@@ -83,7 +83,7 @@ export default function About() {
                 color: 'var(--bg-primary)',
                 fontFamily: "'DM Sans', sans-serif",
                 lineHeight: 1,
-              }}>15+</div>
+              }}>7+</div>
               <div style={{
                 fontSize: 11, fontWeight: 600,
                 color: 'var(--bg-primary)',
@@ -124,7 +124,7 @@ export default function About() {
             transition: 'color 0.5s ease',
           }}>
             <p>
-              Seit über 15 Jahren begleite ich Menschen auf dem Weg zu finanzieller Sicherheit.
+              Seit über 7 Jahren begleite ich Menschen auf dem Weg zu finanzieller Sicherheit.
               Mein Ansatz ist einfach: Ich höre zu, verstehe deine Situation und entwickle
               einen Plan, der wirklich zu dir passt.
             </p>

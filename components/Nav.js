@@ -59,7 +59,7 @@ export default function Nav({ activeSection }) {
             fontWeight: 600, color: 'var(--text-primary)', letterSpacing: 0.5,
             transition: 'color 0.3s',
           }}>
-            Marco Finanzen
+            Marco Arpa
           </span>
         </div>
 

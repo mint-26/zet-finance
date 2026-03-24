@@ -99,7 +99,7 @@ export default function Contact() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             {[
-              { icon: '📧', label: 'E-Mail', value: 'marco@finanzen.de' },
+              { icon: '📧', label: 'E-Mail', value: 'marco.arpa@outlook.de' },
               { icon: '📱', label: 'Telefon', value: '+49 123 456 7890' },
               { icon: '📍', label: 'Standort', value: 'Frankfurt am Main' },
             ].map((c, i) => (

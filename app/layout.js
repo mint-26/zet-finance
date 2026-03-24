@@ -1,11 +1,11 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'Marco Finanzen | Unabhängige Finanzberatung',
+  title: 'Marco Arpa | Unabhängige Finanzberatung',
   description: 'Personalisierte und unabhängige Finanzberatung. Altersvorsorge, Versicherungen, Geldanlage und Immobilienfinanzierung.',
   keywords: 'Finanzberatung, Altersvorsorge, Versicherung, Geldanlage, Immobilienfinanzierung, unabhängig',
   openGraph: {
-    title: 'Marco Finanzen | Unabhängige Finanzberatung',
+    title: 'Marco Arpa | Unabhängige Finanzberatung',
     description: 'Deine Finanzen. Klar durchdacht. Kostenloses Erstgespräch buchen.',
     type: 'website',
   },

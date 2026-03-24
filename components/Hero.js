@@ -133,7 +133,7 @@ export default function Hero() {
         }}>
           {[
             { num: '500+', label: 'Zufriedene Kunden' },
-            { num: '15+', label: 'Jahre Erfahrung' },
+            { num: '7+', label: 'Jahre Erfahrung' },
             { num: '100%', label: 'Unabhängig' },
           ].map((s, i) => (
             <div key={i} style={{

@@ -14,7 +14,7 @@ export default function Footer() {
         alignItems: 'center', flexWrap: 'wrap', gap: 16,
       }}>
         <div style={{ fontSize: 13, color: 'var(--text-dim)' }}>
-          © {new Date().getFullYear()} Marco Finanzen. Alle Rechte vorbehalten.
+          © {new Date().getFullYear()} Marco Arpa. Alle Rechte vorbehalten.
         </div>
         <div style={{ display: 'flex', gap: 24 }}>
           {['Impressum', 'Datenschutz', 'AGB'].map((l) => (
