@@ -19,6 +19,7 @@ export default function Nav({ activeSection }) {
     { id: 'services', label: 'Leistungen' },
     { id: 'process', label: 'So läuft\'s' },
     { id: 'testimonials', label: 'Kundenstimmen' },
+    { id: 'questionnaire', label: 'Fragebogen' },
     { id: 'contact', label: 'Kontakt' },
   ];
 

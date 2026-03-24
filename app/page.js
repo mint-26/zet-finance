@@ -8,6 +8,7 @@ import About from '../components/About';
 import Services from '../components/Services';
 import Process from '../components/Process';
 import Testimonials from '../components/Testimonials';
+import Questionnaire from '../components/Questionnaire';
 import Contact from '../components/Contact';
 import Footer from '../components/Footer';
 
@@ -15,7 +16,7 @@ function PageContent() {
   const [activeSection, setActiveSection] = useState('');
 
   useEffect(() => {
-    const sections = ['about', 'services', 'process', 'testimonials', 'contact'];
+    const sections = ['about', 'services', 'process', 'testimonials', 'questionnaire', 'contact'];
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -44,6 +45,7 @@ function PageContent() {
         <Services />
         <Process />
         <Testimonials />
+        <Questionnaire />
         <Contact />
       </main>
       <Footer />
