@@ -379,6 +379,7 @@ export default function Questionnaire() {
   const [ref, inView] = useInView();
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
 
   const [personal, setPersonal] = useState({
     name: '', address: '', birthdate: '', maritalStatus: '',
@@ -404,11 +405,50 @@ export default function Questionnaire() {
     return false;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step < TOTAL_STEPS - 1) {
       setStep(step + 1);
     } else {
-      setSubmitted(true);
+      setSending(true);
+      try {
+        await fetch('https://formsubmit.co/ajax/marco.arpa@outlook.de', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            _subject: 'Neuer Fragebogen von ' + personal.name,
+            '--- PERSÖNLICHE ANGABEN ---': '',
+            'Name': personal.name,
+            'Adresse': personal.address,
+            'Geburtsdatum': personal.birthdate,
+            'Familienstand': personal.maritalStatus,
+            'Telefon': personal.phone,
+            'E-Mail': personal.email,
+            'Beruf': personal.occupation || '—',
+            '--- KRANKENVERSICHERUNG ---': '',
+            'Versicherungsart': insurance.insuranceType,
+            'Versicherer': insurance.insuranceName,
+            'Wechselinteresse': insurance.switchInterest,
+            'Bonusprogramm': insurance.bonusProgram || '—',
+            '--- ZAHNSTATUS ---': '',
+            'Zahnbehandlung aktuell': dental.dentalTreatment,
+            'Heil- und Kostenplan': dental.treatmentPlan,
+            'Fehlende Zähne': dental.missingTeeth,
+            'Zahnlückenversicherung': dental.gapInsurance,
+            'Parodontose': dental.periodontal,
+            'Schwerpunkt': dental.priorityArea,
+            'Vorherige Zahnzusatzversicherung': dental.previousCoverage,
+            '--- BERATUNG & KONTAKT ---': '',
+            'Kontaktmethode': consultation.contactMethod,
+            'Zusätzlicher Versicherungsschutz': consultation.additionalCoverage.join(', '),
+            'Beratungsthemen': consultation.consultationTopics.join(', '),
+          }),
+        });
+        setSubmitted(true);
+      } catch {
+        setSubmitted(true);
+      } finally {
+        setSending(false);
+      }
     }
   };
 
@@ -455,7 +495,7 @@ export default function Questionnaire() {
     );
   }
 
-  const enabled = canProceed();
+  const enabled = canProceed() && !sending;
 
   return (
     <section id="questionnaire" ref={ref} style={{
@@ -559,7 +599,7 @@ export default function Questionnaire() {
                 boxShadow: enabled ? '0 4px 30px var(--shadow-accent)' : 'none',
               }}
             >
-              {step === TOTAL_STEPS - 1 ? 'Absenden ✓' : 'Weiter →'}
+              {sending ? 'Wird gesendet...' : step === TOTAL_STEPS - 1 ? 'Absenden ✓' : 'Weiter →'}
             </button>
           </div>
         </div>

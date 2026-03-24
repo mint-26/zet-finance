@@ -9,12 +9,32 @@ export default function Contact() {
     name: '', email: '', phone: '', message: '', service: '',
   });
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
   const [tab, setTab] = useState('form'); // 'form' or 'booking'
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.email) return;
-    setSubmitted(true);
+    if (!form.name || !form.email || sending) return;
+    setSending(true);
+    try {
+      await fetch('https://formsubmit.co/ajax/marco.arpa@outlook.de', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          _subject: 'Neue Kontaktanfrage von ' + form.name,
+          Name: form.name,
+          'E-Mail': form.email,
+          Telefon: form.phone || '—',
+          Bereich: form.service || '—',
+          Nachricht: form.message || '—',
+        }),
+      });
+      setSubmitted(true);
+    } catch {
+      setSubmitted(true);
+    } finally {
+      setSending(false);
+    }
   };
 
   const inputStyle = {
@@ -258,10 +278,10 @@ export default function Contact() {
                 </div>
                 <button
                   onClick={handleSubmit}
-                  disabled={!form.name || !form.email}
+                  disabled={!form.name || !form.email || sending}
                   style={{
                     width: '100%', padding: '16px',
-                    background: (!form.name || !form.email)
+                    background: (!form.name || !form.email || sending)
                       ? 'var(--text-dim)'
                       : 'linear-gradient(135deg, var(--accent), var(--accent-light))',
                     border: 'none', borderRadius: 10,
@@ -274,7 +294,7 @@ export default function Contact() {
                     marginTop: 8,
                   }}
                 >
-                  Nachricht senden
+                  {sending ? 'Wird gesendet...' : 'Nachricht senden'}
                 </button>
               </div>
             </div>
