@@ -20,6 +20,7 @@
   --grid-opacity: 0.03;
   --input-bg: rgba(255,255,255,0.04);
   --select-option-bg: #111827;
+  --step-num: rgba(200,164,69,0.35);
 }
 
 [data-theme="light"] {
@@ -41,6 +42,7 @@
   --grid-opacity: 0.025;
   --input-bg: rgba(0,0,0,0.03);
   --select-option-bg: #f8f6f1;
+  --step-num: rgba(160,130,42,0.35);
 }
 
 * {

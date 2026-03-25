@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <circle cx="16" cy="16" r="16" fill="#0a0f1a"/>
+  <circle cx="16" cy="16" r="14.5" fill="none" stroke="#c8a445" stroke-width="1.5"/>
+  <text x="16" y="22" text-anchor="middle" font-family="Georgia, serif" font-size="14" font-weight="700" fill="#c8a445">MA</text>
+</svg>

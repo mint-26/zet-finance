@@ -50,8 +50,7 @@ export default function Process() {
             }}>
               <div style={{
                 fontSize: 48, fontWeight: 800,
-                color: 'transparent',
-                WebkitTextStroke: '1px var(--border)',
+                color: 'var(--step-num)',
                 marginBottom: 16, lineHeight: 1,
                 transition: 'all 0.3s',
               }}>{step.num}</div>
