@@ -99,19 +99,6 @@ export default function Nav({ activeSection }) {
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
 
-          <button
-            onClick={() => scrollTo('contact')}
-            style={{
-              background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
-              border: 'none', borderRadius: 8, padding: '10px 22px',
-              color: 'var(--bg-primary)', fontWeight: 600, fontSize: 14,
-              cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
-              boxShadow: '0 0 20px var(--shadow-accent)',
-              transition: 'all 0.3s',
-            }}
-          >
-            Termin buchen
-          </button>
         </div>
 
         {/* Mobile: theme + burger */}
@@ -181,19 +168,6 @@ export default function Nav({ activeSection }) {
               {l.label}
             </button>
           ))}
-          <button
-            onClick={() => scrollTo('contact')}
-            style={{
-              display: 'block', width: '100%', marginTop: 16,
-              background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
-              border: 'none', borderRadius: 8, padding: '14px',
-              color: 'var(--bg-primary)', fontWeight: 600, fontSize: 15,
-              cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
-              textAlign: 'center',
-            }}
-          >
-            Termin buchen
-          </button>
         </div>
       )}
 

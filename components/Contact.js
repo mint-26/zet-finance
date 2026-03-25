@@ -10,7 +10,6 @@ export default function Contact() {
   });
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
-  const [tab, setTab] = useState('form'); // 'form' or 'booking'
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -172,34 +171,7 @@ export default function Contact() {
           transform: inView ? 'translateX(0)' : 'translateX(20px)',
           transition: 'all 0.7s cubic-bezier(0.16,1,0.3,1) 0.15s',
         }}>
-          {/* Tab Switcher */}
-          <div style={{
-            display: 'flex', borderBottom: '1px solid var(--border)',
-          }}>
-            {[
-              { id: 'form', label: '✉️  Nachricht' },
-              { id: 'booking', label: '📅  Termin buchen' },
-            ].map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                style={{
-                  flex: 1, padding: '16px', border: 'none',
-                  background: tab === t.id ? 'var(--accent-dim)' : 'transparent',
-                  color: tab === t.id ? 'var(--accent)' : 'var(--text-muted)',
-                  fontWeight: 600, fontSize: 14, cursor: 'pointer',
-                  fontFamily: "'DM Sans', sans-serif",
-                  borderBottom: tab === t.id ? '2px solid var(--accent)' : '2px solid transparent',
-                  transition: 'all 0.3s',
-                }}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-
-          {tab === 'form' ? (
-            <div style={{ padding: 36 }}>
+          <div style={{ padding: 36 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div>
                   <label style={{
@@ -298,85 +270,6 @@ export default function Contact() {
                 </button>
               </div>
             </div>
-          ) : (
-            <div style={{ padding: 36 }}>
-              {/* Calendly Integration Placeholder */}
-              <div style={{
-                textAlign: 'center',
-                padding: '40px 20px',
-              }}>
-                <div style={{
-                  width: 64, height: 64, borderRadius: '50%',
-                  background: 'var(--accent-dim)',
-                  border: '1px solid var(--border)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 28, margin: '0 auto 20px',
-                }}>📅</div>
-                <h3 style={{
-                  fontSize: 20, fontWeight: 600, color: 'var(--text-primary)',
-                  marginBottom: 12,
-                  fontFamily: "'Playfair Display', serif",
-                }}>
-                  Termin direkt buchen
-                </h3>
-                <p style={{
-                  fontSize: 14, color: 'var(--text-muted)',
-                  lineHeight: 1.7, marginBottom: 28, maxWidth: 360, margin: '0 auto 28px',
-                }}>
-                  Wähle einen passenden Zeitpunkt für dein kostenloses
-                  30-minütiges Erstgespräch.
-                </p>
-
-                {/*
-                  CALENDLY INTEGRATION:
-                  Ersetze den Button unten mit dem Calendly-Widget:
-
-                  1. Installiere: npm install react-calendly
-                  2. Importiere: import { InlineWidget } from 'react-calendly'
-                  3. Ersetze den Button mit:
-                     <InlineWidget
-                       url="https://calendly.com/DEIN-CALENDLY-LINK"
-                       styles={{ height: '600px', width: '100%' }}
-                     />
-
-                  Oder nutze den einfachen Embed-Link direkt.
-                */}
-                <a
-                  href="https://calendly.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'inline-block',
-                    padding: '16px 40px',
-                    background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
-                    color: 'var(--bg-primary)',
-                    fontWeight: 700, fontSize: 16, borderRadius: 10,
-                    textDecoration: 'none',
-                    fontFamily: "'DM Sans', sans-serif",
-                    boxShadow: '0 4px 30px var(--shadow-accent)',
-                    transition: 'transform 0.2s',
-                  }}
-                >
-                  Zu Calendly →
-                </a>
-
-                <div style={{
-                  marginTop: 32, padding: '16px 20px',
-                  background: 'var(--accent-dim)',
-                  borderRadius: 10,
-                  border: '1px solid var(--border)',
-                }}>
-                  <div style={{
-                    fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6,
-                  }}>
-                    <strong style={{ color: 'var(--accent)' }}>Tipp:</strong>{' '}
-                    Wenn du dir nicht sicher bist, welche Beratung du brauchst,
-                    schreib mir einfach eine Nachricht. Wir finden das gemeinsam raus.
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </section>
