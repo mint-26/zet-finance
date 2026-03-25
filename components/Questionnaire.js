@@ -350,8 +350,8 @@ function Step5({ data, setData }) {
         title="Beratung & Kontakt"
         subtitle="Fast geschafft! Noch ein paar letzte Angaben für die optimale Beratung."
       />
-      <RadioGroup
-        label="Bevorzugte Kontaktmethode"
+      <CheckboxGroup
+        label="Bevorzugte Kontaktmethode (Mehrfachauswahl möglich)"
         options={['E-Mail', 'Telefon', 'WhatsApp']}
         value={data.contactMethod}
         onChange={(v) => update('contactMethod', v)}
@@ -393,7 +393,7 @@ export default function Questionnaire() {
     gapInsurance: '', periodontal: '', priorityArea: '', previousCoverage: '',
   });
   const [consultation, setConsultation] = useState({
-    contactMethod: '', additionalCoverage: [], consultationTopics: [],
+    contactMethod: [], additionalCoverage: [], consultationTopics: [],
   });
 
   const canProceed = () => {
@@ -401,7 +401,7 @@ export default function Questionnaire() {
     if (step === 1) return personal.name && personal.address && personal.birthdate && personal.maritalStatus && personal.phone && personal.email;
     if (step === 2) return insurance.insuranceType && insurance.insuranceName && insurance.switchInterest;
     if (step === 3) return dental.dentalTreatment && dental.treatmentPlan && dental.missingTeeth && dental.gapInsurance && dental.periodontal && dental.priorityArea && dental.previousCoverage;
-    if (step === 4) return consultation.contactMethod && consultation.additionalCoverage.length > 0 && consultation.consultationTopics.length > 0;
+    if (step === 4) return consultation.contactMethod.length > 0 && consultation.additionalCoverage.length > 0 && consultation.consultationTopics.length > 0;
     return false;
   };
 
@@ -438,7 +438,7 @@ export default function Questionnaire() {
             'Schwerpunkt': dental.priorityArea,
             'Vorherige Zahnzusatzversicherung': dental.previousCoverage,
             '--- BERATUNG & KONTAKT ---': '',
-            'Kontaktmethode': consultation.contactMethod,
+            'Kontaktmethode': consultation.contactMethod.join(', '),
             'Zusätzlicher Versicherungsschutz': consultation.additionalCoverage.join(', '),
             'Beratungsthemen': consultation.consultationTopics.join(', '),
           }),
