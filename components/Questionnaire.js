@@ -323,9 +323,9 @@ function Step4({ data, setData }) {
         onChange={(v) => update('periodontal', v)}
         required
       />
-      <RadioGroup
-        label="Schwerpunktbereich"
-        options={['Zahnersatz', 'Zahnbehandlung', 'Kieferorthopädie', 'Kosmetische Eingriffe']}
+      <CheckboxGroup
+        label="Welcher Bereich ist Ihnen am wichtigsten? (Mehrfachauswahl möglich)"
+        options={['Zahnersatz', 'Zahnbehandlung', 'Kieferorthopädie', 'Kosmetische Eingriffe (Zahnreinigung, Bleaching etc.)']}
         value={data.priorityArea}
         onChange={(v) => update('priorityArea', v)}
         required
@@ -397,7 +397,7 @@ export default function Questionnaire() {
   });
   const [dental, setDental] = useState({
     dentalTreatment: '', treatmentPlan: '', missingTeeth: '',
-    gapInsurance: '', periodontal: '', priorityArea: '', previousCoverage: '',
+    gapInsurance: '', periodontal: '', priorityArea: [], previousCoverage: '',
   });
   const [consultation, setConsultation] = useState({
     contactMethod: [], additionalCoverage: [], consultationTopics: [],
@@ -407,7 +407,7 @@ export default function Questionnaire() {
     if (step === 0) return true;
     if (step === 1) return personal.name && personal.address && personal.birthdate && personal.maritalStatus && personal.phone && personal.email;
     if (step === 2) return insurance.insuranceType && insurance.insuranceName && insurance.switchInterest;
-    if (step === 3) return dental.dentalTreatment && dental.treatmentPlan && dental.missingTeeth && dental.gapInsurance && dental.periodontal && dental.priorityArea && dental.previousCoverage;
+    if (step === 3) return dental.dentalTreatment && dental.treatmentPlan && dental.missingTeeth && dental.gapInsurance && dental.periodontal && dental.priorityArea.length > 0 && dental.previousCoverage;
     if (step === 4) return consultation.contactMethod.length > 0 && consultation.additionalCoverage.length > 0 && consultation.consultationTopics.length > 0;
     return false;
   };
@@ -443,7 +443,7 @@ export default function Questionnaire() {
             'Fehlende Zähne': dental.missingTeeth,
             'Zahnlückenversicherung': dental.gapInsurance,
             'Parodontose': dental.periodontal,
-            'Schwerpunkt': dental.priorityArea,
+            'Schwerpunkt': dental.priorityArea.join(', '),
             'Vorherige Zahnzusatzversicherung': dental.previousCoverage,
             '--- BERATUNG & KONTAKT ---': '',
             'Kontaktmethode': consultation.contactMethod.join(', '),
