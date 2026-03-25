@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useInView } from './useInView';
 
 const TOTAL_STEPS = 5;
@@ -377,9 +377,16 @@ function Step5({ data, setData }) {
 
 export default function Questionnaire() {
   const [ref, inView] = useInView();
+  const cardRef = useRef(null);
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
+
+  const scrollToCard = useCallback(() => {
+    if (cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
 
   const [personal, setPersonal] = useState({
     name: '', address: '', birthdate: '', maritalStatus: '',
@@ -408,6 +415,7 @@ export default function Questionnaire() {
   const handleNext = async () => {
     if (step < TOTAL_STEPS - 1) {
       setStep(step + 1);
+      setTimeout(scrollToCard, 50);
     } else {
       setSending(true);
       try {
@@ -453,7 +461,10 @@ export default function Questionnaire() {
   };
 
   const handleBack = () => {
-    if (step > 0) setStep(step - 1);
+    if (step > 0) {
+      setStep(step - 1);
+      setTimeout(scrollToCard, 50);
+    }
   };
 
   if (submitted) {
@@ -534,12 +545,13 @@ export default function Questionnaire() {
         </div>
 
         {/* Card */}
-        <div style={{
+        <div ref={cardRef} style={{
           background: 'var(--bg-card)',
           border: '1px solid var(--border)',
           borderRadius: 20, padding: '36px 32px',
           position: 'relative',
           overflow: 'hidden',
+          scrollMarginTop: 24,
         }}>
           <ProgressBar step={step} />
 
