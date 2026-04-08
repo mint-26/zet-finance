@@ -16,10 +16,9 @@ export default function Nav({ activeSection }) {
 
   const links = [
     { id: 'about', label: 'Über mich' },
-    { id: 'services', label: 'Leistungen' },
     { id: 'process', label: 'So läuft\'s' },
+    { id: 'fragebogen', label: 'Fragebogen', highlight: true },
     { id: 'testimonials', label: 'Kundenstimmen' },
-    { id: 'questionnaire', label: 'Fragebogen' },
     { id: 'contact', label: 'Kontakt' },
   ];
 
@@ -71,7 +70,17 @@ export default function Nav({ activeSection }) {
             <button
               key={l.id}
               onClick={() => scrollTo(l.id)}
-              style={{
+              style={l.highlight ? {
+                background: 'var(--accent-dim)',
+                border: '1px solid var(--accent)',
+                borderRadius: 100,
+                padding: '4px 14px',
+                color: 'var(--accent)',
+                fontSize: 14, fontWeight: 600,
+                fontFamily: "'DM Sans', sans-serif",
+                cursor: 'pointer',
+                transition: 'all 0.3s',
+              } : {
                 background: 'none', border: 'none', cursor: 'pointer',
                 color: activeSection === l.id ? 'var(--accent)' : 'var(--text-muted)',
                 fontSize: 14, fontWeight: 500, fontFamily: "'DM Sans', sans-serif",
@@ -157,7 +166,16 @@ export default function Nav({ activeSection }) {
             <button
               key={l.id}
               onClick={() => scrollTo(l.id)}
-              style={{
+              style={l.highlight ? {
+                display: 'block', width: '100%', textAlign: 'left',
+                background: 'var(--accent-dim)',
+                border: '1px solid var(--accent)',
+                borderRadius: 10,
+                cursor: 'pointer',
+                color: 'var(--accent)', fontSize: 16, fontWeight: 600,
+                padding: '14px 16px', marginTop: 8, marginBottom: 8,
+                fontFamily: "'DM Sans', sans-serif",
+              } : {
                 display: 'block', width: '100%', textAlign: 'left',
                 background: 'none', border: 'none', cursor: 'pointer',
                 color: 'var(--text-body)', fontSize: 16, padding: '14px 0',

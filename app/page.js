@@ -5,10 +5,9 @@ import { ThemeProvider } from '../components/ThemeProvider';
 import Nav from '../components/Nav';
 import Hero from '../components/Hero';
 import About from '../components/About';
-import Services from '../components/Services';
 import Process from '../components/Process';
-import Testimonials from '../components/Testimonials';
 import Questionnaire from '../components/Questionnaire';
+import Testimonials from '../components/Testimonials';
 import Contact from '../components/Contact';
 import Footer from '../components/Footer';
 
@@ -16,7 +15,7 @@ function PageContent() {
   const [activeSection, setActiveSection] = useState('');
 
   useEffect(() => {
-    const sections = ['about', 'services', 'process', 'testimonials', 'questionnaire', 'contact'];
+    const sections = ['about', 'process', 'fragebogen', 'testimonials', 'contact'];
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -42,10 +41,9 @@ function PageContent() {
       <main>
         <Hero />
         <About />
-        <Services />
         <Process />
-        <Testimonials />
         <Questionnaire />
+        <Testimonials />
         <Contact />
       </main>
       <Footer />

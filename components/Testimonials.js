@@ -4,21 +4,21 @@ import { useInView } from './useInView';
 
 const TESTIMONIALS = [
   {
-    name: 'Thomas K.',
-    role: 'Unternehmer',
-    text: 'Marco hat mir geholfen, meine Altersvorsorge komplett neu aufzustellen. Endlich verstehe ich, wo mein Geld hingeht.',
+    name: 'Sandra K.',
+    role: 'Patientin, Zahnarztpraxis Dr. Weber',
+    text: 'Marco hat sich alles in Ruhe angehört und mir eine Zahnzusatzversicherung gefunden, die perfekt passt. Als ich dann mein Implantat brauchte, wurde fast alles übernommen. Ohne ihn hätte ich über 3.000€ selbst gezahlt.',
     rating: 5,
   },
   {
-    name: 'Sarah M.',
-    role: 'Ärztin',
-    text: 'Professionell, ehrlich und immer erreichbar. Die beste Entscheidung, die ich für meine Finanzen getroffen habe.',
+    name: 'Thomas M.',
+    role: 'Patient, Zahnarztpraxis Dr. Hoffmann',
+    text: 'Ich hatte jahrelang keine Zahnzusatzversicherung und dachte, ich brauche keine. Nach dem Gespräch mit Marco war klar: Für 15€ im Monat spare ich mir im Ernstfall Tausende. Drei Monate später brauchte ich tatsächlich eine Krone.',
     rating: 5,
   },
   {
-    name: 'David R.',
-    role: 'Ingenieur',
-    text: 'Kein Verkaufsgespräch, sondern echte Beratung. Marco nimmt sich Zeit und denkt mit.',
+    name: 'Petra R.',
+    role: 'Patientin, Zahnarztpraxis Dr. Klein',
+    text: 'Was mich überzeugt hat: Marco hat meine alte Versicherung geprüft und mir einen besseren Tarif gefunden, der weniger kostet und mehr abdeckt. Und er kümmert sich wirklich um alles, wenn man eine Rechnung einreicht.',
     rating: 5,
   },
 ];

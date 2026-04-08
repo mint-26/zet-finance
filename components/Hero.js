@@ -68,35 +68,42 @@ export default function Hero() {
               fontWeight: 700,
               color: 'var(--text-primary)',
               lineHeight: 1.1,
-              marginBottom: 24,
+              marginBottom: 32,
               maxWidth: 700,
               transition: 'color 0.5s ease',
             }}>
-              Deine Finanzen.<br />
+              Damit die Rechnung<br />
               <span style={{
                 background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
               }}>
-                Klar durchdacht.
+                nicht wehtut.
               </span>
             </h1>
 
-            <p style={{
-              fontSize: 'clamp(16px, 2vw, 20px)',
-              color: 'var(--text-muted)',
-              lineHeight: 1.7,
+            <div style={{
               maxWidth: 520,
               marginBottom: 40,
-              transition: 'color 0.5s ease',
+              display: 'flex', flexDirection: 'column', gap: 16,
             }}>
-              Unabhängige Finanzberatung, die auf dich zugeschnitten ist.
-              Kein Verkaufsdruck, keine versteckten Kosten. Nur ehrliche Empfehlungen.
-            </p>
+              <p style={{ fontSize: 'clamp(15px, 1.8vw, 17px)', lineHeight: 1.7 }}>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>Was kostet meine Beratung?</span>{' '}
+                <span style={{ color: 'var(--text-muted)' }}>Nichts.</span>
+              </p>
+              <p style={{ fontSize: 'clamp(15px, 1.8vw, 17px)', lineHeight: 1.7 }}>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>Für wen arbeite ich?</span>{' '}
+                <span style={{ color: 'var(--text-muted)' }}>Für Sie. Nicht für eine Versicherung.</span>
+              </p>
+              <p style={{ fontSize: 'clamp(15px, 1.8vw, 17px)', lineHeight: 1.7 }}>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>Und dann?</span>{' '}
+                <span style={{ color: 'var(--text-muted)' }}>Einmal im Jahr checke ich, ob Ihr Tarif noch der beste ist. Wenn nicht, wechseln wir. Ohne Papierkram für Sie.</span>
+              </p>
+            </div>
 
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
               <button
-                onClick={() => scrollTo('contact')}
+                onClick={() => scrollTo('fragebogen')}
                 className="hero-cta-primary"
                 style={{
                   background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
@@ -107,10 +114,10 @@ export default function Hero() {
                   transition: 'transform 0.2s, box-shadow 0.2s',
                 }}
               >
-                Kostenloses Erstgespräch
+                Jetzt Angebot anfordern
               </button>
               <button
-                onClick={() => scrollTo('services')}
+                onClick={() => scrollTo('process')}
                 className="hero-cta-secondary"
                 style={{
                   background: 'transparent',
@@ -121,7 +128,7 @@ export default function Hero() {
                   transition: 'border-color 0.3s, color 0.3s',
                 }}
               >
-                Mehr erfahren ↓
+                So läuft&apos;s ↓
               </button>
             </div>
           </div>

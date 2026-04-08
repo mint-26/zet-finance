@@ -134,8 +134,7 @@ export default function About() {
               versteht und dein Interesse in den Mittelpunkt stellt.
             </p>
             <p>
-              Ob Altersvorsorge, Geldanlage oder Immobilienfinanzierung: Ich sorge
-              dafür, dass du jede Entscheidung verstehst und dich dabei gut fühlst.
+              Ob Zahnersatz, Prophylaxe oder Kieferorthopädie: Ich finde die Versicherung, die genau das abdeckt, was Sie brauchen. Nicht mehr, nicht weniger.
             </p>
           </div>
 
@@ -144,9 +143,9 @@ export default function About() {
             display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 28,
           }}>
             {[
-              'IHK-zertifiziert',
-              'Unabhängiger Berater',
-              '500+ zufriedene Kunden',
+              'Unabhängiger Makler',
+              'Spezialisiert auf Zahnzusatz',
+              'Kostenlose Beratung',
               'DSGVO-konform',
             ].map((tag, i) => (
               <span key={i} style={{

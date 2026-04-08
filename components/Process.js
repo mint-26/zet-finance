@@ -3,10 +3,10 @@
 import { useInView } from './useInView';
 
 const STEPS = [
-  { num: '01', title: 'Erstgespräch', desc: 'Kostenlos und unverbindlich. Wir lernen uns kennen und ich verstehe deine Situation.' },
-  { num: '02', title: 'Analyse', desc: 'Ich durchleuchte deine aktuelle Finanzlage und identifiziere Potenziale.' },
-  { num: '03', title: 'Strategie', desc: 'Du bekommst einen klaren Plan mit konkreten Empfehlungen.' },
-  { num: '04', title: 'Umsetzung', desc: 'Gemeinsam setzen wir die Strategie um. Ich kümmere mich um den Papierkram.' },
+  { num: '01', title: 'Kurzes Gespräch', desc: '5 Minuten reichen. Wir klären Ihre Zahnsituation und was Ihnen wichtig ist. Telefonisch, per WhatsApp oder vor Ort.' },
+  { num: '02', title: 'Fragebogen ausfüllen', desc: 'Ein paar Fragen zu Ihren Zähnen und Ihrer Gesundheit direkt hier auf der Website. Dauert 2 Minuten.' },
+  { num: '03', title: 'Ihr persönliches Angebot', desc: 'Ich vergleiche den gesamten Markt und finde den Tarif, der zu Ihren Zähnen und Ihrem Budget passt. Keine Standardlösung.' },
+  { num: '04', title: 'Rechnung einreichen, fertig', desc: 'Sie reichen Ihre Zahnarztrechnung ein. Den Rest erledige ich. Kommunikation mit der Versicherung, Nachfragen, Abwicklung. Und wenn mal was ist: Ich bin 24/7, 365 Tage im Jahr für Sie erreichbar.' },
 ];
 
 export default function Process() {

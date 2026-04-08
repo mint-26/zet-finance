@@ -1,527 +1,120 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState } from 'react';
 import { useInView } from './useInView';
 
-const TOTAL_STEPS = 5;
-
-function ProgressBar({ step }) {
-  return (
-    <div style={{ display: 'flex', gap: 6, marginBottom: 32 }}>
-      {Array.from({ length: TOTAL_STEPS }, (_, i) => (
-        <div key={i} style={{
-          flex: 1, height: 4, borderRadius: 2,
-          background: i < step
-            ? 'var(--accent)'
-            : i === step
-              ? 'linear-gradient(90deg, var(--accent), var(--accent-light))'
-              : 'var(--border)',
-          transition: 'background 0.4s ease',
-        }} />
-      ))}
-    </div>
-  );
-}
-
-function StepHeader({ icon, title, subtitle }) {
-  return (
-    <div style={{ marginBottom: 28, textAlign: 'center' }}>
-      <div style={{
-        width: 52, height: 52, borderRadius: '50%',
-        background: 'var(--accent-dim)', border: '1px solid var(--border)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 24, margin: '0 auto 16px',
-      }}>{icon}</div>
-      <h3 style={{
-        fontFamily: "'Playfair Display', serif",
-        fontSize: 22, fontWeight: 700, color: 'var(--text-primary)',
-        marginBottom: 8,
-      }}>{title}</h3>
-      {subtitle && (
-        <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-          {subtitle}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function RadioGroup({ label, options, value, onChange, required }) {
-  return (
-    <div style={{ marginBottom: 20 }}>
-      <label style={{
-        fontSize: 13, color: 'var(--text-muted)',
-        display: 'block', marginBottom: 10,
-      }}>{label}{required && ' *'}</label>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {options.map((opt) => {
-          const selected = value === opt;
-          return (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => onChange(opt)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '12px 16px',
-                background: selected ? 'var(--accent-dim)' : 'var(--input-bg)',
-                border: selected ? '1.5px solid var(--accent)' : '1px solid var(--border)',
-                borderRadius: 10, cursor: 'pointer',
-                transition: 'all 0.25s ease',
-                textAlign: 'left',
-              }}
-            >
-              <div style={{
-                width: 18, height: 18, borderRadius: '50%',
-                border: selected ? '2px solid var(--accent)' : '2px solid var(--text-dim)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0, transition: 'all 0.25s',
-              }}>
-                {selected && <div style={{
-                  width: 8, height: 8, borderRadius: '50%',
-                  background: 'var(--accent)',
-                }} />}
-              </div>
-              <span style={{
-                fontSize: 14, color: selected ? 'var(--text-primary)' : 'var(--text-body)',
-                fontFamily: "'DM Sans', sans-serif",
-                fontWeight: selected ? 500 : 400,
-              }}>{opt}</span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function CheckboxGroup({ label, options, value, onChange, required }) {
-  const toggleOption = (opt) => {
-    if (value.includes(opt)) {
-      onChange(value.filter((v) => v !== opt));
-    } else {
-      onChange([...value, opt]);
-    }
-  };
-  return (
-    <div style={{ marginBottom: 20 }}>
-      <label style={{
-        fontSize: 13, color: 'var(--text-muted)',
-        display: 'block', marginBottom: 10,
-      }}>{label}{required && ' *'}</label>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {options.map((opt) => {
-          const selected = value.includes(opt);
-          return (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => toggleOption(opt)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '12px 16px',
-                background: selected ? 'var(--accent-dim)' : 'var(--input-bg)',
-                border: selected ? '1.5px solid var(--accent)' : '1px solid var(--border)',
-                borderRadius: 10, cursor: 'pointer',
-                transition: 'all 0.25s ease',
-                textAlign: 'left',
-              }}
-            >
-              <div style={{
-                width: 18, height: 18, borderRadius: 4,
-                border: selected ? '2px solid var(--accent)' : '2px solid var(--text-dim)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0, transition: 'all 0.25s',
-                background: selected ? 'var(--accent)' : 'transparent',
-              }}>
-                {selected && <span style={{ color: '#fff', fontSize: 12, lineHeight: 1 }}>✓</span>}
-              </div>
-              <span style={{
-                fontSize: 14, color: selected ? 'var(--text-primary)' : 'var(--text-body)',
-                fontFamily: "'DM Sans', sans-serif",
-                fontWeight: selected ? 500 : 400,
-              }}>{opt}</span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function TextInput({ label, value, onChange, placeholder, type = 'text', required }) {
-  return (
-    <div style={{ marginBottom: 16 }}>
-      <label style={{
-        fontSize: 13, color: 'var(--text-muted)',
-        display: 'block', marginBottom: 6,
-      }}>{label}{required && ' *'}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        style={{
-          width: '100%', padding: '14px 18px',
-          background: 'var(--input-bg)',
-          border: '1px solid var(--border)', borderRadius: 10,
-          color: 'var(--text-body)', fontSize: 15,
-          fontFamily: "'DM Sans', sans-serif",
-          outline: 'none', transition: 'border-color 0.3s',
-          boxSizing: 'border-box',
-        }}
-      />
-    </div>
-  );
-}
-
-// Step content components
-function Step1() {
-  return (
-    <div>
-      <StepHeader
-        icon="👋"
-        title="Willkommen"
-        subtitle="In wenigen Schritten erhalte ich alle wichtigen Infos, um dir das beste Angebot zusammenzustellen."
-      />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {[
-          { icon: '🎯', title: 'Persönliche Beratung', text: 'Individuell auf deine Lebenssituation abgestimmt.' },
-          { icon: '⚡', title: 'Effiziente Lösungen', text: 'Schnelle und transparente Vergleichsangebote.' },
-          { icon: '🤝', title: 'Langfristige Partnerschaft', text: 'Ich begleite dich dauerhaft bei deinen Finanzentscheidungen.' },
-        ].map((item, i) => (
-          <div key={i} style={{
-            display: 'flex', gap: 14, alignItems: 'flex-start',
-            padding: '16px 18px',
-            background: 'var(--input-bg)',
-            border: '1px solid var(--border)',
-            borderRadius: 12,
-          }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: 10,
-              background: 'var(--accent-dim)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 18, flexShrink: 0,
-            }}>{item.icon}</div>
-            <div>
-              <div style={{
-                fontSize: 15, fontWeight: 600, color: 'var(--text-primary)',
-                marginBottom: 2,
-              }}>{item.title}</div>
-              <div style={{
-                fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5,
-              }}>{item.text}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function Step2({ data, setData }) {
-  const update = (key, val) => setData({ ...data, [key]: val });
-  return (
-    <div>
-      <StepHeader
-        icon="👤"
-        title="Persönliche Angaben"
-        subtitle="Bitte fülle die folgenden Angaben sorgfältig aus, damit ich dir das passende Angebot erstellen kann."
-      />
-      <TextInput label="Vollständiger Name" value={data.name} onChange={(v) => update('name', v)} placeholder="Max Mustermann" required />
-      <TextInput label="Adresse (PLZ, Ort, Straße, Nr.)" value={data.address} onChange={(v) => update('address', v)} placeholder="12345 Berlin, Musterstraße 1" required />
-      <TextInput label="Geburtsdatum" value={data.birthdate} onChange={(v) => update('birthdate', v)} placeholder="TT.MM.JJJJ" type="text" required />
-      <RadioGroup
-        label="Familienstand"
-        options={['Ledig', 'Verheiratet', 'Eingetragene Lebenspartnerschaft', 'Geschieden', 'Verwitwet']}
-        value={data.maritalStatus}
-        onChange={(v) => update('maritalStatus', v)}
-        required
-      />
-      <TextInput label="Rückrufnummer" value={data.phone} onChange={(v) => update('phone', v)} placeholder="+49 123 456 7890" type="tel" required />
-      <TextInput label="E-Mail-Adresse" value={data.email} onChange={(v) => update('email', v)} placeholder="deine@email.de" type="email" required />
-      <TextInput label="Beruf" value={data.occupation} onChange={(v) => update('occupation', v)} placeholder="z.B. Ingenieur" />
-    </div>
-  );
-}
-
-function Step3({ data, setData }) {
-  const update = (key, val) => setData({ ...data, [key]: val });
-  return (
-    <div>
-      <StepHeader
-        icon="🏥"
-        title="Krankenversicherung"
-        subtitle="Angaben zu deiner aktuellen Krankenversicherungssituation."
-      />
-      <RadioGroup
-        label="Art der Versicherung"
-        options={['Gesetzlich pflichtversichert', 'Gesetzlich freiwillig versichert', 'Gesetzlich familienversichert', 'Privat versichert']}
-        value={data.insuranceType}
-        onChange={(v) => update('insuranceType', v)}
-        required
-      />
-      <TextInput label="Name des Versicherers" value={data.insuranceName} onChange={(v) => update('insuranceName', v)} placeholder="z.B. AOK, TK, Allianz..." required />
-      <RadioGroup
-        label="Interesse an einem Wechsel?"
-        options={['Ja, ich hätte gerne ein Vergleichsangebot', 'Nein']}
-        value={data.switchInterest}
-        onChange={(v) => update('switchInterest', v)}
-        required
-      />
-      <RadioGroup
-        label="Nimmst du an einem Bonusprogramm teil?"
-        options={['Ja', 'Nein']}
-        value={data.bonusProgram}
-        onChange={(v) => update('bonusProgram', v)}
-      />
-    </div>
-  );
-}
-
-function Step4({ data, setData }) {
-  const update = (key, val) => setData({ ...data, [key]: val });
-  return (
-    <div>
-      <StepHeader
-        icon="🦷"
-        title="Zahnstatus"
-        subtitle="Informationen zu deinem aktuellen Zahnstatus für die passende Zahnzusatzversicherung."
-      />
-      <RadioGroup
-        label="Aktuelle oder geplante Zahnbehandlung?"
-        options={['Ja', 'Nein']}
-        value={data.dentalTreatment}
-        onChange={(v) => update('dentalTreatment', v)}
-        required
-      />
-      <RadioGroup
-        label="Liegt ein Heil- und Kostenplan vor?"
-        options={['Ja, dokumentiert', 'Ja, nur mündlich mitgeteilt', 'Nein']}
-        value={data.treatmentPlan}
-        onChange={(v) => update('treatmentPlan', v)}
-        required
-      />
-      <RadioGroup
-        label="Anzahl fehlender Zähne (ohne Weisheitszähne)"
-        options={['0', '1', '2', '3', '4', 'Mehr als 4']}
-        value={data.missingTeeth}
-        onChange={(v) => update('missingTeeth', v)}
-        required
-      />
-      <RadioGroup
-        label="Zahnlückenversicherung einschließen?"
-        options={['Ja', 'Nein']}
-        value={data.gapInsurance}
-        onChange={(v) => update('gapInsurance', v)}
-        required
-      />
-      <RadioGroup
-        label="Parodontose-Erkrankung?"
-        options={['Aktuell in Behandlung', 'Früher, mittlerweile ausgeheilt', 'Nein']}
-        value={data.periodontal}
-        onChange={(v) => update('periodontal', v)}
-        required
-      />
-      <CheckboxGroup
-        label="Welcher Bereich ist Ihnen am wichtigsten? (Mehrfachauswahl möglich)"
-        options={['Zahnersatz', 'Zahnbehandlung', 'Kieferorthopädie', 'Kosmetische Eingriffe (Zahnreinigung, Bleaching etc.)']}
-        value={data.priorityArea}
-        onChange={(v) => update('priorityArea', v)}
-        required
-      />
-      <RadioGroup
-        label="Hattest du bereits eine Zahnzusatzversicherung?"
-        options={['Ja', 'Nein']}
-        value={data.previousCoverage}
-        onChange={(v) => update('previousCoverage', v)}
-        required
-      />
-    </div>
-  );
-}
-
-function Step5({ data, setData }) {
-  const update = (key, val) => setData({ ...data, [key]: val });
-  return (
-    <div>
-      <StepHeader
-        icon="📋"
-        title="Beratung & Kontakt"
-        subtitle="Fast geschafft! Noch ein paar letzte Angaben für die optimale Beratung."
-      />
-      <CheckboxGroup
-        label="Bevorzugte Kontaktmethode (Mehrfachauswahl möglich)"
-        options={['E-Mail', 'Telefon', 'WhatsApp']}
-        value={data.contactMethod}
-        onChange={(v) => update('contactMethod', v)}
-        required
-      />
-      <CheckboxGroup
-        label="Interesse an weiterem Versicherungsschutz?"
-        options={['Ambulante Absicherung', 'Stationäre Absicherung', 'Sehhilfen', 'Unfallversicherung', 'Kein weiterer Bedarf']}
-        value={data.additionalCoverage}
-        onChange={(v) => update('additionalCoverage', v)}
-        required
-      />
-      <CheckboxGroup
-        label="Wünschst du eine digitale Beratung zu einem dieser Themen?"
-        options={['Finanzanalyse', 'Altersvorsorge', 'Einkommensabsicherung', 'Immobilien & Kapitalanlagen', 'Finanzierung', 'Vermögensaufbau', 'Keine Beratung gewünscht']}
-        value={data.consultationTopics}
-        onChange={(v) => update('consultationTopics', v)}
-        required
-      />
-    </div>
-  );
-}
-
 export default function Questionnaire() {
-  const [ref, inView] = useInView();
-  const cardRef = useRef(null);
-  const [step, setStep] = useState(0);
+  const [ref, inView] = useInView(0.05);
+  const [form, setForm] = useState({
+    anrede: '', vorname: '', nachname: '', geburtsdatum: '',
+    email: '', telefon: '', hatVersicherung: '', versicherer: '',
+    zahnzustand: '', wichtig: [], nachricht: '', datenschutz: false,
+  });
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
 
-  const scrollToCard = useCallback(() => {
-    if (cardRef.current) {
-      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, []);
+  const update = (key, val) => setForm({ ...form, [key]: val });
 
-  const [personal, setPersonal] = useState({
-    name: '', address: '', birthdate: '', maritalStatus: '',
-    phone: '', email: '', occupation: '',
-  });
-  const [insurance, setInsurance] = useState({
-    insuranceType: '', insuranceName: '', switchInterest: '', bonusProgram: '',
-  });
-  const [dental, setDental] = useState({
-    dentalTreatment: '', treatmentPlan: '', missingTeeth: '',
-    gapInsurance: '', periodontal: '', priorityArea: [], previousCoverage: '',
-  });
-  const [consultation, setConsultation] = useState({
-    contactMethod: [], additionalCoverage: [], consultationTopics: [],
-  });
-
-  const canProceed = () => {
-    if (step === 0) return true;
-    if (step === 1) return personal.name && personal.address && personal.birthdate && personal.maritalStatus && personal.phone && personal.email;
-    if (step === 2) return insurance.insuranceType && insurance.insuranceName && insurance.switchInterest;
-    if (step === 3) return dental.dentalTreatment && dental.treatmentPlan && dental.missingTeeth && dental.gapInsurance && dental.periodontal && dental.priorityArea.length > 0 && dental.previousCoverage;
-    if (step === 4) return consultation.contactMethod.length > 0 && consultation.additionalCoverage.length > 0 && consultation.consultationTopics.length > 0;
-    return false;
+  const toggleWichtig = (val) => {
+    const arr = form.wichtig.includes(val)
+      ? form.wichtig.filter((v) => v !== val)
+      : [...form.wichtig, val];
+    update('wichtig', arr);
   };
 
-  const handleNext = async () => {
-    if (step < TOTAL_STEPS - 1) {
-      setStep(step + 1);
-      setTimeout(scrollToCard, 50);
-    } else {
-      setSending(true);
-      try {
-        await fetch('https://formsubmit.co/ajax/marco.arpa@outlook.de', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify({
-            _subject: 'Neuer Fragebogen von ' + personal.name,
-            '--- PERSÖNLICHE ANGABEN ---': '',
-            'Name': personal.name,
-            'Adresse': personal.address,
-            'Geburtsdatum': personal.birthdate,
-            'Familienstand': personal.maritalStatus,
-            'Telefon': personal.phone,
-            'E-Mail': personal.email,
-            'Beruf': personal.occupation || '—',
-            '--- KRANKENVERSICHERUNG ---': '',
-            'Versicherungsart': insurance.insuranceType,
-            'Versicherer': insurance.insuranceName,
-            'Wechselinteresse': insurance.switchInterest,
-            'Bonusprogramm': insurance.bonusProgram || '—',
-            '--- ZAHNSTATUS ---': '',
-            'Zahnbehandlung aktuell': dental.dentalTreatment,
-            'Heil- und Kostenplan': dental.treatmentPlan,
-            'Fehlende Zähne': dental.missingTeeth,
-            'Zahnlückenversicherung': dental.gapInsurance,
-            'Parodontose': dental.periodontal,
-            'Schwerpunkt': dental.priorityArea.join(', '),
-            'Vorherige Zahnzusatzversicherung': dental.previousCoverage,
-            '--- BERATUNG & KONTAKT ---': '',
-            'Kontaktmethode': consultation.contactMethod.join(', '),
-            'Zusätzlicher Versicherungsschutz': consultation.additionalCoverage.join(', '),
-            'Beratungsthemen': consultation.consultationTopics.join(', '),
-          }),
-        });
-        setSubmitted(true);
-      } catch {
-        setSubmitted(true);
-      } finally {
-        setSending(false);
-      }
+  const canSubmit = form.anrede && form.vorname && form.nachname &&
+    form.geburtsdatum && form.email && form.zahnzustand && form.datenschutz && !sending;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!canSubmit) return;
+    setSending(true);
+    try {
+      await fetch('https://formsubmit.co/ajax/marco.arpa@outlook.de', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          _subject: 'Neues Angebot angefragt: ' + form.vorname + ' ' + form.nachname,
+          Anrede: form.anrede,
+          Vorname: form.vorname,
+          Nachname: form.nachname,
+          Geburtsdatum: form.geburtsdatum,
+          'E-Mail': form.email,
+          Telefon: form.telefon || '\u2014',
+          'Bestehende Versicherung': form.hatVersicherung === 'ja'
+            ? 'Ja, bei ' + (form.versicherer || 'unbekannt')
+            : 'Nein',
+          Zahnzustand: form.zahnzustand,
+          'Wichtige Bereiche': form.wichtig.length ? form.wichtig.join(', ') : '\u2014',
+          Nachricht: form.nachricht || '\u2014',
+        }),
+      });
+      setSubmitted(true);
+    } catch {
+      setSubmitted(true);
+    } finally {
+      setSending(false);
     }
   };
 
-  const handleBack = () => {
-    if (step > 0) {
-      setStep(step - 1);
-      setTimeout(scrollToCard, 50);
-    }
+  const inputStyle = {
+    width: '100%', padding: '14px 18px',
+    background: 'var(--input-bg)',
+    border: '1px solid var(--border)', borderRadius: 10,
+    color: 'var(--text-body)', fontSize: 15,
+    fontFamily: "'DM Sans', sans-serif",
+    outline: 'none', transition: 'border-color 0.3s',
+    boxSizing: 'border-box',
+  };
+
+  const labelStyle = {
+    fontSize: 13, color: 'var(--text-muted)',
+    display: 'block', marginBottom: 6,
   };
 
   if (submitted) {
     return (
-      <section id="questionnaire" style={{
+      <section id="fragebogen" style={{
         padding: '100px 24px',
-        background: 'var(--bg-primary)',
+        background: 'var(--bg-secondary)',
         textAlign: 'center',
       }}>
-        <div style={{
-          maxWidth: 500, margin: '0 auto',
-          animation: 'fadeInUp 0.6s ease',
-        }}>
+        <div style={{ maxWidth: 500, margin: '0 auto', animation: 'fadeInUp 0.6s ease' }}>
           <div style={{
             width: 72, height: 72, borderRadius: '50%', margin: '0 auto 24px',
             background: 'var(--accent-dim)', border: '2px solid var(--accent)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 32, color: 'var(--accent)',
-          }}>✓</div>
+          }}>{'\u2713'}</div>
           <h2 style={{
             fontFamily: "'Playfair Display', serif",
             fontSize: 32, color: 'var(--text-primary)', marginBottom: 12,
           }}>
-            Vielen Dank!
+            Anfrage gesendet!
           </h2>
           <p style={{
             fontSize: 16, color: 'var(--text-muted)', lineHeight: 1.7,
-            marginBottom: 8,
           }}>
-            Deine Angaben sind bei mir eingegangen, {personal.name.split(' ')[0] || 'lieber Kunde'}.
-          </p>
-          <p style={{
-            fontSize: 16, color: 'var(--text-muted)', lineHeight: 1.7,
-          }}>
-            Du erhältst in Kürze ein individuelles Angebot von mir!
+            Danke, {form.vorname}! Ich melde mich innerhalb von 24 Stunden mit Ihrem persönlichen Angebot.
           </p>
         </div>
       </section>
     );
   }
 
-  const enabled = canProceed() && !sending;
-
   return (
-    <section id="questionnaire" ref={ref} style={{
+    <section id="fragebogen" ref={ref} style={{
       padding: '100px 24px',
-      background: 'var(--bg-primary)',
+      background: 'var(--bg-secondary)',
       transition: 'background 0.5s ease',
     }}>
       <div style={{
-        maxWidth: 620, margin: '0 auto',
+        maxWidth: 680, margin: '0 auto',
         opacity: inView ? 1 : 0,
-        transform: inView ? 'translateY(0)' : 'translateY(30px)',
+        transform: inView ? 'translateY(0)' : 'translateY(20px)',
         transition: 'all 0.7s cubic-bezier(0.16,1,0.3,1)',
       }}>
-        {/* Section header */}
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <span style={{
             fontSize: 13, fontWeight: 600, color: 'var(--accent)',
             letterSpacing: 2, textTransform: 'uppercase',
@@ -530,108 +123,239 @@ export default function Questionnaire() {
           </span>
           <h2 style={{
             fontFamily: "'Playfair Display', serif",
-            fontSize: 'clamp(28px, 4vw, 40px)',
+            fontSize: 'clamp(28px, 4vw, 44px)',
             fontWeight: 700, color: 'var(--text-primary)',
-            marginTop: 12, marginBottom: 16, lineHeight: 1.2,
+            marginTop: 12, lineHeight: 1.2,
           }}>
-            Dein persönliches Angebot
+            Ihr persönliches Angebot in 2 Minuten
           </h2>
-          <p style={{
-            fontSize: 16, color: 'var(--text-muted)', lineHeight: 1.7,
-            maxWidth: 480, margin: '0 auto',
-          }}>
-            Fülle den Fragebogen aus und erhalte ein maßgeschneidertes Angebot — kostenlos und unverbindlich.
-          </p>
         </div>
 
-        {/* Card */}
-        <div ref={cardRef} style={{
+        <div style={{
           background: 'var(--bg-card)',
           border: '1px solid var(--border)',
-          borderRadius: 20, padding: '36px 32px',
-          position: 'relative',
-          overflow: 'hidden',
-          scrollMarginTop: 24,
+          borderRadius: 20, padding: 36,
         }}>
-          <ProgressBar step={step} />
-
-          {/* Step indicator */}
-          <div style={{
-            fontSize: 12, color: 'var(--text-dim)',
-            textAlign: 'right', marginBottom: 16, marginTop: -20,
+          <form onSubmit={handleSubmit} style={{
+            display: 'flex', flexDirection: 'column', gap: 20,
           }}>
-            Schritt {step + 1} von {TOTAL_STEPS}
-          </div>
+            {/* Anrede */}
+            <div>
+              <label style={labelStyle}>Anrede *</label>
+              <div style={{ display: 'flex', gap: 10 }}>
+                {['Herr', 'Frau', 'Divers'].map((a) => (
+                  <button key={a} type="button" onClick={() => update('anrede', a)} style={{
+                    flex: 1, padding: '12px 0',
+                    background: form.anrede === a
+                      ? 'linear-gradient(135deg, var(--accent), var(--accent-light))'
+                      : 'var(--input-bg)',
+                    border: `1px solid ${form.anrede === a ? 'var(--accent)' : 'var(--border)'}`,
+                    borderRadius: 10,
+                    color: form.anrede === a ? 'var(--bg-primary)' : 'var(--text-body)',
+                    fontWeight: form.anrede === a ? 700 : 500,
+                    fontSize: 14, cursor: 'pointer',
+                    fontFamily: "'DM Sans', sans-serif",
+                    transition: 'all 0.3s',
+                  }}>{a}</button>
+                ))}
+              </div>
+            </div>
 
-          {/* Step content */}
-          <div key={step} style={{ animation: 'fadeInUp 0.4s ease' }}>
-            {step === 0 && <Step1 />}
-            {step === 1 && <Step2 data={personal} setData={setPersonal} />}
-            {step === 2 && <Step3 data={insurance} setData={setInsurance} />}
-            {step === 3 && <Step4 data={dental} setData={setDental} />}
-            {step === 4 && <Step5 data={consultation} setData={setConsultation} />}
-          </div>
+            {/* Vor- und Nachname */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div>
+                <label style={labelStyle}>Vorname *</label>
+                <input style={inputStyle} value={form.vorname}
+                  onChange={(e) => update('vorname', e.target.value)}
+                  placeholder="Vorname" />
+              </div>
+              <div>
+                <label style={labelStyle}>Nachname *</label>
+                <input style={inputStyle} value={form.nachname}
+                  onChange={(e) => update('nachname', e.target.value)}
+                  placeholder="Nachname" />
+              </div>
+            </div>
 
-          {/* Navigation buttons */}
-          <div style={{
-            display: 'flex', gap: 12, marginTop: 28,
-            flexDirection: step === 0 ? 'column' : 'row',
-          }}>
-            {step > 0 && (
-              <button
-                onClick={handleBack}
-                style={{
-                  flex: 1, padding: '15px',
-                  background: 'var(--input-bg)',
-                  border: '1px solid var(--border)', borderRadius: 10,
-                  color: 'var(--text-body)', fontWeight: 600, fontSize: 15,
-                  cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
-                  transition: 'all 0.3s',
-                }}
-              >
-                ← Zurück
-              </button>
+            {/* Geburtsdatum */}
+            <div>
+              <label style={labelStyle}>Geburtsdatum *</label>
+              <input style={inputStyle} type="date" value={form.geburtsdatum}
+                onChange={(e) => update('geburtsdatum', e.target.value)} />
+            </div>
+
+            {/* E-Mail */}
+            <div>
+              <label style={labelStyle}>E-Mail *</label>
+              <input style={inputStyle} type="email" value={form.email}
+                onChange={(e) => update('email', e.target.value)}
+                placeholder="ihre@email.de" />
+            </div>
+
+            {/* Telefon */}
+            <div>
+              <label style={labelStyle}>Telefon (optional)</label>
+              <input style={inputStyle} type="tel" value={form.telefon}
+                onChange={(e) => update('telefon', e.target.value)}
+                placeholder="+49 ..." />
+            </div>
+
+            {/* Bestehende Versicherung */}
+            <div>
+              <label style={labelStyle}>Haben Sie bereits eine Zahnzusatzversicherung? *</label>
+              <div style={{ display: 'flex', gap: 10 }}>
+                {[{ v: 'ja', l: 'Ja' }, { v: 'nein', l: 'Nein' }].map((o) => (
+                  <button key={o.v} type="button" onClick={() => update('hatVersicherung', o.v)} style={{
+                    flex: 1, padding: '12px 0',
+                    background: form.hatVersicherung === o.v
+                      ? 'linear-gradient(135deg, var(--accent), var(--accent-light))'
+                      : 'var(--input-bg)',
+                    border: `1px solid ${form.hatVersicherung === o.v ? 'var(--accent)' : 'var(--border)'}`,
+                    borderRadius: 10,
+                    color: form.hatVersicherung === o.v ? 'var(--bg-primary)' : 'var(--text-body)',
+                    fontWeight: form.hatVersicherung === o.v ? 700 : 500,
+                    fontSize: 14, cursor: 'pointer',
+                    fontFamily: "'DM Sans', sans-serif",
+                    transition: 'all 0.3s',
+                  }}>{o.l}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Versicherer (conditional) */}
+            {form.hatVersicherung === 'ja' && (
+              <div style={{ animation: 'fadeIn 0.3s ease' }}>
+                <label style={labelStyle}>Bei welcher Versicherung?</label>
+                <input style={inputStyle} value={form.versicherer}
+                  onChange={(e) => update('versicherer', e.target.value)}
+                  placeholder="Name der Versicherung" />
+              </div>
             )}
+
+            {/* Zahnzustand */}
+            <div>
+              <label style={labelStyle}>Wie ist der aktuelle Zustand Ihrer Zähne? *</label>
+              <select
+                style={{
+                  ...inputStyle, appearance: 'none', cursor: 'pointer',
+                  backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%239ca3af\'%3e%3cpath d=\'M7 10l5 5 5-5z\'/%3e%3c/svg%3e")',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 12px center',
+                  backgroundSize: '20px',
+                  paddingRight: 40,
+                }}
+                value={form.zahnzustand}
+                onChange={(e) => update('zahnzustand', e.target.value)}
+              >
+                <option value="" style={{ background: 'var(--select-option-bg)' }}>Bitte wählen...</option>
+                <option value="Sehr gut - keine Probleme" style={{ background: 'var(--select-option-bg)' }}>Sehr gut - keine Probleme</option>
+                <option value="Gut - kleinere Füllungen" style={{ background: 'var(--select-option-bg)' }}>Gut - kleinere Füllungen</option>
+                <option value="Mittel - Kronen oder Brücken vorhanden" style={{ background: 'var(--select-option-bg)' }}>Mittel - Kronen oder Brücken vorhanden</option>
+                <option value="Behandlung geplant oder empfohlen" style={{ background: 'var(--select-option-bg)' }}>Behandlung geplant oder empfohlen</option>
+              </select>
+            </div>
+
+            {/* Was ist Ihnen wichtig - Checkboxes */}
+            <div>
+              <label style={labelStyle}>Was ist Ihnen besonders wichtig? (Mehrfachauswahl)</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[
+                  'Zahnersatz (Kronen, Brücken, Implantate)',
+                  'Professionelle Zahnreinigung',
+                  'Kieferorthopädie',
+                  'Günstiger Beitrag',
+                  'Hohe Erstattung',
+                ].map((option) => (
+                  <label key={option} onClick={() => toggleWichtig(option)} style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '12px 16px',
+                    background: form.wichtig.includes(option) ? 'var(--accent-dim)' : 'var(--input-bg)',
+                    border: `1px solid ${form.wichtig.includes(option) ? 'var(--accent)' : 'var(--border)'}`,
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    transition: 'all 0.3s',
+                  }}>
+                    <div style={{
+                      width: 20, height: 20, borderRadius: 4, flexShrink: 0,
+                      border: `2px solid ${form.wichtig.includes(option) ? 'var(--accent)' : 'var(--border)'}`,
+                      background: form.wichtig.includes(option)
+                        ? 'linear-gradient(135deg, var(--accent), var(--accent-light))'
+                        : 'transparent',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transition: 'all 0.3s',
+                    }}>
+                      {form.wichtig.includes(option) && (
+                        <span style={{ color: 'var(--bg-primary)', fontSize: 12, fontWeight: 700 }}>{'\u2713'}</span>
+                      )}
+                    </div>
+                    <span style={{
+                      fontSize: 14,
+                      color: form.wichtig.includes(option) ? 'var(--accent)' : 'var(--text-body)',
+                      fontWeight: form.wichtig.includes(option) ? 600 : 400,
+                    }}>{option}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Nachricht */}
+            <div>
+              <label style={labelStyle}>Nachricht an Marco (optional)</label>
+              <textarea
+                style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }}
+                value={form.nachricht}
+                onChange={(e) => update('nachricht', e.target.value)}
+                placeholder="Gibt es etwas, das ich wissen sollte?"
+              />
+            </div>
+
+            {/* Datenschutz */}
+            <label onClick={() => update('datenschutz', !form.datenschutz)} style={{
+              display: 'flex', alignItems: 'flex-start', gap: 12,
+              cursor: 'pointer', padding: '8px 0',
+            }}>
+              <div style={{
+                width: 20, height: 20, borderRadius: 4, flexShrink: 0, marginTop: 2,
+                border: `2px solid ${form.datenschutz ? 'var(--accent)' : 'var(--border)'}`,
+                background: form.datenschutz
+                  ? 'linear-gradient(135deg, var(--accent), var(--accent-light))'
+                  : 'transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.3s',
+              }}>
+                {form.datenschutz && (
+                  <span style={{ color: 'var(--bg-primary)', fontSize: 12, fontWeight: 700 }}>{'\u2713'}</span>
+                )}
+              </div>
+              <span style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                Ich stimme der Verarbeitung meiner Daten gemäß der Datenschutzerklärung zu. *
+              </span>
+            </label>
+
+            {/* Submit */}
             <button
-              onClick={handleNext}
-              disabled={!enabled}
+              type="submit"
+              disabled={!canSubmit}
               style={{
-                flex: step === 0 ? 'unset' : 1,
-                width: step === 0 ? '100%' : 'auto',
-                padding: '15px',
-                background: enabled
+                width: '100%', padding: '16px',
+                background: canSubmit
                   ? 'linear-gradient(135deg, var(--accent), var(--accent-light))'
                   : 'var(--text-dim)',
                 border: 'none', borderRadius: 10,
-                color: enabled ? 'var(--bg-primary)' : 'var(--text-muted)',
-                fontWeight: 700, fontSize: 15,
-                cursor: enabled ? 'pointer' : 'not-allowed',
+                color: canSubmit ? 'var(--bg-primary)' : 'var(--text-muted)',
+                fontWeight: 700, fontSize: 16,
+                cursor: canSubmit ? 'pointer' : 'not-allowed',
                 fontFamily: "'DM Sans', sans-serif",
                 transition: 'all 0.3s',
-                boxShadow: enabled ? '0 4px 30px var(--shadow-accent)' : 'none',
+                boxShadow: canSubmit ? '0 4px 30px var(--shadow-accent)' : 'none',
+                marginTop: 8,
               }}
             >
-              {sending ? 'Wird gesendet...' : step === TOTAL_STEPS - 1 ? 'Absenden ✓' : 'Weiter →'}
+              {sending ? 'Wird gesendet...' : 'Angebot anfordern'}
             </button>
-          </div>
-        </div>
-
-        {/* Privacy note */}
-        <div style={{
-          marginTop: 20, textAlign: 'center',
-          fontSize: 12, color: 'var(--text-dim)',
-        }}>
-          🔒 Deine Daten werden verschlüsselt übertragen und vertraulich behandelt.
+          </form>
         </div>
       </div>
-
-      <style jsx>{`
-        @media (max-width: 768px) {
-          section > div > div:last-of-type {
-            padding: 24px 18px !important;
-          }
-        }
-      `}</style>
     </section>
   );
 }
