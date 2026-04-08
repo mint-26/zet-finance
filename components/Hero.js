@@ -83,20 +83,20 @@ export default function Hero() {
             </h1>
 
             <div style={{
-              maxWidth: 520,
+              maxWidth: 640,
               marginBottom: 40,
               display: 'flex', flexDirection: 'column', gap: 16,
             }}>
               <p style={{ fontSize: 'clamp(15px, 1.8vw, 17px)', lineHeight: 1.7 }}>
-                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>Was kostet meine Beratung?</span>{' '}
+                <span style={{ color: 'var(--text-primary)', fontWeight: 600, display: 'block' }}>Was kostet meine Beratung?</span>
                 <span style={{ color: 'var(--text-primary)', fontWeight: 400 }}>Nichts.</span>
               </p>
               <p style={{ fontSize: 'clamp(15px, 1.8vw, 17px)', lineHeight: 1.7 }}>
-                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>Für wen arbeite ich?</span>{' '}
+                <span style={{ color: 'var(--text-primary)', fontWeight: 600, display: 'block' }}>Für wen arbeite ich?</span>
                 <span style={{ color: 'var(--text-primary)', fontWeight: 400 }}>Für Sie. Nicht für eine Versicherung.</span>
               </p>
               <p style={{ fontSize: 'clamp(15px, 1.8vw, 17px)', lineHeight: 1.7 }}>
-                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>Und dann?</span>{' '}
+                <span style={{ color: 'var(--text-primary)', fontWeight: 600, display: 'block' }}>Und dann?</span>
                 <span style={{ color: 'var(--text-primary)', fontWeight: 400 }}>Einmal im Jahr checke ich, ob Ihr Tarif noch der beste ist. Wenn nicht, wechseln wir. Ohne Papierkram für Sie.</span>
               </p>
             </div>
@@ -199,6 +199,12 @@ export default function Hero() {
           .hero-layout {
             flex-direction: column-reverse !important;
             text-align: center;
+            align-items: center !important;
+          }
+          .hero-layout > div:first-child {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
           }
           .hero-logo img {
             width: 200px !important;

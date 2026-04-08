@@ -139,7 +139,7 @@ export default function About() {
           </div>
 
           {/* Credential tags */}
-          <div style={{
+          <div className="about-tags" style={{
             display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 28,
           }}>
             {[
@@ -161,6 +161,7 @@ export default function About() {
           </div>
 
           {/* CTA */}
+          <div className="about-cta">
           <button
             onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
             style={{
@@ -180,6 +181,7 @@ export default function About() {
           >
             Jetzt kennenlernen →
           </button>
+          </div>
         </div>
       </div>
     </section>

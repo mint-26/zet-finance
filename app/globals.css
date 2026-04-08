@@ -109,3 +109,12 @@ textarea::placeholder {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--accent);
 }
+
+@media (max-width: 768px) {
+  .about-tags {
+    justify-content: center !important;
+  }
+  .about-cta {
+    text-align: center;
+  }
+}

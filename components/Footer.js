@@ -17,17 +17,21 @@ export default function Footer() {
           © {new Date().getFullYear()} Marco Arpa. Alle Rechte vorbehalten.
         </div>
         <div style={{ display: 'flex', gap: 24 }}>
-          {['Impressum', 'Datenschutz', 'AGB'].map((l) => (
+          {[
+            { label: 'Impressum', href: '/impressum' },
+            { label: 'Datenschutz', href: '/datenschutz' },
+            { label: 'AGB', href: '/agb' },
+          ].map((l) => (
             <a
-              key={l}
-              href="#"
+              key={l.label}
+              href={l.href}
               className="footer-link"
               style={{
                 fontSize: 13, color: 'var(--text-dim)',
                 textDecoration: 'none', transition: 'color 0.3s',
               }}
             >
-              {l}
+              {l.label}
             </a>
           ))}
         </div>
