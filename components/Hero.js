@@ -59,9 +59,9 @@ export default function Hero() {
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
               }}>
-                Damit die Rechnung
+                Damit die Zahnkosten
               </span><br />
-              nicht wehtut.
+              nicht wehtun.
             </h1>
 
             <div style={{

@@ -144,7 +144,7 @@ export default function About() {
           }}>
             {[
               'Unabhängiger Makler',
-              'Spezialisiert auf Zahnzusatz',
+              'Spezialisiert auf Zahnzusatz und Krankenversicherung',
               'Kostenlose Beratung',
               'DSGVO-konform',
             ].map((tag, i) => (
