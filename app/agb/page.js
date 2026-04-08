@@ -1,6 +1,7 @@
 'use client';
 
 import { ThemeProvider, useTheme } from '../../components/ThemeProvider';
+import CookieConsent from '../../components/CookieConsent';
 
 function AGBContent() {
   const { theme, toggle } = useTheme();
@@ -76,6 +77,7 @@ function AGBContent() {
           </section>
         </div>
       </main>
+      <CookieConsent />
     </div>
   );
 }

@@ -44,24 +44,6 @@ export default function Hero() {
             transform: visible ? 'translateY(0)' : 'translateY(30px)',
             transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1)',
           }}>
-            {/* Status badge */}
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              background: 'var(--accent-dim)',
-              border: '1px solid var(--border)',
-              borderRadius: 100, padding: '6px 16px', marginBottom: 28,
-            }}>
-              <div style={{
-                width: 8, height: 8, borderRadius: '50%',
-                background: 'var(--success)', animation: 'pulse 2s infinite',
-              }} />
-              <span style={{
-                fontSize: 13, color: 'var(--accent)', fontWeight: 500,
-              }}>
-                Freie Termine verfügbar
-              </span>
-            </div>
-
             <h1 style={{
               fontFamily: "'Playfair Display', serif",
               fontSize: 'clamp(36px, 6vw, 72px)',

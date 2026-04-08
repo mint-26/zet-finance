@@ -1,6 +1,7 @@
 'use client';
 
 import { ThemeProvider, useTheme } from '../../components/ThemeProvider';
+import CookieConsent from '../../components/CookieConsent';
 
 function ImpressumContent() {
   const { theme, toggle } = useTheme();
@@ -78,6 +79,7 @@ function ImpressumContent() {
           </section>
         </div>
       </main>
+      <CookieConsent />
     </div>
   );
 }

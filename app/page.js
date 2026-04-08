@@ -10,6 +10,7 @@ import Questionnaire from '../components/Questionnaire';
 import Testimonials from '../components/Testimonials';
 import Contact from '../components/Contact';
 import Footer from '../components/Footer';
+import CookieConsent from '../components/CookieConsent';
 
 function PageContent() {
   const [activeSection, setActiveSection] = useState('');
@@ -47,6 +48,7 @@ function PageContent() {
         <Contact />
       </main>
       <Footer />
+      <CookieConsent />
     </>
   );
 }

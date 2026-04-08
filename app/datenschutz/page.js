@@ -1,6 +1,7 @@
 'use client';
 
 import { ThemeProvider, useTheme } from '../../components/ThemeProvider';
+import CookieConsent from '../../components/CookieConsent';
 
 function DatenschutzContent() {
   const { theme, toggle } = useTheme();
@@ -81,6 +82,7 @@ function DatenschutzContent() {
           </section>
         </div>
       </main>
+      <CookieConsent />
     </div>
   );
 }
