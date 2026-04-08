@@ -83,8 +83,10 @@ export default function Questionnaire() {
         }),
       });
       setSubmitted(true);
+      setTimeout(() => document.getElementById('fragebogen')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
     } catch {
       setSubmitted(true);
+      setTimeout(() => document.getElementById('fragebogen')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
     } finally {
       setSending(false);
     }
