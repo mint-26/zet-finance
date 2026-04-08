@@ -14,13 +14,15 @@ export default function Questionnaire() {
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
 
-  const update = (key, val) => setForm({ ...form, [key]: val });
+  const update = (key, val) => setForm((prev) => ({ ...prev, [key]: val }));
 
   const toggleWichtig = (val) => {
-    const arr = form.wichtig.includes(val)
-      ? form.wichtig.filter((v) => v !== val)
-      : [...form.wichtig, val];
-    update('wichtig', arr);
+    setForm((prev) => ({
+      ...prev,
+      wichtig: prev.wichtig.includes(val)
+        ? prev.wichtig.filter((v) => v !== val)
+        : [...prev.wichtig, val],
+    }));
   };
 
   const step1Valid = form.anrede && form.vorname && form.nachname && form.geburtsdatum && form.email;
