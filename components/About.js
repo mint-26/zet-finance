@@ -125,13 +125,13 @@ export default function About() {
           }}>
             <p>
               Seit über 7 Jahren begleite ich Menschen auf dem Weg zu finanzieller Sicherheit.
-              Mein Ansatz ist einfach: Ich höre zu, verstehe deine Situation und entwickle
-              einen Plan, der wirklich zu dir passt.
+              Mein Ansatz ist einfach: Ich höre zu, verstehe Ihre Situation und entwickle
+              einen Plan, der wirklich zu Ihnen passt.
             </p>
             <p>
               Kein Fachjargon, keine versteckten Provisionen, keine Verkaufsgespräche.
-              Stattdessen bekommst du ehrliche Beratung von jemandem, der sein Handwerk
-              versteht und dein Interesse in den Mittelpunkt stellt.
+              Stattdessen bekommen Sie ehrliche Beratung von jemandem, der sein Handwerk
+              versteht und Ihr Interesse in den Mittelpunkt stellt.
             </p>
             <p>
               Ob Zahnersatz, Prophylaxe oder Kieferorthopädie: Ich finde die Versicherung, die genau das abdeckt, was Sie brauchen. Nicht mehr, nicht weniger.

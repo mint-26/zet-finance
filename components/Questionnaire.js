@@ -127,7 +127,7 @@ export default function Questionnaire() {
             fontWeight: 700, color: 'var(--text-primary)',
             marginTop: 12, lineHeight: 1.2,
           }}>
-            Ihr persönliches Angebot in 2 Minuten
+            Ihr persönliches Angebot<br />in 2 Minuten
           </h2>
         </div>
 

@@ -69,7 +69,7 @@ export default function Contact() {
           <p style={{
             fontSize: 16, color: 'var(--text-muted)', lineHeight: 1.7,
           }}>
-            Danke, {form.name}. Ich melde mich innerhalb von 24 Stunden bei dir.
+            Danke, {form.name}. Ich melde mich innerhalb von 24 Stunden bei Ihnen.
           </p>
         </div>
       </section>
@@ -106,14 +106,14 @@ export default function Contact() {
             fontWeight: 700, color: 'var(--text-primary)',
             marginTop: 12, marginBottom: 20, lineHeight: 1.2,
           }}>
-            Lass uns sprechen
+            Lassen Sie uns sprechen
           </h2>
           <p style={{
             fontSize: 16, color: 'var(--text-muted)',
             lineHeight: 1.7, marginBottom: 40,
           }}>
             Das Erstgespräch ist kostenlos und unverbindlich.
-            Schreib mir, und ich melde mich innerhalb von 24 Stunden.
+            Schreiben Sie mir, und ich melde mich innerhalb von 24 Stunden.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -156,7 +156,7 @@ export default function Contact() {
               🔒 Datenschutz-Garantie
             </div>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              Deine Daten werden vertraulich behandelt und niemals an Dritte weitergegeben.
+              Ihre Daten werden vertraulich behandelt und niemals an Dritte weitergegeben.
               DSGVO-konform.
             </p>
           </div>
@@ -182,7 +182,7 @@ export default function Contact() {
                     style={inputStyle}
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    placeholder="Dein Name"
+                    placeholder="Ihr Name"
                   />
                 </div>
                 <div>
@@ -195,7 +195,7 @@ export default function Contact() {
                     type="email"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    placeholder="deine@email.de"
+                    placeholder="ihre@email.de"
                   />
                 </div>
                 <div>
@@ -245,7 +245,7 @@ export default function Contact() {
                     style={{ ...inputStyle, minHeight: 100, resize: 'vertical' }}
                     value={form.message}
                     onChange={(e) => setForm({ ...form, message: e.target.value })}
-                    placeholder="Erzähl mir kurz, was dich bewegt..."
+                    placeholder="Erzählen Sie mir kurz, was Sie bewegt..."
                   />
                 </div>
                 <button

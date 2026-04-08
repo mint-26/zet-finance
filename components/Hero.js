@@ -72,14 +72,14 @@ export default function Hero() {
               maxWidth: 700,
               transition: 'color 0.5s ease',
             }}>
-              Damit die Rechnung<br />
               <span style={{
                 background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
               }}>
-                nicht wehtut.
-              </span>
+                Damit die Rechnung
+              </span><br />
+              nicht wehtut.
             </h1>
 
             <div style={{
@@ -89,15 +89,15 @@ export default function Hero() {
             }}>
               <p style={{ fontSize: 'clamp(15px, 1.8vw, 17px)', lineHeight: 1.7 }}>
                 <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>Was kostet meine Beratung?</span>{' '}
-                <span style={{ color: 'var(--text-muted)' }}>Nichts.</span>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 400 }}>Nichts.</span>
               </p>
               <p style={{ fontSize: 'clamp(15px, 1.8vw, 17px)', lineHeight: 1.7 }}>
                 <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>Für wen arbeite ich?</span>{' '}
-                <span style={{ color: 'var(--text-muted)' }}>Für Sie. Nicht für eine Versicherung.</span>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 400 }}>Für Sie. Nicht für eine Versicherung.</span>
               </p>
               <p style={{ fontSize: 'clamp(15px, 1.8vw, 17px)', lineHeight: 1.7 }}>
                 <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>Und dann?</span>{' '}
-                <span style={{ color: 'var(--text-muted)' }}>Einmal im Jahr checke ich, ob Ihr Tarif noch der beste ist. Wenn nicht, wechseln wir. Ohne Papierkram für Sie.</span>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 400 }}>Einmal im Jahr checke ich, ob Ihr Tarif noch der beste ist. Wenn nicht, wechseln wir. Ohne Papierkram für Sie.</span>
               </p>
             </div>
 
