@@ -6,6 +6,27 @@ import CookieConsent from '../../components/CookieConsent';
 function AGBContent() {
   const { theme, toggle } = useTheme();
 
+  const h2Style = {
+    fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12,
+    fontFamily: "'Playfair Display', serif",
+  };
+
+  const numStyle = { color: 'var(--accent)', fontWeight: 700 };
+
+  const linkStyle = { color: 'var(--accent)', textDecoration: 'none' };
+
+  const hinweisStyle = {
+    background: 'var(--accent-dim)',
+    border: '1px solid var(--accent)',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 32,
+    fontSize: 14,
+    lineHeight: 1.6,
+    color: 'var(--text-primary)',
+    fontWeight: 500,
+  };
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', color: 'var(--text-body)', transition: 'background 0.5s ease, color 0.5s ease' }}>
       {/* Header */}
@@ -36,42 +57,66 @@ function AGBContent() {
         <h1 style={{
           fontFamily: "'Playfair Display', serif", fontSize: 'clamp(28px, 4vw, 40px)',
           fontWeight: 700, color: 'var(--text-primary)', marginBottom: 40,
-        }}>Allgemeine Geschäftsbedingungen</h1>
+        }}>Nutzungsbedingungen</h1>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 32, fontSize: 16, lineHeight: 1.8, color: 'var(--text-muted)' }}>
+        <div style={hinweisStyle}>
+          Hinweis: Diese Nutzungsbedingungen sind ein Entwurf und sollten von einem Rechtsanwalt geprüft werden.
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 32, fontSize: 16, lineHeight: 1.8, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
           <section>
-            <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 }}>1. Geltungsbereich</h2>
-            <p>Diese Allgemeinen Geschäftsbedingungen gelten für alle Dienstleistungen, die Marco Arpa als Versicherungsmakler im Bereich der Zahnzusatzversicherung erbringt. Mit der Nutzung des Fragebogens auf dieser Website erklären Sie sich mit diesen Bedingungen einverstanden.</p>
+            <h2 style={h2Style}><span style={numStyle}>1.</span> Geltungsbereich</h2>
+            <p>Diese Nutzungsbedingungen gelten für die Nutzung der Website von Marco Arpa, Alte Dieburger Str. 46, 64367 Mühltal Trautheim. Die Website dient ausschließlich der Erfassung von Kontakt- und Bedarfsdaten zur Erstellung eines unverbindlichen Angebots für Zahnzusatzversicherungen.</p>
           </section>
 
           <section>
-            <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 }}>2. Leistungsbeschreibung</h2>
-            <p>Marco Arpa bietet eine unabhängige Beratung und Vermittlung von Zahnzusatzversicherungen an. Die Beratung umfasst die Analyse Ihres individuellen Bedarfs, die Auswahl passender Tarife aus dem Angebot verschiedener Versicherungsgesellschaften sowie die Unterstützung bei der Antragstellung und laufenden Betreuung Ihres Vertrags.</p>
+            <h2 style={h2Style}><span style={numStyle}>2.</span> Anbieter</h2>
+            <p>
+              Marco Arpa<br />
+              Versicherungsmakler nach §34d GewO<br />
+              Alte Dieburger Str. 46<br />
+              64367 Mühltal Trautheim<br />
+              E-Mail: <a href="mailto:marco.arpa@outlook.de" style={linkStyle}>marco.arpa@outlook.de</a><br />
+              Telefon: +49 152 5461 1314<br />
+              Registernummer: D-4GG1-I1LV5-50
+            </p>
+            <p style={{ marginTop: 12 }}>Die Vermittlung von Versicherungsverträgen erfolgt über den Fondsfinanz Maklerservice GmbH, Riesstraße 25, 80992 München.</p>
           </section>
 
           <section>
-            <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 }}>3. Maklerverhältnis</h2>
-            <p>Mit der Beauftragung zur Vermittlung einer Zahnzusatzversicherung wird ein Maklerverhältnis begründet. Marco Arpa handelt dabei als unabhängiger Versicherungsmakler gemäß §34d GewO und ist nicht an einzelne Versicherungsgesellschaften gebunden. Die Vergütung erfolgt in der Regel durch Courtage seitens der Versicherungsgesellschaften. Für Sie als Kunde entstehen keine zusätzlichen Kosten.</p>
+            <h2 style={h2Style}><span style={numStyle}>3.</span> Leistungsbeschreibung</h2>
+            <p>Über den Fragebogen auf dieser Website können Sie Ihre Kontaktdaten und Angaben zu Ihrer Zahnsituation übermitteln. Auf Basis dieser Angaben erstellt Marco Arpa ein unverbindliches Angebot für eine Zahnzusatzversicherung. Die Vermittlung und der Vertragsabschluss erfolgen ausschließlich über den Fondsfinanz Maklerservice per separatem Antrag. Über diese Website wird kein Versicherungsvertrag und kein Maklervertrag geschlossen.</p>
           </section>
 
           <section>
-            <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 }}>4. Mitwirkungspflichten</h2>
-            <p>Für eine sachgerechte Beratung sind wahrheitsgemäße und vollständige Angaben erforderlich. Dies gilt insbesondere für die im Fragebogen abgefragten Gesundheitsinformationen. Unrichtige Angaben können dazu führen, dass der Versicherungsschutz gefährdet wird.</p>
+            <h2 style={h2Style}><span style={numStyle}>4.</span> Unverbindlichkeit</h2>
+            <p>Die über diese Website erstellten Angebote sind unverbindlich. Ein Versicherungsvertrag kommt erst durch die Annahme eines separaten Antrags durch die jeweilige Versicherungsgesellschaft zustande.</p>
           </section>
 
           <section>
-            <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 }}>5. Haftung</h2>
-            <p>Marco Arpa haftet für Schäden nur bei Vorsatz oder grober Fahrlässigkeit. Die Haftung für leichte Fahrlässigkeit ist auf die Verletzung wesentlicher Vertragspflichten beschränkt. Eine Haftung für die Richtigkeit, Vollständigkeit und Aktualität der auf dieser Website bereitgestellten Informationen wird nicht übernommen.</p>
+            <h2 style={h2Style}><span style={numStyle}>5.</span> Kosten</h2>
+            <p>Die Nutzung dieser Website und die Beratung durch Marco Arpa sind für Sie kostenlos. Die Vergütung erfolgt durch Courtage der Versicherungsgesellschaften über den Fondsfinanz Maklerservice.</p>
           </section>
 
           <section>
-            <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 }}>6. Widerrufsrecht</h2>
-            <p>Sie haben das Recht, den Maklervertrag innerhalb von 14 Tagen ohne Angabe von Gründen zu widerrufen. Der Widerruf kann formlos per E-Mail an marco.arpa@outlook.de erfolgen. Im Falle eines Widerrufs werden Ihre personenbezogenen Daten umgehend gelöscht, sofern keine gesetzlichen Aufbewahrungspflichten bestehen.</p>
+            <h2 style={h2Style}><span style={numStyle}>6.</span> Angaben im Fragebogen</h2>
+            <p>Für eine sachgerechte Angebotserstellung sind wahrheitsgemäße und vollständige Angaben erforderlich. Dies gilt insbesondere für die Angaben zu Ihrem Zahnzustand. Die Angaben im Fragebogen stellen keine vorvertraglichen Anzeigen im Sinne des VVG dar. Die vorvertragliche Anzeigepflicht entsteht erst im Rahmen der formellen Antragstellung über den Fondsfinanz Maklerservice.</p>
           </section>
 
           <section>
-            <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 12 }}>7. Schlussbestimmungen</h2>
-            <p>Es gilt das Recht der Bundesrepublik Deutschland. Sollten einzelne Bestimmungen dieser AGB unwirksam sein, bleibt die Wirksamkeit der übrigen Bestimmungen davon unberührt.</p>
+            <h2 style={h2Style}><span style={numStyle}>7.</span> Datenschutz</h2>
+            <p>Informationen zur Verarbeitung Ihrer Daten finden Sie in unserer <a href="/datenschutz" style={linkStyle}>Datenschutzerklärung</a>.</p>
+          </section>
+
+          <section>
+            <h2 style={h2Style}><span style={numStyle}>8.</span> Haftung</h2>
+            <p>Marco Arpa übernimmt keine Haftung für die Richtigkeit, Vollständigkeit und Aktualität der auf dieser Website bereitgestellten allgemeinen Informationen. Die Haftung für Schäden, die aus der Nutzung dieser Website entstehen, ist auf Vorsatz und grobe Fahrlässigkeit beschränkt. Die Haftung im Rahmen der Versicherungsvermittlung richtet sich nach den gesetzlichen Vorschriften und ist durch die Berufshaftpflichtversicherung bei der R+V Versicherung AG abgedeckt.</p>
+          </section>
+
+          <section>
+            <h2 style={h2Style}><span style={numStyle}>9.</span> Schlussbestimmungen</h2>
+            <p>Es gilt das Recht der Bundesrepublik Deutschland. Sollten einzelne Bestimmungen dieser Nutzungsbedingungen unwirksam sein, bleibt die Wirksamkeit der übrigen Bestimmungen davon unberührt.</p>
+            <p style={{ marginTop: 16, fontSize: 14, color: 'var(--text-dim)' }}>Stand: April 2026</p>
           </section>
         </div>
       </main>

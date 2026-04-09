@@ -552,11 +552,11 @@ export default function Questionnaire() {
                     )}
                   </div>
                   <span style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                    Ich stimme der Verarbeitung meiner Daten gemäß der{' '}
+                    Ich willige in die Verarbeitung meiner personenbezogenen Daten einschließlich meiner Gesundheitsdaten (Angaben zum Zahnzustand) zur Erstellung eines Versicherungsangebots ein. Details finden Sie in der{' '}
                     <a href="/datenschutz" onClick={(e) => e.stopPropagation()}
                       style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
                       Datenschutzerklärung
-                    </a>{' '}zu. *
+                    </a>. *
                   </span>
                 </label>
 
