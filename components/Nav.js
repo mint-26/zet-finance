@@ -46,20 +46,11 @@ export default function Nav({ activeSection }) {
           style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         >
-          <div style={{
-            width: 36, height: 36, borderRadius: '50%',
-            background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 700, fontSize: 16, color: 'var(--bg-primary)',
-            transition: 'all 0.3s',
-          }}>M</div>
-          <span style={{
-            fontFamily: "'Playfair Display', serif", fontSize: 18,
-            fontWeight: 600, color: 'var(--text-primary)', letterSpacing: 0.5,
-            transition: 'color 0.3s',
-          }}>
-            Marco Arpa
-          </span>
+          <img
+            src={theme === 'dark' ? '/logo-white.svg' : '/logo-black.svg'}
+            alt="Marco Arpa"
+            style={{ height: 36, width: 'auto', transition: 'opacity 0.3s' }}
+          />
         </div>
 
         {/* Desktop Nav */}
