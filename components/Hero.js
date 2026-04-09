@@ -48,7 +48,7 @@ export default function Hero() {
           }}>
             <h1 style={{
               fontFamily: "'Playfair Display', serif",
-              fontSize: 'clamp(36px, 6vw, 72px)',
+              fontSize: 'clamp(30px, 4.5vw, 56px)',
               fontWeight: 700,
               color: 'var(--text-primary)',
               lineHeight: 1.1,
