@@ -49,7 +49,7 @@ export default function Nav({ activeSection }) {
           <img
             src={theme === 'dark' ? '/logo-white.svg?v=2' : '/logo-black.svg'}
             alt="Marco Arpa"
-            style={{ height: 36, width: 'auto', transition: 'opacity 0.3s' }}
+            style={{ height: 47, width: 'auto', transition: 'opacity 0.3s' }}
           />
         </div>
 

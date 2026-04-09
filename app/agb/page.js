@@ -36,7 +36,7 @@ function AGBContent() {
             <img
               src={theme === 'dark' ? '/logo-white.svg?v=2' : '/logo-black.svg'}
               alt="Marco Arpa"
-              style={{ height: 36, width: 'auto' }}
+              style={{ height: 47, width: 'auto' }}
             />
           </a>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
