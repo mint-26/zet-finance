@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTheme } from './ThemeProvider';
 
 export default function Hero() {
   const [visible, setVisible] = useState(false);
+  const { theme } = useTheme();
   useEffect(() => { setTimeout(() => setVisible(true), 150); }, []);
 
   const scrollTo = (id) => {
@@ -121,16 +123,14 @@ export default function Hero() {
             opacity: visible ? 1 : 0,
             transform: visible ? 'scale(1)' : 'scale(0.9)',
             transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.2s',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <img
-              src="/marco.jpg"
+              src={theme === 'dark' ? '/logo-white.svg' : '/logo-black.svg'}
               alt="Marco Arpa"
               style={{
                 width: 320, height: 320,
-                borderRadius: '50%',
-                objectFit: 'cover',
-                border: '3px solid var(--border-strong)',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.3), 0 0 80px var(--accent-dim)',
+                objectFit: 'contain',
               }}
             />
           </div>
@@ -189,8 +189,8 @@ export default function Hero() {
             align-items: center;
           }
           .hero-logo img {
-            width: 200px !important;
-            height: 200px !important;
+            width: 220px !important;
+            height: 220px !important;
           }
         }
       `}</style>
