@@ -129,7 +129,7 @@ export default function Hero() {
               src={theme === 'dark' ? '/logo-white.svg?v=2' : '/logo-black.svg'}
               alt="Marco Arpa"
               style={{
-                width: 540, height: 540,
+                width: 432, height: 432,
                 objectFit: 'contain',
               }}
             />
@@ -189,8 +189,8 @@ export default function Hero() {
             align-items: center;
           }
           .hero-logo img {
-            width: 370px !important;
-            height: 370px !important;
+            width: 296px !important;
+            height: 296px !important;
           }
         }
       `}</style>
