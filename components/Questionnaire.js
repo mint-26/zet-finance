@@ -54,41 +54,47 @@ export default function Questionnaire() {
     if (!step4Valid || sending) return;
     setSending(true);
     try {
-      await fetch('https://formsubmit.co/ajax/marco.arpa@outlook.de', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-          _subject: 'Neues Zahnzusatz-Angebot: ' + form.name,
-          'Vor- und Nachname': form.name,
-          'Anschrift': form.anschrift,
-          'Geburtsdatum': form.geburtsdatum,
-          'Familienstand': form.familienstand,
-          'Telefon': form.telefon,
-          'E-Mail': form.email,
-          'Beruf': form.beruf || '\u2014',
-          'Krankenversicherungsart': form.versicherungsart,
-          'Krankenkasse': form.krankenkasse,
-          'Kassenwechsel': form.wechsel,
-          'Bonusprogramm': form.bonusprogramm || '\u2014',
-          'Aktuelle Behandlung': form.behandlung,
-          'Heil- und Kostenplan': form.heilkostenplan,
-          'Fehlende Zähne': form.fehlendeZaehne,
-          'Zahnlücke mitversichern': form.zahnluecke,
-          'Parodontose': form.parodontose,
-          'Schwerpunktbereich': form.schwerpunkt.join(', '),
-          'Vorherige Zahnversicherung': form.vorherigeVersicherung,
-          'Kontaktweg': form.kontaktweg.join(', '),
-          'Zusatzversicherungen': form.zusatzversicherung.join(', '),
-          'Beratungstermin': form.beratungstermin.join(', '),
+      // Fire both in parallel: email notification + database record.
+      // If either fails the user still sees a success message.
+      await Promise.allSettled([
+        fetch('https://formsubmit.co/ajax/marco.arpa@outlook.de', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            _subject: 'Neues Zahnzusatz-Angebot: ' + form.name,
+            'Vor- und Nachname': form.name,
+            'Anschrift': form.anschrift,
+            'Geburtsdatum': form.geburtsdatum,
+            'Familienstand': form.familienstand,
+            'Telefon': form.telefon,
+            'E-Mail': form.email,
+            'Beruf': form.beruf || '\u2014',
+            'Krankenversicherungsart': form.versicherungsart,
+            'Krankenkasse': form.krankenkasse,
+            'Kassenwechsel': form.wechsel,
+            'Bonusprogramm': form.bonusprogramm || '\u2014',
+            'Aktuelle Behandlung': form.behandlung,
+            'Heil- und Kostenplan': form.heilkostenplan,
+            'Fehlende Zähne': form.fehlendeZaehne,
+            'Zahnlücke mitversichern': form.zahnluecke,
+            'Parodontose': form.parodontose,
+            'Schwerpunktbereich': form.schwerpunkt.join(', '),
+            'Vorherige Zahnversicherung': form.vorherigeVersicherung,
+            'Kontaktweg': form.kontaktweg.join(', '),
+            'Zusatzversicherungen': form.zusatzversicherung.join(', '),
+            'Beratungstermin': form.beratungstermin.join(', '),
+          }),
         }),
-      });
-      setSubmitted(true);
-      setTimeout(() => document.getElementById('fragebogen')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
-    } catch {
-      setSubmitted(true);
-      setTimeout(() => document.getElementById('fragebogen')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+        fetch('/api/submissions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(form),
+        }),
+      ]);
     } finally {
       setSending(false);
+      setSubmitted(true);
+      setTimeout(() => document.getElementById('fragebogen')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
     }
   };
 
