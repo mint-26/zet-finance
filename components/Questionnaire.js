@@ -1,12 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useInView } from './useInView';
 
 export default function Questionnaire() {
   const [ref, inView] = useInView(0.05);
   const [step, setStep] = useState(1);
   const totalSteps = 5;
+  // Refs for step-2 inputs so we can read autofilled values the browser
+  // populated without triggering React's onChange handler.
+  const step2Refs = useRef({});
+  const bindRef = (key) => (el) => { if (el) step2Refs.current[key] = el; };
+  // Reads any DOM values into React state — returns the merged form snapshot
+  // so callers can validate immediately without waiting for re-render.
+  const syncStep2FromDOM = () => {
+    const patch = {};
+    for (const key of ['name', 'anschrift', 'geburtsdatum', 'telefon', 'email', 'beruf']) {
+      const el = step2Refs.current[key];
+      if (el && el.value !== form[key]) patch[key] = el.value;
+    }
+    if (Object.keys(patch).length) {
+      setForm((prev) => ({ ...prev, ...patch }));
+    }
+    return { ...form, ...patch };
+  };
   const [form, setForm] = useState({
     // Step 1 - Persönliche Angaben
     name: '', anschrift: '', geburtsdatum: '', familienstand: '',
@@ -333,7 +350,9 @@ export default function Questionnaire() {
                 <div>
                   <label style={labelStyle}>Vor- und Nachname *</label>
                   <input style={inputStyle} value={form.name}
+                    ref={bindRef('name')}
                     onChange={(e) => update('name', e.target.value)}
+                    onBlur={syncStep2FromDOM}
                     placeholder="Max Mustermann" />
                 </div>
 
@@ -342,14 +361,18 @@ export default function Questionnaire() {
                     <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Postleitzahl → Ort → Straße → Hausnummer</span>
                   </label>
                   <input style={inputStyle} value={form.anschrift}
+                    ref={bindRef('anschrift')}
                     onChange={(e) => update('anschrift', e.target.value)}
+                    onBlur={syncStep2FromDOM}
                     placeholder="60311 Frankfurt am Main, Musterstraße 1" />
                 </div>
 
                 <div>
                   <label style={labelStyle}>Geburtsdatum *</label>
                   <input style={inputStyle} type="date" value={form.geburtsdatum}
-                    onChange={(e) => update('geburtsdatum', e.target.value)} />
+                    ref={bindRef('geburtsdatum')}
+                    onChange={(e) => update('geburtsdatum', e.target.value)}
+                    onBlur={syncStep2FromDOM} />
                 </div>
 
                 <div>
@@ -362,28 +385,41 @@ export default function Questionnaire() {
                 <div>
                   <label style={labelStyle}>Rückrufnummer *</label>
                   <input style={inputStyle} type="tel" value={form.telefon}
+                    ref={bindRef('telefon')}
                     onChange={(e) => update('telefon', e.target.value)}
+                    onBlur={syncStep2FromDOM}
                     placeholder="+49 ..." />
                 </div>
 
                 <div>
                   <label style={labelStyle}>E-Mail-Adresse *</label>
                   <input style={inputStyle} type="email" value={form.email}
+                    ref={bindRef('email')}
                     onChange={(e) => update('email', e.target.value)}
+                    onBlur={syncStep2FromDOM}
                     placeholder="ihre@email.de" />
                 </div>
 
                 <div>
                   <label style={labelStyle}>Beruf (optional)</label>
                   <input style={inputStyle} value={form.beruf}
+                    ref={bindRef('beruf')}
                     onChange={(e) => update('beruf', e.target.value)}
+                    onBlur={syncStep2FromDOM}
                     placeholder="z.B. Angestellter" />
                 </div>
 
                 <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
                   <button type="button" onClick={() => setStep(1)} style={navBtn(true, false)}>Zurück</button>
-                  <button type="button" disabled={!step1Valid}
-                    onClick={() => step1Valid && setStep(3)} style={navBtn(step1Valid, true)}>Weiter</button>
+                  <button type="button"
+                    onClick={() => {
+                      // Force-sync any autofilled values, then validate
+                      const synced = syncStep2FromDOM();
+                      const valid = synced.name && synced.anschrift && synced.geburtsdatum
+                        && synced.familienstand && synced.telefon && synced.email;
+                      if (valid) setStep(3);
+                    }}
+                    style={navBtn(step1Valid, true)}>Weiter</button>
                 </div>
               </>
             )}
