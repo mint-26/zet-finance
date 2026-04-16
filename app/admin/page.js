@@ -352,11 +352,11 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onDelete 
     ['Fehlende Zähne', s.fehlende_zaehne],
     ['Zahnlücke mitversichern', s.zahnluecke],
     ['Parodontose', s.parodontose],
-    ['Wichtiger Bereich', s.schwerpunkt],
+    ['Wichtiger Bereich', s.schwerpunkt, true],
     ['Vorherige Zahnversicherung', s.vorherige_versicherung],
-    ['Kontaktweg', s.kontaktweg],
-    ['Zusatzversicherung', s.zusatzversicherung],
-    ['Beratungstermin', s.beratungstermin],
+    ['Kontaktweg', s.kontaktweg, true],
+    ['Zusatzversicherung', s.zusatzversicherung, true],
+    ['Beratungstermin', s.beratungstermin, true],
   ];
 
   return (
@@ -460,13 +460,30 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onDelete 
           </EditableField>
 
           {/* Read-only fields */}
-          <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
-            {fields.map(([label, value]) => (
-              <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <span style={{ fontSize: 11, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</span>
-                <span style={{ fontSize: 14, color: 'var(--text-body)', wordBreak: 'break-word' }}>{value || '—'}</span>
-              </div>
-            ))}
+          <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+            {fields.map(([label, value, multi]) => {
+              const items = multi && typeof value === 'string' ? splitMulti(value) : null;
+              const isList = items && items.length > 1;
+              return (
+                <div key={label} style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: isList ? 6 : 2,
+                  ...(multi ? { gridColumn: '1 / -1' } : {}),
+                }}>
+                  <span style={{ fontSize: 11, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</span>
+                  {isList ? (
+                    <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {items.map((item, i) => (
+                        <li key={i} style={{ fontSize: 14, color: 'var(--text-body)', lineHeight: 1.5 }}>{item}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span style={{ fontSize: 14, color: 'var(--text-body)', wordBreak: 'break-word' }}>{value || '—'}</span>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
@@ -494,6 +511,26 @@ function EditableField({ label, children }) {
       {children}
     </label>
   );
+}
+
+// Split a comma-joined multi-select value into individual items,
+// respecting parentheses so e.g. "foo (a, b), bar" stays two items.
+function splitMulti(value) {
+  const parts = [];
+  let depth = 0;
+  let current = '';
+  for (const ch of value) {
+    if (ch === '(') { depth++; current += ch; continue; }
+    if (ch === ')') { depth = Math.max(0, depth - 1); current += ch; continue; }
+    if (ch === ',' && depth === 0) {
+      if (current.trim()) parts.push(current.trim());
+      current = '';
+      continue;
+    }
+    current += ch;
+  }
+  if (current.trim()) parts.push(current.trim());
+  return parts;
 }
 
 const inputStyle = {
