@@ -6,6 +6,7 @@ import { ThemeProvider, useTheme } from '../../components/ThemeProvider';
 const STATUS_OPTIONS = [
   { value: 'offen', label: 'Offen', color: '#9ca3af' },
   { value: 'in_bearbeitung', label: 'In Bearbeitung', color: '#c9a24a' },
+  { value: 'abgelehnt', label: 'Abgelehnt', color: '#dc3c3c' },
   { value: 'versichert', label: 'Versichert', color: '#4a9e6a' },
 ];
 
@@ -429,6 +430,15 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onDelete 
                 step="0.01"
                 defaultValue={s.provision ?? ''}
                 onBlur={(e) => onUpdate('provision', e.target.value === '' ? null : parseFloat(e.target.value))}
+                style={inputStyle}
+              />
+            </EditableField>
+            <EditableField label="Monatsbeitrag">
+              <input
+                type="number"
+                step="0.01"
+                defaultValue={s.monatsbeitrag ?? ''}
+                onBlur={(e) => onUpdate('monatsbeitrag', e.target.value === '' ? null : parseFloat(e.target.value))}
                 style={inputStyle}
               />
             </EditableField>

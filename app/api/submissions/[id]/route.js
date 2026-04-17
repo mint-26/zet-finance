@@ -4,8 +4,8 @@ import { isAuthenticated } from '../../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-const ALLOWED_FIELDS = ['status', 'provision', 'grund', 'gesellschaft', 'notizen'];
-const ALLOWED_STATUS = ['offen', 'in_bearbeitung', 'versichert'];
+const ALLOWED_FIELDS = ['status', 'provision', 'monatsbeitrag', 'grund', 'gesellschaft', 'notizen'];
+const ALLOWED_STATUS = ['offen', 'in_bearbeitung', 'abgelehnt', 'versichert'];
 
 export async function PATCH(request, { params }) {
   if (!isAuthenticated()) {

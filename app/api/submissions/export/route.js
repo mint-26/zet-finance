@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 const STATUS_LABELS = {
   offen: 'Offen',
   in_bearbeitung: 'In Bearbeitung',
+  abgelehnt: 'Abgelehnt',
   versichert: 'Versichert',
 };
 
@@ -33,9 +34,11 @@ export async function GET() {
   const sheet = workbook.addWorksheet('Antworten');
 
   sheet.columns = [
+    { header: 'Status', key: 'status', width: 16 },
     { header: 'Provision', key: 'provision', width: 12 },
-    { header: 'Grund', key: 'grund', width: 14 },
+    { header: 'Monatsbeitrag', key: 'monatsbeitrag', width: 14 },
     { header: 'Gesellschaft', key: 'gesellschaft', width: 18 },
+    { header: 'Grund', key: 'grund', width: 30 },
     { header: 'Zeitstempel', key: 'zeitstempel', width: 20 },
     { header: 'Vor- und Nachnamen', key: 'name', width: 24 },
     { header: 'Anschrift', key: 'anschrift', width: 34 },
@@ -58,7 +61,6 @@ export async function GET() {
     { header: 'Kontaktweg', key: 'kontaktweg', width: 22 },
     { header: 'Zusatzversicherung', key: 'zusatzversicherung', width: 26 },
     { header: 'Beratungstermin', key: 'beratungstermin', width: 22 },
-    { header: 'Status', key: 'status', width: 16 },
     { header: 'Notizen', key: 'notizen', width: 34 },
   ];
 
@@ -71,9 +73,11 @@ export async function GET() {
 
   for (const row of data) {
     sheet.addRow({
+      status: STATUS_LABELS[row.status] || row.status,
       provision: row.provision,
-      grund: row.grund,
+      monatsbeitrag: row.monatsbeitrag,
       gesellschaft: row.gesellschaft,
+      grund: row.grund,
       zeitstempel: row.created_at ? new Date(row.created_at) : null,
       name: row.name,
       anschrift: row.anschrift,
@@ -96,7 +100,6 @@ export async function GET() {
       kontaktweg: row.kontaktweg,
       zusatzversicherung: row.zusatzversicherung,
       beratungstermin: row.beratungstermin,
-      status: STATUS_LABELS[row.status] || row.status,
       notizen: row.notizen,
     });
   }
