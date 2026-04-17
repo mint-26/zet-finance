@@ -4,21 +4,21 @@ import { useInView } from './useInView';
 
 const TESTIMONIALS = [
   {
-    name: 'Sandra K.',
-    role: 'Patientin, Zahnarztpraxis Dr. Weber',
-    text: 'Marco hat sich alles in Ruhe angehört und mir eine Zahnzusatzversicherung gefunden, die perfekt passt. Als ich dann mein Implantat brauchte, wurde fast alles übernommen. Ohne ihn hätte ich über 3.000€ selbst gezahlt.',
+    name: 'Julia S.',
+    role: 'Kundin seit 2023',
+    text: 'Mein Zahnarzt hat mir Marcos Karte gegeben, als eine größere Behandlung anstand. Innerhalb von zwei Tagen hatte ich ein Angebot, das richtig gut gepasst hat. Was mich überrascht hat: Er hat sich auch danach noch gemeldet, um zu fragen ob alles geklappt hat.',
     rating: 5,
   },
   {
-    name: 'Thomas M.',
-    role: 'Patient, Zahnarztpraxis Dr. Hoffmann',
-    text: 'Ich hatte jahrelang keine Zahnzusatzversicherung und dachte, ich brauche keine. Nach dem Gespräch mit Marco war klar: Für 15€ im Monat spare ich mir im Ernstfall Tausende. Drei Monate später brauchte ich tatsächlich eine Krone.',
+    name: 'Michael B.',
+    role: 'Kunde seit 2024',
+    text: 'Ich hab mich ewig vor dem Thema Versicherung gedrückt. Marco hat das in einem kurzen Telefonat geklärt, ohne Druck, ohne Fachchinesisch. Jetzt zahle ich einen fairen Beitrag und muss mir beim Zahnarzt keine Gedanken mehr über die Kosten machen.',
     rating: 5,
   },
   {
-    name: 'Petra R.',
-    role: 'Patientin, Zahnarztpraxis Dr. Klein',
-    text: 'Was mich überzeugt hat: Marco hat meine alte Versicherung geprüft und mir einen besseren Tarif gefunden, der weniger kostet und mehr abdeckt. Und er kümmert sich wirklich um alles, wenn man eine Rechnung einreicht.',
+    name: 'Sabine W.',
+    role: 'Kundin seit 2022',
+    text: 'Letztes Jahr hat Marco von sich aus meinen Tarif überprüft und mir einen besseren vorgeschlagen. Weniger Beitrag, bessere Leistung. Das macht kein normaler Versicherungsvertreter. Kann ich wirklich empfehlen.',
     rating: 5,
   },
 ];
