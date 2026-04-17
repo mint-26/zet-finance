@@ -8,22 +8,22 @@ export function useTheme() {
   return useContext(ThemeContext);
 }
 
-export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState('dark');
+export function ThemeProvider({ children, defaultTheme = 'dark', storageKey = 'marco-theme' }) {
+  const [theme, setTheme] = useState(defaultTheme);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('marco-theme') || 'dark';
+    const saved = localStorage.getItem(storageKey) || defaultTheme;
     setTheme(saved);
     document.documentElement.setAttribute('data-theme', saved);
     setMounted(true);
-  }, []);
+  }, [defaultTheme, storageKey]);
 
   const toggle = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
     setTheme(next);
     document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('marco-theme', next);
+    localStorage.setItem(storageKey, next);
   };
 
   if (!mounted) {

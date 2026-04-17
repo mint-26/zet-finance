@@ -384,6 +384,9 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onDelete 
           fontSize: 12,
           fontWeight: 600,
           whiteSpace: 'nowrap',
+          minWidth: 130,
+          textAlign: 'center',
+          boxSizing: 'border-box',
         }}>{statusOpt.label}</span>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -558,7 +561,7 @@ const inputStyle = {
 
 export default function AdminPage() {
   return (
-    <ThemeProvider>
+    <ThemeProvider defaultTheme="light" storageKey="marco-admin-theme">
       <AdminContent />
     </ThemeProvider>
   );
