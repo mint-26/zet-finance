@@ -71,20 +71,22 @@ function AdminContent() {
     setAuthState('login');
   };
 
-  const updateField = async (id, field, value) => {
-    // Optimistic update
-    setSubmissions((prev) => prev.map((s) => s.id === id ? { ...s, [field]: value } : s));
+  const updateFields = async (id, patch) => {
+    // Optimistic update — patch one or multiple fields at once.
+    setSubmissions((prev) => prev.map((s) => s.id === id ? { ...s, ...patch } : s));
     try {
       await fetch(`/api/submissions/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [field]: value }),
+        body: JSON.stringify(patch),
       });
     } catch {
       // On error, reload to sync state
       load();
     }
   };
+
+  const updateField = (id, field, value) => updateFields(id, { [field]: value });
 
   const deleteSubmission = async (id) => {
     if (!confirm('Diesen Eintrag wirklich löschen?')) return;
@@ -325,6 +327,7 @@ function AdminContent() {
                 expanded={expandedId === s.id}
                 onToggle={() => setExpandedId(expandedId === s.id ? null : s.id)}
                 onUpdate={(field, value) => updateField(s.id, field, value)}
+                onUpdateMany={(patch) => updateFields(s.id, patch)}
                 onDelete={() => deleteSubmission(s.id)}
               />
             ))}
@@ -335,7 +338,19 @@ function AdminContent() {
   );
 }
 
-function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onDelete }) {
+// Compute provision from monthly premium + insurer.
+// Formula: Monatsbeitrag * rate * 0.9 (minus 10%).
+// Münchener Verein → 7.8, otherwise → 6.8.
+// Returns a number rounded to 2 decimals, or null if monatsbeitrag is not a finite number.
+function computeProvision(monatsbeitrag, gesellschaft) {
+  const mb = typeof monatsbeitrag === 'number' ? monatsbeitrag : parseFloat(monatsbeitrag);
+  if (!Number.isFinite(mb)) return null;
+  const isMV = typeof gesellschaft === 'string' && gesellschaft.trim().toLowerCase() === 'münchener verein';
+  const rate = isMV ? 7.8 : 6.8;
+  return Math.round(mb * rate * 0.9 * 100) / 100;
+}
+
+function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateMany, onDelete }) {
   const statusOpt = STATUS_OPTIONS.find((o) => o.value === s.status) || STATUS_OPTIONS[0];
   const createdAt = s.created_at ? new Date(s.created_at) : null;
 
@@ -414,8 +429,8 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onDelete 
 
       {expanded && (
         <div style={{ borderTop: '1px solid var(--border)', padding: 20 }}>
-          {/* Editable fields */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
+          {/* Editable fields — core row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 16 }}>
             <EditableField label="Status">
               <select
                 value={s.status}
@@ -429,6 +444,7 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onDelete 
             </EditableField>
             <EditableField label="Provision">
               <input
+                key={`prov-${s.id}-${s.provision ?? 'null'}`}
                 type="number"
                 step="0.01"
                 defaultValue={s.provision ?? ''}
@@ -441,7 +457,13 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onDelete 
                 type="number"
                 step="0.01"
                 defaultValue={s.monatsbeitrag ?? ''}
-                onBlur={(e) => onUpdate('monatsbeitrag', e.target.value === '' ? null : parseFloat(e.target.value))}
+                onBlur={(e) => {
+                  const raw = e.target.value;
+                  const mb = raw === '' ? null : parseFloat(raw);
+                  // Auto-calc provision from monatsbeitrag + current gesellschaft.
+                  const provision = mb == null ? s.provision : computeProvision(mb, s.gesellschaft);
+                  onUpdateMany({ monatsbeitrag: mb, provision });
+                }}
                 style={inputStyle}
               />
             </EditableField>
@@ -457,10 +479,22 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onDelete 
               <input
                 type="text"
                 defaultValue={s.gesellschaft ?? ''}
-                onBlur={(e) => onUpdate('gesellschaft', e.target.value)}
+                onBlur={(e) => {
+                  const ges = e.target.value;
+                  // Re-calc provision if monatsbeitrag is set — the rate depends on insurer.
+                  if (s.monatsbeitrag != null) {
+                    onUpdateMany({ gesellschaft: ges, provision: computeProvision(s.monatsbeitrag, ges) });
+                  } else {
+                    onUpdate('gesellschaft', ges);
+                  }
+                }}
                 style={inputStyle}
               />
             </EditableField>
+          </div>
+
+          {/* Editable fields — Vertragsstatus-Flags */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
             <EditableField label="Alt-Vertrag gekündigt">
               <BoolSelect
                 value={s.alt_vertrag_gekuendigt}
