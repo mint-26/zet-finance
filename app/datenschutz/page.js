@@ -70,7 +70,7 @@ function DatenschutzContent() {
               Marco Arpa<br />
               Versicherungsmakler nach §34d GewO<br />
               Alte Dieburger Str. 46<br />
-              64367 Mühltal Trautheim<br />
+              64367 Trautheim<br />
               E-Mail: <a href="mailto:marco.arpa@outlook.de" style={linkStyle}>marco.arpa@outlook.de</a><br />
               Telefon: +49 152 5461 1314
             </p>

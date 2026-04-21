@@ -66,7 +66,7 @@ function AGBContent() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32, fontSize: 16, lineHeight: 1.8, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
           <section>
             <h2 style={h2Style}><span style={numStyle}>1.</span> Geltungsbereich</h2>
-            <p>Diese Nutzungsbedingungen gelten für die Nutzung der Website von Marco Arpa, Alte Dieburger Str. 46, 64367 Mühltal Trautheim. Die Website dient ausschließlich der Erfassung von Kontakt- und Bedarfsdaten zur Erstellung eines unverbindlichen Angebots für Zahnzusatzversicherungen.</p>
+            <p>Diese Nutzungsbedingungen gelten für die Nutzung der Website von Marco Arpa, Alte Dieburger Str. 46, 64367 Trautheim. Die Website dient ausschließlich der Erfassung von Kontakt- und Bedarfsdaten zur Erstellung eines unverbindlichen Angebots für Zahnzusatzversicherungen.</p>
           </section>
 
           <section>
@@ -75,7 +75,7 @@ function AGBContent() {
               Marco Arpa<br />
               Versicherungsmakler nach §34d GewO<br />
               Alte Dieburger Str. 46<br />
-              64367 Mühltal Trautheim<br />
+              64367 Trautheim<br />
               E-Mail: <a href="mailto:marco.arpa@outlook.de" style={linkStyle}>marco.arpa@outlook.de</a><br />
               Telefon: +49 152 5461 1314<br />
               Registernummer: D-4GG1-I1LV5-50
