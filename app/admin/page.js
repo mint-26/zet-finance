@@ -339,7 +339,7 @@ function AdminContent() {
 }
 
 // Compute provision from monthly premium + insurer.
-// Formula: Monatsbeitrag * rate * 0.9 (minus 10%).
+// Formula: Monatsbeitrag * rate - 0.10  (Excel-Konvention: "-10%" = -0,10).
 // Münchener Verein → 7.8, otherwise → 6.8.
 // Returns a number rounded to 2 decimals, or null if monatsbeitrag is not a finite number.
 function computeProvision(monatsbeitrag, gesellschaft) {
@@ -347,7 +347,7 @@ function computeProvision(monatsbeitrag, gesellschaft) {
   if (!Number.isFinite(mb)) return null;
   const isMV = typeof gesellschaft === 'string' && gesellschaft.trim().toLowerCase() === 'münchener verein';
   const rate = isMV ? 7.8 : 6.8;
-  return Math.round(mb * rate * 0.9 * 100) / 100;
+  return Math.round((mb * rate - 0.10) * 100) / 100;
 }
 
 function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateMany, onDelete }) {
