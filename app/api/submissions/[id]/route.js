@@ -4,8 +4,23 @@ import { isAuthenticated } from '../../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-const ALLOWED_FIELDS = ['status', 'provision', 'monatsbeitrag', 'grund', 'gesellschaft', 'notizen'];
+const ALLOWED_FIELDS = [
+  'status',
+  'provision',
+  'monatsbeitrag',
+  'grund',
+  'gesellschaft',
+  'notizen',
+  'alt_vertrag_gekuendigt',
+  'kuendigungsbestaetigung_erhalten',
+  'neue_vertragsunterlagen_erhalten',
+];
 const ALLOWED_STATUS = ['offen', 'in_bearbeitung', 'abgelehnt', 'versichert'];
+const BOOLEAN_FIELDS = new Set([
+  'alt_vertrag_gekuendigt',
+  'kuendigungsbestaetigung_erhalten',
+  'neue_vertragsunterlagen_erhalten',
+]);
 
 export async function PATCH(request, { params }) {
   if (!isAuthenticated()) {
@@ -27,7 +42,20 @@ export async function PATCH(request, { params }) {
   const update = {};
   for (const key of ALLOWED_FIELDS) {
     if (key in body) {
-      update[key] = body[key] === '' ? null : body[key];
+      let value = body[key];
+      if (value === '' || value === null || value === undefined) {
+        value = null;
+      } else if (BOOLEAN_FIELDS.has(key)) {
+        // Normalize "true"/"false"/1/0/true/false → boolean
+        if (typeof value === 'string') {
+          if (value === 'true') value = true;
+          else if (value === 'false') value = false;
+          else { return NextResponse.json({ error: `Invalid value for ${key}` }, { status: 400 }); }
+        } else if (typeof value !== 'boolean') {
+          return NextResponse.json({ error: `Invalid value for ${key}` }, { status: 400 });
+        }
+      }
+      update[key] = value;
     }
   }
 

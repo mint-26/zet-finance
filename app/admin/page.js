@@ -461,6 +461,24 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onDelete 
                 style={inputStyle}
               />
             </EditableField>
+            <EditableField label="Alt-Vertrag gekündigt">
+              <BoolSelect
+                value={s.alt_vertrag_gekuendigt}
+                onChange={(v) => onUpdate('alt_vertrag_gekuendigt', v)}
+              />
+            </EditableField>
+            <EditableField label="Kündigungsbestätigung erhalten">
+              <BoolSelect
+                value={s.kuendigungsbestaetigung_erhalten}
+                onChange={(v) => onUpdate('kuendigungsbestaetigung_erhalten', v)}
+              />
+            </EditableField>
+            <EditableField label="Neue Vertragsunterlagen erhalten">
+              <BoolSelect
+                value={s.neue_vertragsunterlagen_erhalten}
+                onChange={(v) => onUpdate('neue_vertragsunterlagen_erhalten', v)}
+              />
+            </EditableField>
           </div>
 
           <EditableField label="Notizen">
@@ -514,6 +532,26 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onDelete 
         </div>
       )}
     </div>
+  );
+}
+
+// Tri-state select for nullable booleans: null | true | false.
+// Stored as ' ' / 'true' / 'false' in the <select>; converted back on change.
+function BoolSelect({ value, onChange }) {
+  const current = value === true ? 'true' : value === false ? 'false' : '';
+  return (
+    <select
+      value={current}
+      onChange={(e) => {
+        const v = e.target.value;
+        onChange(v === '' ? null : v === 'true');
+      }}
+      style={inputStyle}
+    >
+      <option value="">—</option>
+      <option value="true">Ja</option>
+      <option value="false">Nein</option>
+    </select>
   );
 }
 

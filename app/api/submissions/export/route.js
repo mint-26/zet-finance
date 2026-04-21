@@ -12,6 +12,12 @@ const STATUS_LABELS = {
   versichert: 'Versichert',
 };
 
+function boolLabel(v) {
+  if (v === true) return 'Ja';
+  if (v === false) return 'Nein';
+  return null;
+}
+
 export async function GET() {
   if (!isAuthenticated()) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -38,6 +44,9 @@ export async function GET() {
     { header: 'Provision', key: 'provision', width: 12 },
     { header: 'Monatsbeitrag', key: 'monatsbeitrag', width: 14 },
     { header: 'Gesellschaft', key: 'gesellschaft', width: 18 },
+    { header: 'Alt-Vertrag gekündigt', key: 'alt_vertrag_gekuendigt', width: 20 },
+    { header: 'Kündigungsbestätigung erhalten', key: 'kuendigungsbestaetigung_erhalten', width: 28 },
+    { header: 'Neue Vertragsunterlagen erhalten', key: 'neue_vertragsunterlagen_erhalten', width: 30 },
     { header: 'Grund', key: 'grund', width: 30 },
     { header: 'Zeitstempel', key: 'zeitstempel', width: 20 },
     { header: 'Vor- und Nachnamen', key: 'name', width: 24 },
@@ -77,6 +86,9 @@ export async function GET() {
       provision: row.provision,
       monatsbeitrag: row.monatsbeitrag,
       gesellschaft: row.gesellschaft,
+      alt_vertrag_gekuendigt: boolLabel(row.alt_vertrag_gekuendigt),
+      kuendigungsbestaetigung_erhalten: boolLabel(row.kuendigungsbestaetigung_erhalten),
+      neue_vertragsunterlagen_erhalten: boolLabel(row.neue_vertragsunterlagen_erhalten),
       grund: row.grund,
       zeitstempel: row.created_at ? new Date(row.created_at) : null,
       name: row.name,
