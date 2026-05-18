@@ -94,6 +94,29 @@ function AdminContent() {
     await fetch(`/api/submissions/${id}`, { method: 'DELETE' });
   };
 
+  // Re-runs the notification pipeline server-side. Updates the row from
+  // the response so the badge flips immediately on success.
+  const resendNotification = async (id) => {
+    setSubmissions((prev) => prev.map((s) => s.id === id ? { ...s, _resending: true } : s));
+    try {
+      const res = await fetch(`/api/submissions/${id}/resend-notification`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (data.ok) {
+        setSubmissions((prev) => prev.map((s) => s.id === id
+          ? { ...s, notification_sent_at: new Date().toISOString(), notification_last_error: null, _resending: false }
+          : s));
+      } else {
+        setSubmissions((prev) => prev.map((s) => s.id === id
+          ? { ...s, notification_last_error: data.error || 'Versand fehlgeschlagen', _resending: false }
+          : s));
+        alert('Versand fehlgeschlagen: ' + (data.error || 'unbekannt'));
+      }
+    } catch (err) {
+      setSubmissions((prev) => prev.map((s) => s.id === id ? { ...s, _resending: false } : s));
+      alert('Versand fehlgeschlagen: ' + (err?.message || 'Netzwerkfehler'));
+    }
+  };
+
   const handleExport = () => {
     window.location.href = '/api/submissions/export';
   };
@@ -108,6 +131,8 @@ function AdminContent() {
     }
     return true;
   });
+
+  const pendingNotifications = submissions.filter((s) => !s.notification_sent_at).length;
 
   // ─── Render: Checking ───
   if (authState === 'checking') {
@@ -245,6 +270,24 @@ function AdminContent() {
               {filtered.length} {filtered.length === 1 ? 'Eintrag' : 'Einträge'}
               {filtered.length !== submissions.length && ` (von ${submissions.length})`}
             </p>
+            {pendingNotifications > 0 && (
+              <div style={{
+                marginTop: 12,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '8px 14px',
+                background: 'rgba(220,60,60,0.10)',
+                border: '1px solid rgba(220,60,60,0.35)',
+                borderRadius: 8,
+                color: '#dc3c3c',
+                fontSize: 13,
+                fontWeight: 600,
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                {pendingNotifications} {pendingNotifications === 1 ? 'Eintrag' : 'Einträge'} ohne Mail-Versand
+              </div>
+            )}
           </div>
           <button onClick={handleExport} style={{
             padding: '12px 24px',
@@ -329,6 +372,7 @@ function AdminContent() {
                 onUpdate={(field, value) => updateField(s.id, field, value)}
                 onUpdateMany={(patch) => updateFields(s.id, patch)}
                 onDelete={() => deleteSubmission(s.id)}
+                onResendNotification={() => resendNotification(s.id)}
               />
             ))}
           </div>
@@ -350,9 +394,11 @@ function computeProvision(monatsbeitrag, gesellschaft) {
   return Math.round((mb * rate - 0.10) * 100) / 100;
 }
 
-function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateMany, onDelete }) {
+function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateMany, onDelete, onResendNotification }) {
   const statusOpt = STATUS_OPTIONS.find((o) => o.value === s.status) || STATUS_OPTIONS[0];
   const createdAt = s.created_at ? new Date(s.created_at) : null;
+  const notificationSentAt = s.notification_sent_at ? new Date(s.notification_sent_at) : null;
+  const mailDelivered = !!s.notification_sent_at;
 
   const fields = [
     ['Anschrift', s.anschrift],
@@ -386,7 +432,7 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
       <div style={{
         padding: '16px 20px',
         display: 'grid',
-        gridTemplateColumns: 'auto 1fr auto auto',
+        gridTemplateColumns: 'auto auto 1fr auto auto',
         gap: 16,
         alignItems: 'center',
       }}>
@@ -403,6 +449,26 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
           textAlign: 'center',
           boxSizing: 'border-box',
         }}>{statusOpt.label}</span>
+        <span
+          title={mailDelivered
+            ? `Mail an Marco versandt: ${notificationSentAt ? notificationSentAt.toLocaleString('de-DE') : ''}`
+            : `Mail noch nicht versandt${s.notification_attempts ? ` · ${s.notification_attempts} Versuche` : ''}`}
+          aria-label={mailDelivered ? 'Mail versandt' : 'Mail nicht versandt'}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 28, height: 28, borderRadius: '50%',
+            background: mailDelivered ? 'rgba(74,158,106,0.12)' : 'rgba(220,60,60,0.12)',
+            border: `1px solid ${mailDelivered ? 'rgba(74,158,106,0.45)' : 'rgba(220,60,60,0.45)'}`,
+            color: mailDelivered ? '#4a9e6a' : '#dc3c3c',
+            flexShrink: 0,
+          }}
+        >
+          {mailDelivered
+            ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
+        </span>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {s.name || '(Kein Name)'}
@@ -551,7 +617,66 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
             })}
           </div>
 
-          <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
+          {/* Notification status */}
+          <div style={{
+            marginTop: 24,
+            padding: '14px 18px',
+            background: mailDelivered ? 'rgba(74,158,106,0.06)' : 'rgba(220,60,60,0.06)',
+            border: `1px solid ${mailDelivered ? 'rgba(74,158,106,0.25)' : 'rgba(220,60,60,0.25)'}`,
+            borderRadius: 10,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 16,
+            flexWrap: 'wrap',
+          }}>
+            <div>
+              <div style={{
+                fontSize: 12, color: 'var(--text-dim)',
+                textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4,
+              }}>
+                E-Mail-Benachrichtigung
+              </div>
+              <div style={{ fontSize: 14, color: 'var(--text-body)', lineHeight: 1.5 }}>
+                {mailDelivered ? (
+                  <>An Marco versandt {notificationSentAt ? `am ${notificationSentAt.toLocaleString('de-DE')}` : ''}</>
+                ) : (
+                  <>
+                    Noch nicht versandt.
+                    {s.notification_attempts ? ` ${s.notification_attempts} Versuche.` : ''}
+                    {s.notification_last_error ? (
+                      <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: 12, marginTop: 2 }}>
+                        Letzter Fehler: {s.notification_last_error}
+                      </span>
+                    ) : null}
+                  </>
+                )}
+              </div>
+            </div>
+            {!mailDelivered && (
+              <button
+                onClick={onResendNotification}
+                disabled={s._resending}
+                style={{
+                  background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '8px 16px',
+                  color: 'var(--bg-primary)',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: s._resending ? 'wait' : 'pointer',
+                  fontFamily: "'DM Sans', sans-serif",
+                  opacity: s._resending ? 0.7 : 1,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {s._resending ? 'Sende…' : 'Mail erneut senden'}
+              </button>
+            )}
+          </div>
+
+          <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
             <button onClick={onDelete} style={{
               background: 'transparent',
               border: '1px solid rgba(220,60,60,0.3)',

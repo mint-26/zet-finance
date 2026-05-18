@@ -1,10 +1,17 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '../../../lib/supabase';
 import { isAuthenticated } from '../../../lib/auth';
+import { sendFormSubmitNotification, buildQuestionnairePayload } from '../../../lib/notify';
 
 export const dynamic = 'force-dynamic';
+// Generous: notification path can take up to ~16 s in worst case.
+export const maxDuration = 30;
 
 // POST /api/submissions  — public. Called by the questionnaire.
+// Saves the lead first (must not fail), then attempts to deliver the
+// e-mail notification with retry/backoff. The notification result is
+// persisted on the same row so the admin can see "mail not sent" state
+// and trigger a manual resend later.
 export async function POST(request) {
   let body;
   try {
@@ -40,7 +47,7 @@ export async function POST(request) {
       zusatzversicherung: Array.isArray(body.zusatzversicherung) ? body.zusatzversicherung.join(', ') : (body.zusatzversicherung || null),
       beratungstermin: Array.isArray(body.beratungstermin) ? body.beratungstermin.join(', ') : (body.beratungstermin || null),
     })
-    .select('id')
+    .select('*')
     .single();
 
   if (error) {
@@ -48,7 +55,31 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Failed to save submission' }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, id: data.id });
+  // ─── Notification ───
+  const payload = buildQuestionnairePayload(data);
+  const result = await sendFormSubmitNotification(payload);
+
+  const notificationPatch = result.success
+    ? { notification_sent_at: new Date().toISOString(), notification_attempts: result.attempts, notification_last_error: null }
+    : { notification_attempts: result.attempts, notification_last_error: result.lastError || 'unknown' };
+
+  const { error: patchError } = await supabase
+    .from('zahnzusatz_submissions')
+    .update(notificationPatch)
+    .eq('id', data.id);
+
+  if (patchError) {
+    console.error('Notification status patch error:', patchError);
+  }
+  if (!result.success) {
+    console.warn(`Notification failed for submission ${data.id} after ${result.attempts} attempts: ${result.lastError}`);
+  }
+
+  return NextResponse.json({
+    ok: true,
+    id: data.id,
+    notification_sent: result.success,
+  });
 }
 
 // GET /api/submissions  — auth required. Returns all submissions.

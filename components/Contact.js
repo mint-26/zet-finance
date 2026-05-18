@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useInView } from './useInView';
 
 export default function Contact() {
@@ -11,22 +11,25 @@ export default function Contact() {
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
 
+  // Warn if user closes the tab mid-submit — request must finish for the
+  // mail to actually go out (Contact form has no DB fallback).
+  useEffect(() => {
+    if (!sending) return;
+    const handler = (e) => { e.preventDefault(); e.returnValue = ''; return ''; };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [sending]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name || !form.email || sending) return;
     setSending(true);
     try {
-      await fetch('https://formsubmit.co/ajax/marco.arpa@outlook.de', {
+      // Server-side proxy with retry/backoff (see app/api/contact/route.js).
+      await fetch('/api/contact', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-          _subject: 'Neue Kontaktanfrage von ' + form.name,
-          Name: form.name,
-          'E-Mail': form.email,
-          Telefon: form.phone || '—',
-          Bereich: form.service || '—',
-          Nachricht: form.message || '—',
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
       });
       setSubmitted(true);
     } catch {
@@ -266,8 +269,36 @@ export default function Contact() {
                     marginTop: 8,
                   }}
                 >
-                  {sending ? 'Wird gesendet...' : 'Nachricht senden'}
+                  {sending ? (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                      <span
+                        aria-hidden
+                        style={{
+                          width: 18, height: 18, borderRadius: '50%',
+                          border: '2px solid currentColor',
+                          borderTopColor: 'transparent',
+                          animation: 'c-spin 0.8s linear infinite',
+                          display: 'inline-block',
+                        }}
+                      />
+                      Wird gesendet…
+                    </span>
+                  ) : 'Nachricht senden'}
                 </button>
+                {sending && (
+                  <p style={{
+                    fontSize: 13, color: 'var(--text-muted)', textAlign: 'center',
+                    marginTop: 4, lineHeight: 1.5,
+                  }}>
+                    Bitte schließen Sie den Tab nicht — der Versand kann bis zu 20&nbsp;Sekunden dauern.
+                  </p>
+                )}
+                <style jsx>{`
+                  @keyframes c-spin {
+                    from { transform: rotate(0deg); }
+                    to   { transform: rotate(360deg); }
+                  }
+                `}</style>
               </div>
             </div>
         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useInView } from './useInView';
 
 export default function Questionnaire() {
@@ -66,48 +66,34 @@ export default function Questionnaire() {
     return false;
   };
 
+  // Warn user if they try to close the tab while a submission is in flight.
+  // The browser shows a generic confirmation; the lead is already being saved
+  // server-side but the mail notification needs the request to complete.
+  useEffect(() => {
+    if (!sending) return;
+    const handler = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [sending]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!step4Valid || sending) return;
     setSending(true);
     try {
-      // Fire both in parallel: email notification + database record.
-      // If either fails the user still sees a success message.
-      await Promise.allSettled([
-        fetch('https://formsubmit.co/ajax/marco.arpa@outlook.de', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify({
-            _subject: 'Neues Zahnzusatz-Angebot: ' + form.name,
-            'Vor- und Nachname': form.name,
-            'Anschrift': form.anschrift,
-            'Geburtsdatum': form.geburtsdatum,
-            'Familienstand': form.familienstand,
-            'Telefon': form.telefon,
-            'E-Mail': form.email,
-            'Beruf': form.beruf || '\u2014',
-            'Krankenversicherungsart': form.versicherungsart,
-            'Krankenkasse': form.krankenkasse,
-            'Kassenwechsel': form.wechsel,
-            'Bonusprogramm': form.bonusprogramm || '\u2014',
-            'Aktuelle Behandlung': form.behandlung,
-            'Heil- und Kostenplan': form.heilkostenplan,
-            'Fehlende Zähne': form.fehlendeZaehne,
-            'Zahnlücke mitversichern': form.zahnluecke,
-            'Parodontose': form.parodontose,
-            'Schwerpunktbereich': form.schwerpunkt.join(', '),
-            'Vorherige Zahnversicherung': form.vorherigeVersicherung,
-            'Kontaktweg': form.kontaktweg.join(', '),
-            'Zusatzversicherungen': form.zusatzversicherung.join(', '),
-            'Beratungstermin': form.beratungstermin.join(', '),
-          }),
-        }),
-        fetch('/api/submissions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(form),
-        }),
-      ]);
+      // Single server-side call. The API route persists to Supabase and then
+      // triggers the FormSubmit notification with retry/backoff. If the mail
+      // pipeline fails after retries, the lead is still saved and Marco's
+      // admin shows it as "Mail noch nicht versandt" with a manual resend.
+      await fetch('/api/submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
     } finally {
       setSending(false);
       setSubmitted(true);
@@ -603,12 +589,40 @@ export default function Questionnaire() {
                 </label>
 
                 <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-                  <button type="button" onClick={() => setStep(4)} style={navBtn(true, false)}>Zurück</button>
+                  <button type="button" onClick={() => setStep(4)} disabled={sending} style={navBtn(!sending, false)}>Zurück</button>
                   <button type="submit" disabled={!step4Valid || sending}
                     style={navBtn(step4Valid && !sending, true)}>
-                    {sending ? 'Wird gesendet...' : 'Angebot anfordern'}
+                    {sending ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                        <span
+                          aria-hidden
+                          style={{
+                            width: 18, height: 18, borderRadius: '50%',
+                            border: '2px solid currentColor',
+                            borderTopColor: 'transparent',
+                            animation: 'q-spin 0.8s linear infinite',
+                            display: 'inline-block',
+                          }}
+                        />
+                        Wird gesendet…
+                      </span>
+                    ) : 'Angebot anfordern'}
                   </button>
                 </div>
+                {sending && (
+                  <p style={{
+                    fontSize: 13, color: 'var(--text-muted)', textAlign: 'center',
+                    marginTop: 4, lineHeight: 1.5,
+                  }}>
+                    Bitte schließen Sie den Tab nicht — der Versand kann bis zu 20&nbsp;Sekunden dauern.
+                  </p>
+                )}
+                <style jsx>{`
+                  @keyframes q-spin {
+                    from { transform: rotate(0deg); }
+                    to   { transform: rotate(360deg); }
+                  }
+                `}</style>
               </>
             )}
           </form>
