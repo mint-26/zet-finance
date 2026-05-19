@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '../../../../../lib/supabase';
 import { isAuthenticated } from '../../../../../lib/auth';
-import { sendFormSubmitNotification, buildQuestionnairePayload } from '../../../../../lib/notify';
+import { sendNotification, buildQuestionnairePayload } from '../../../../../lib/notify';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -31,7 +31,7 @@ export async function POST(_request, { params }) {
   }
 
   const payload = buildQuestionnairePayload(row);
-  const result = await sendFormSubmitNotification(payload);
+  const result = await sendNotification(payload);
 
   const totalAttempts = (row.notification_attempts || 0) + result.attempts;
   const patch = result.success

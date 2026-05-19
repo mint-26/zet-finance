@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '../../../lib/supabase';
 import { isAuthenticated } from '../../../lib/auth';
-import { sendFormSubmitNotification, buildQuestionnairePayload } from '../../../lib/notify';
+import { sendNotification, buildQuestionnairePayload } from '../../../lib/notify';
 
 export const dynamic = 'force-dynamic';
 // Generous: notification path can take up to ~16 s in worst case.
@@ -57,7 +57,7 @@ export async function POST(request) {
 
   // ─── Notification ───
   const payload = buildQuestionnairePayload(data);
-  const result = await sendFormSubmitNotification(payload);
+  const result = await sendNotification(payload);
 
   const notificationPatch = result.success
     ? { notification_sent_at: new Date().toISOString(), notification_attempts: result.attempts, notification_last_error: null }

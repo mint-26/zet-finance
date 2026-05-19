@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { sendFormSubmitNotification, buildContactPayload } from '../../../lib/notify';
+import { sendNotification, buildContactPayload } from '../../../lib/notify';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -21,7 +21,7 @@ export async function POST(request) {
   }
 
   const payload = buildContactPayload(body);
-  const result = await sendFormSubmitNotification(payload);
+  const result = await sendNotification(payload);
 
   if (!result.success) {
     console.warn(`Contact notification failed after ${result.attempts} attempts: ${result.lastError}`);
