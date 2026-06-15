@@ -161,7 +161,7 @@ function DatenschutzContent() {
 
 export default function Datenschutz() {
   return (
-    <ThemeProvider>
+    <ThemeProvider autoSchedule>
       <DatenschutzContent />
     </ThemeProvider>
   );

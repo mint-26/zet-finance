@@ -127,7 +127,7 @@ function AGBContent() {
 
 export default function AGB() {
   return (
-    <ThemeProvider>
+    <ThemeProvider autoSchedule>
       <AGBContent />
     </ThemeProvider>
   );

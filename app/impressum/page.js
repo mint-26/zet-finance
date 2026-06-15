@@ -136,7 +136,7 @@ function ImpressumContent() {
 
 export default function Impressum() {
   return (
-    <ThemeProvider>
+    <ThemeProvider autoSchedule>
       <ImpressumContent />
     </ThemeProvider>
   );

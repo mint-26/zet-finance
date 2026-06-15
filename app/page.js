@@ -55,7 +55,7 @@ function PageContent() {
 
 export default function Home() {
   return (
-    <ThemeProvider>
+    <ThemeProvider autoSchedule>
       <PageContent />
     </ThemeProvider>
   );

@@ -8,16 +8,26 @@ export function useTheme() {
   return useContext(ThemeContext);
 }
 
-export function ThemeProvider({ children, defaultTheme = 'dark', storageKey = 'marco-theme' }) {
+// Picks a theme based on the visitor's local time of day:
+// daytime (07:00–18:59) → light, otherwise → dark.
+function getScheduledTheme() {
+  const hour = new Date().getHours();
+  return hour >= 7 && hour < 19 ? 'light' : 'dark';
+}
+
+export function ThemeProvider({ children, defaultTheme = 'dark', storageKey = 'marco-theme', autoSchedule = false }) {
   const [theme, setTheme] = useState(defaultTheme);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem(storageKey) || defaultTheme;
-    setTheme(saved);
-    document.documentElement.setAttribute('data-theme', saved);
+    // A manually saved choice always wins. Otherwise, when autoSchedule is on,
+    // derive the theme from the time of day; else fall back to defaultTheme.
+    const saved = localStorage.getItem(storageKey);
+    const initial = saved || (autoSchedule ? getScheduledTheme() : defaultTheme);
+    setTheme(initial);
+    document.documentElement.setAttribute('data-theme', initial);
     setMounted(true);
-  }, [defaultTheme, storageKey]);
+  }, [defaultTheme, storageKey, autoSchedule]);
 
   const toggle = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
