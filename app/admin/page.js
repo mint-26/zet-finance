@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { ThemeProvider, useTheme } from '../../components/ThemeProvider';
+import { formatBirthdate } from '../../lib/format';
 
 const STATUS_OPTIONS = [
   { value: 'offen', label: 'Offen', color: '#9ca3af' },
@@ -402,7 +403,7 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
 
   const fields = [
     ['Anschrift', s.anschrift],
-    ['Geburtsdatum', s.geburtsdatum],
+    ['Geburtsdatum', formatBirthdate(s.geburtsdatum)],
     ['Familienstand', s.familienstand],
     ['Beruf', s.beruf],
     ['Krankenversicherung', s.versicherungsart],

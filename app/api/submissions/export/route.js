@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import ExcelJS from 'exceljs';
 import { getSupabaseAdmin } from '../../../../lib/supabase';
 import { isAuthenticated } from '../../../../lib/auth';
+import { formatBirthdate } from '../../../../lib/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -93,7 +94,7 @@ export async function GET() {
       zeitstempel: row.created_at ? new Date(row.created_at) : null,
       name: row.name,
       anschrift: row.anschrift,
-      geburtsdatum: row.geburtsdatum,
+      geburtsdatum: formatBirthdate(row.geburtsdatum),
       familienstand: row.familienstand,
       telefon: row.telefon,
       email: row.email,
