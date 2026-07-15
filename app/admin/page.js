@@ -6,9 +6,20 @@ import { formatBirthdate } from '../../lib/format';
 
 const STATUS_OPTIONS = [
   { value: 'offen', label: 'Offen', color: '#9ca3af' },
-  { value: 'in_bearbeitung', label: 'In Bearbeitung', color: '#c9a24a' },
+  { value: 'angebot_verschickt', label: 'Angebot verschickt', color: '#c9a24a' },
   { value: 'abgelehnt', label: 'Abgelehnt', color: '#dc3c3c' },
   { value: 'versichert', label: 'Versichert', color: '#4a9e6a' },
+  { value: 'kein_interesse', label: 'Kein Interesse', color: '#64748b' },
+];
+
+const ABLEHNUNGSGRUND_OPTIONS = ['mehr als 4 fehlende Zähne', 'Bonität'];
+
+const GESELLSCHAFT_OPTIONS = [
+  'Münchener Verein',
+  'Allianz',
+  'Axa',
+  'Deutsche Familienversicherung',
+  'Württembergische',
 ];
 
 function AdminContent() {
@@ -383,18 +394,6 @@ function AdminContent() {
   );
 }
 
-// Compute provision from monthly premium + insurer.
-// Formula: Monatsbeitrag * rate - 0.10  (Excel-Konvention: "-10%" = -0,10).
-// Münchener Verein → 7.8, otherwise → 6.8.
-// Returns a number rounded to 2 decimals, or null if monatsbeitrag is not a finite number.
-function computeProvision(monatsbeitrag, gesellschaft) {
-  const mb = typeof monatsbeitrag === 'number' ? monatsbeitrag : parseFloat(monatsbeitrag);
-  if (!Number.isFinite(mb)) return null;
-  const isMV = typeof gesellschaft === 'string' && gesellschaft.trim().toLowerCase() === 'münchener verein';
-  const rate = isMV ? 7.8 : 6.8;
-  return Math.round((mb * rate - 0.10) * 100) / 100;
-}
-
 function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateMany, onDelete, onResendNotification }) {
   const statusOpt = STATUS_OPTIONS.find((o) => o.value === s.status) || STATUS_OPTIONS[0];
   const createdAt = s.created_at ? new Date(s.created_at) : null;
@@ -402,6 +401,8 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
   const mailDelivered = !!s.notification_sent_at;
 
   const fields = [
+    ['E-Mail', s.email],
+    ['Telefon', s.telefon],
     ['Anschrift', s.anschrift],
     ['Geburtsdatum', formatBirthdate(s.geburtsdatum)],
     ['Familienstand', s.familienstand],
@@ -433,7 +434,7 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
       <div style={{
         padding: '16px 20px',
         display: 'grid',
-        gridTemplateColumns: 'auto auto 1fr auto auto',
+        gridTemplateColumns: 'auto auto 1fr auto auto auto',
         gap: 16,
         alignItems: 'center',
       }}>
@@ -474,8 +475,24 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
           <div style={{ fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {s.name || '(Kein Name)'}
           </div>
-          <div style={{ fontSize: 13, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {s.email} {s.telefon ? `· ${s.telefon}` : ''}
+        </div>
+        {/* Abgerechnet */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+          <span style={{ fontSize: 11, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Abgerechnet</span>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <span style={{
+              width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
+              background: s.abgerechnet ? '#4a9e6a' : '#dc3c3c',
+            }} />
+            <select
+              value={s.abgerechnet ? 'true' : 'false'}
+              onChange={(e) => onUpdate('abgerechnet', e.target.value === 'true')}
+              aria-label="Abgerechnet"
+              style={{ ...inputStyle, width: 'auto', padding: '6px 10px', cursor: 'pointer' }}
+            >
+              <option value="false">Nein</option>
+              <option value="true">Ja</option>
+            </select>
           </div>
         </div>
         <div style={{ fontSize: 12, color: 'var(--text-dim)', textAlign: 'right', whiteSpace: 'nowrap' }}>
@@ -501,7 +518,15 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
             <EditableField label="Status">
               <select
                 value={s.status}
-                onChange={(e) => onUpdate('status', e.target.value)}
+                onChange={(e) => {
+                  const status = e.target.value;
+                  // Ablehnungsgrund ist nur bei "Abgelehnt" relevant — sonst leeren.
+                  if (status !== 'abgelehnt' && s.ablehnungsgrund) {
+                    onUpdateMany({ status, ablehnungsgrund: null });
+                  } else {
+                    onUpdate('status', status);
+                  }
+                }}
                 style={inputStyle}
               >
                 {STATUS_OPTIONS.map((o) => (
@@ -509,60 +534,40 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
                 ))}
               </select>
             </EditableField>
-            <EditableField label="Provision">
-              <input
-                key={`prov-${s.id}-${s.provision ?? 'null'}`}
-                type="number"
-                step="0.01"
-                defaultValue={s.provision ?? ''}
-                onBlur={(e) => onUpdate('provision', e.target.value === '' ? null : parseFloat(e.target.value))}
-                style={inputStyle}
-              />
-            </EditableField>
-            <EditableField label="Monatsbeitrag">
-              <input
-                type="number"
-                step="0.01"
-                defaultValue={s.monatsbeitrag ?? ''}
-                onBlur={(e) => {
-                  const raw = e.target.value;
-                  const mb = raw === '' ? null : parseFloat(raw);
-                  // Auto-calc provision from monatsbeitrag + current gesellschaft.
-                  const provision = mb == null ? s.provision : computeProvision(mb, s.gesellschaft);
-                  onUpdateMany({ monatsbeitrag: mb, provision });
-                }}
-                style={inputStyle}
-              />
-            </EditableField>
-            <EditableField label="Grund">
-              <input
-                type="text"
-                defaultValue={s.grund ?? ''}
-                onBlur={(e) => onUpdate('grund', e.target.value)}
-                style={inputStyle}
-              />
-            </EditableField>
+            {s.status === 'abgelehnt' && (
+              <EditableField label="Ablehnungsgrund">
+                <select
+                  value={s.ablehnungsgrund ?? ''}
+                  onChange={(e) => onUpdate('ablehnungsgrund', e.target.value === '' ? null : e.target.value)}
+                  style={inputStyle}
+                >
+                  <option value="">—</option>
+                  {ABLEHNUNGSGRUND_OPTIONS.map((o) => (
+                    <option key={o} value={o}>{o}</option>
+                  ))}
+                </select>
+              </EditableField>
+            )}
             <EditableField label="Gesellschaft">
-              <input
-                type="text"
-                defaultValue={s.gesellschaft ?? ''}
-                onBlur={(e) => {
-                  const ges = e.target.value;
-                  // Re-calc provision if monatsbeitrag is set — the rate depends on insurer.
-                  if (s.monatsbeitrag != null) {
-                    onUpdateMany({ gesellschaft: ges, provision: computeProvision(s.monatsbeitrag, ges) });
-                  } else {
-                    onUpdate('gesellschaft', ges);
-                  }
-                }}
+              <select
+                value={s.gesellschaft ?? ''}
+                onChange={(e) => onUpdate('gesellschaft', e.target.value === '' ? null : e.target.value)}
                 style={inputStyle}
-              />
+              >
+                <option value="">—</option>
+                {(s.gesellschaft && !GESELLSCHAFT_OPTIONS.includes(s.gesellschaft)
+                  ? [s.gesellschaft, ...GESELLSCHAFT_OPTIONS]
+                  : GESELLSCHAFT_OPTIONS
+                ).map((o) => (
+                  <option key={o} value={o}>{o}</option>
+                ))}
+              </select>
             </EditableField>
           </div>
 
           {/* Editable fields — Vertragsstatus-Flags */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
-            <EditableField label="Alt-Vertrag gekündigt">
+            <EditableField label="Vertrag gekündigt">
               <BoolSelect
                 value={s.alt_vertrag_gekuendigt}
                 onChange={(v) => onUpdate('alt_vertrag_gekuendigt', v)}
@@ -574,15 +579,9 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
                 onChange={(v) => onUpdate('kuendigungsbestaetigung_erhalten', v)}
               />
             </EditableField>
-            <EditableField label="Neue Vertragsunterlagen erhalten">
-              <BoolSelect
-                value={s.neue_vertragsunterlagen_erhalten}
-                onChange={(v) => onUpdate('neue_vertragsunterlagen_erhalten', v)}
-              />
-            </EditableField>
           </div>
 
-          <EditableField label="Notizen">
+          <EditableField label="Beratungsdokumentation">
             <textarea
               defaultValue={s.notizen ?? ''}
               onBlur={(e) => onUpdate('notizen', e.target.value)}

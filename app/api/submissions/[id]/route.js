@@ -6,20 +6,19 @@ export const dynamic = 'force-dynamic';
 
 const ALLOWED_FIELDS = [
   'status',
-  'provision',
-  'monatsbeitrag',
-  'grund',
+  'ablehnungsgrund',
   'gesellschaft',
+  'abgerechnet',
   'notizen',
   'alt_vertrag_gekuendigt',
   'kuendigungsbestaetigung_erhalten',
-  'neue_vertragsunterlagen_erhalten',
 ];
-const ALLOWED_STATUS = ['offen', 'in_bearbeitung', 'abgelehnt', 'versichert'];
+const ALLOWED_STATUS = ['offen', 'angebot_verschickt', 'abgelehnt', 'versichert', 'kein_interesse'];
+const ALLOWED_ABLEHNUNGSGRUND = ['mehr als 4 fehlende Zähne', 'Bonität'];
 const BOOLEAN_FIELDS = new Set([
+  'abgerechnet',
   'alt_vertrag_gekuendigt',
   'kuendigungsbestaetigung_erhalten',
-  'neue_vertragsunterlagen_erhalten',
 ]);
 
 export async function PATCH(request, { params }) {
@@ -61,6 +60,10 @@ export async function PATCH(request, { params }) {
 
   if (update.status && !ALLOWED_STATUS.includes(update.status)) {
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+  }
+
+  if (update.ablehnungsgrund != null && !ALLOWED_ABLEHNUNGSGRUND.includes(update.ablehnungsgrund)) {
+    return NextResponse.json({ error: 'Invalid ablehnungsgrund' }, { status: 400 });
   }
 
   if (Object.keys(update).length === 0) {

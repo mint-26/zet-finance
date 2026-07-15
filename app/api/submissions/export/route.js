@@ -8,9 +8,10 @@ export const dynamic = 'force-dynamic';
 
 const STATUS_LABELS = {
   offen: 'Offen',
-  in_bearbeitung: 'In Bearbeitung',
+  angebot_verschickt: 'Angebot verschickt',
   abgelehnt: 'Abgelehnt',
   versichert: 'Versichert',
+  kein_interesse: 'Kein Interesse',
 };
 
 function boolLabel(v) {
@@ -41,11 +42,13 @@ export async function GET() {
   const sheet = workbook.addWorksheet('Antworten');
 
   sheet.columns = [
-    { header: 'Status', key: 'status', width: 16 },
+    { header: 'Status', key: 'status', width: 18 },
+    { header: 'Abgerechnet', key: 'abgerechnet', width: 12 },
+    { header: 'Ablehnungsgrund', key: 'ablehnungsgrund', width: 24 },
     { header: 'Provision', key: 'provision', width: 12 },
     { header: 'Monatsbeitrag', key: 'monatsbeitrag', width: 14 },
     { header: 'Gesellschaft', key: 'gesellschaft', width: 18 },
-    { header: 'Alt-Vertrag gekündigt', key: 'alt_vertrag_gekuendigt', width: 20 },
+    { header: 'Vertrag gekündigt', key: 'alt_vertrag_gekuendigt', width: 20 },
     { header: 'Kündigungsbestätigung erhalten', key: 'kuendigungsbestaetigung_erhalten', width: 28 },
     { header: 'Neue Vertragsunterlagen erhalten', key: 'neue_vertragsunterlagen_erhalten', width: 30 },
     { header: 'Grund', key: 'grund', width: 30 },
@@ -84,6 +87,8 @@ export async function GET() {
   for (const row of data) {
     sheet.addRow({
       status: STATUS_LABELS[row.status] || row.status,
+      abgerechnet: boolLabel(row.abgerechnet),
+      ablehnungsgrund: row.ablehnungsgrund,
       provision: row.provision,
       monatsbeitrag: row.monatsbeitrag,
       gesellschaft: row.gesellschaft,
