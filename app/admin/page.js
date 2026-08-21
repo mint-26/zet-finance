@@ -405,6 +405,7 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
     ['Telefon', s.telefon],
     ['Anschrift', s.anschrift],
     ['Geburtsdatum', formatBirthdate(s.geburtsdatum)],
+    ['Geschlecht', s.geschlecht],
     ['Familienstand', s.familienstand],
     ['Beruf', s.beruf],
     ['Krankenversicherung', s.versicherungsart],

@@ -28,6 +28,7 @@ export async function POST(request) {
       name: body.name || null,
       anschrift: body.anschrift || null,
       geburtsdatum: body.geburtsdatum || null,
+      geschlecht: body.geschlecht || null,
       familienstand: body.familienstand || null,
       telefon: body.telefon || null,
       email: body.email || null,

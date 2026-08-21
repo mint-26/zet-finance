@@ -26,7 +26,7 @@ export default function Questionnaire() {
   };
   const [form, setForm] = useState({
     // Step 1 - Persönliche Angaben
-    name: '', anschrift: '', geburtsdatum: '', familienstand: '',
+    name: '', anschrift: '', geburtsdatum: '', geschlecht: '', familienstand: '',
     telefon: '', email: '', beruf: '',
     // Step 2 - Krankenversicherung
     versicherungsart: '', krankenkasse: '', wechsel: '', bonusprogramm: '',
@@ -53,7 +53,7 @@ export default function Questionnaire() {
     }));
   };
 
-  const step1Valid = form.name && form.anschrift && form.geburtsdatum && form.familienstand && form.telefon && form.email;
+  const step1Valid = form.name && form.anschrift && form.geburtsdatum && form.geschlecht && form.familienstand && form.telefon && form.email;
   const step2Valid = form.versicherungsart && form.krankenkasse && form.wechsel;
   const step3Valid = form.behandlung && form.heilkostenplan && form.fehlendeZaehne && form.zahnluecke && form.parodontose && form.schwerpunkt.length > 0 && form.vorherigeVersicherung;
   const step4Valid = form.kontaktweg.length > 0 && form.zusatzversicherung.length > 0 && form.beratungstermin.length > 0 && form.datenschutz;
@@ -362,6 +362,13 @@ export default function Questionnaire() {
                 </div>
 
                 <div>
+                  <label style={labelStyle}>Geschlecht *</label>
+                  <RadioGroup field="geschlecht" options={[
+                    'Männlich', 'Weiblich', 'Divers',
+                  ]} />
+                </div>
+
+                <div>
                   <label style={labelStyle}>Familienstand *</label>
                   <RadioGroup field="familienstand" options={[
                     'Ledig', 'Verheiratet', 'Verpartnert (in einem Haushalt lebend)', 'Geschieden', 'Verwitwet',
@@ -402,7 +409,7 @@ export default function Questionnaire() {
                       // Force-sync any autofilled values, then validate
                       const synced = syncStep2FromDOM();
                       const valid = synced.name && synced.anschrift && synced.geburtsdatum
-                        && synced.familienstand && synced.telefon && synced.email;
+                        && synced.geschlecht && synced.familienstand && synced.telefon && synced.email;
                       if (valid) setStep(3);
                     }}
                     style={navBtn(step1Valid, true)}>Weiter</button>
