@@ -76,7 +76,7 @@ function AGBContent() {
               Versicherungsmakler nach §34d GewO<br />
               Alte Dieburger Str. 46<br />
               64367 Trautheim<br />
-              E-Mail: <a href="mailto:marco.arpa@outlook.de" style={linkStyle}>marco.arpa@outlook.de</a><br />
+              E-Mail: <a href="mailto:kontakt@marcoarpa.com" style={linkStyle}>kontakt@marcoarpa.com</a><br />
               Telefon: +49 152 5461 1314<br />
               Registernummer: D-4GG1-I1LV5-50
             </p>

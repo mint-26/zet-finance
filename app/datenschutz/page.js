@@ -71,7 +71,7 @@ function DatenschutzContent() {
               Versicherungsmakler nach §34d GewO<br />
               Alte Dieburger Str. 46<br />
               64367 Trautheim<br />
-              E-Mail: <a href="mailto:marco.arpa@outlook.de" style={linkStyle}>marco.arpa@outlook.de</a><br />
+              E-Mail: <a href="mailto:kontakt@marcoarpa.com" style={linkStyle}>kontakt@marcoarpa.com</a><br />
               Telefon: +49 152 5461 1314
             </p>
           </section>
@@ -122,7 +122,7 @@ function DatenschutzContent() {
               <li>Recht auf Widerspruch gegen die Verarbeitung (Art. 21 DSGVO)</li>
               <li>Recht auf Widerruf erteilter Einwilligungen (Art. 7 Abs. 3 DSGVO)</li>
             </ul>
-            <p>Eine erteilte Einwilligung zur Verarbeitung von Gesundheitsdaten können Sie jederzeit mit Wirkung für die Zukunft widerrufen. Senden Sie den Widerruf an: <a href="mailto:marco.arpa@outlook.de" style={linkStyle}>marco.arpa@outlook.de</a></p>
+            <p>Eine erteilte Einwilligung zur Verarbeitung von Gesundheitsdaten können Sie jederzeit mit Wirkung für die Zukunft widerrufen. Senden Sie den Widerruf an: <a href="mailto:kontakt@marcoarpa.com" style={linkStyle}>kontakt@marcoarpa.com</a></p>
             <p style={{ marginTop: 12 }}>Darüber hinaus haben Sie das Recht, sich bei einer Datenschutz-Aufsichtsbehörde über die Verarbeitung Ihrer personenbezogenen Daten zu beschweren.</p>
             <p style={{ marginTop: 12 }}>
               Zuständige Aufsichtsbehörde:<br />

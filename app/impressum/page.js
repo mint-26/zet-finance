@@ -55,7 +55,7 @@ function ImpressumContent() {
 
           <section>
             <h2 style={h2Style}>Kontakt</h2>
-            <p>E-Mail: <a href="mailto:marco.arpa@outlook.de" style={linkStyle}>marco.arpa@outlook.de</a><br />Telefon: +49 152 5461 1314</p>
+            <p>E-Mail: <a href="mailto:kontakt@marcoarpa.com" style={linkStyle}>kontakt@marcoarpa.com</a><br />Telefon: +49 152 5461 1314</p>
           </section>
 
           <section>
@@ -113,7 +113,7 @@ function ImpressumContent() {
             <p style={{ marginTop: 16 }}>
               Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit:<br />
               <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" style={linkStyle}>https://ec.europa.eu/consumers/odr</a><br />
-              E-Mail: <a href="mailto:marco.arpa@outlook.de" style={linkStyle}>marco.arpa@outlook.de</a>
+              E-Mail: <a href="mailto:kontakt@marcoarpa.com" style={linkStyle}>kontakt@marcoarpa.com</a>
             </p>
             <p style={{ marginTop: 16 }}>Wir sind nicht verpflichtet und nicht bereit, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
           </section>
