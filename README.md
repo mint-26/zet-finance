@@ -29,7 +29,7 @@ Moderne Landingpage für Marcos Finanzberatung. Gebaut mit Next.js 14, deployed 
 3. Klicke "Add New Project"
 4. Importiere dein GitHub Repository
 5. Vercel erkennt Next.js automatisch — einfach "Deploy" klicken
-6. Fertig! Deine Seite ist live unter `marcos-finanzberatung.vercel.app`
+6. Fertig! Die Seite ist live unter `marcoarpa.com`
 
 ### Option 2: Via Vercel CLI
 
@@ -50,25 +50,15 @@ Alle Platzhalter-Daten findest du in den Komponenten unter `components/`:
 - **Kontaktdaten**: `components/Contact.js` — E-Mail, Telefon, Standort
 - **Stats**: `components/Hero.js` — Zahlen (500+ Kunden etc.)
 
-### Calendly einbinden
+### Domain
 
-1. Marco erstellt ein Calendly-Konto: [calendly.com](https://calendly.com)
-2. In `components/Contact.js` den Calendly-Link eintragen
-3. Optional: `npm install react-calendly` für ein eingebettetes Widget
+Die Seite laeuft unter `marcoarpa.com`, `www` leitet per 308 darauf um. DNS liegt bei IONOS, die Nameserver bleiben dort, weil auf der Domain auch Marcos E-Mail laeuft. Die URL steht zentral in `lib/site.js`.
 
-### Custom Domain
+### Kontaktformular
 
-1. In Vercel unter "Settings" → "Domains"
-2. Eigene Domain hinzufügen (z.B. `marco-finanzen.de`)
-3. DNS-Einträge beim Domain-Provider setzen
+Ist angebunden, kein Handlungsbedarf. Beide Formulare schreiben ueber eigene API-Routes nach Supabase und loesen eine Benachrichtigung per Resend aus (`lib/notify.js`). Absender ist `leads@marcoarpa.com`, Empfaenger steht in der Umgebungsvariable `NOTIFICATION_EMAIL`.
 
-### Kontaktformular mit Backend verbinden
-
-Das Formular ist aktuell nur Frontend. Optionen:
-
-- **Formspree** (einfachste): [formspree.io](https://formspree.io)
-- **Resend** (professionell): [resend.com](https://resend.com)
-- **Next.js API Route** (eigenes Backend): Route unter `app/api/contact/route.js`
+Benoetigte Umgebungsvariablen in Vercel: `RESEND_API_KEY`, `NOTIFICATION_EMAIL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_PASSWORD`, `ADMIN_SECRET`.
 
 ## Lokale Entwicklung
 

@@ -88,36 +88,37 @@ Wichtige Variables:
 - **Keine externe State-Library:** React Context reicht für Theme-Toggle.
 - **styled-jsx für Hover-States:** Inline Styles können kein `:hover`, daher `<style jsx>` Blöcke für interaktive States.
 
-## Platzhalter-Daten (müssen ersetzt werden)
+## Domain und Deployment
+
+Live unter **marcoarpa.com** (seit 01.09.2026), `www` leitet per 308 auf die Hauptdomain um. Ein Vercel-Projekt: `marcos-finanzberatung`. Die Domain-URL steht zentral in `lib/site.js` und wird von Metadata, Sitemap, robots.txt und den Lead-Mails genutzt.
+
+DNS liegt bei IONOS. Die Nameserver bleiben dort, weil auf der Domain Marcos E-Mail laeuft (MX auf ionos.de). Aenderungen am DNS also immer daraufhin pruefen, ob sie die Mail-Records auf dem Apex beruehren.
+
+## Platzhalter-Daten (noch zu pruefen)
 
 | Was | Wo | Aktuell |
 |---|---|---|
-| Kontaktdaten | `Contact.js` | marco@finanzen.de, +49 123 456 7890 |
-| Standort | `Contact.js` | Frankfurt am Main |
-| Kundenzahlen | `Hero.js` | 500+, 15+, 100% |
-| Testimonials | `Testimonials.js` | 3 fiktive Bewertungen |
-| Calendly Link | `Contact.js` | Generischer Link zu calendly.com |
-| Impressum/Datenschutz/AGB | `Footer.js` | Verlinken auf `#` |
+| Kundenzahlen | `Hero.js` | 500+, 7+, 100% |
+| Testimonials | `Testimonials.js` | 3 Bewertungen mit abgekuerzten Namen |
 
-## Offene Integrationen
+Kontaktdaten, Standort und die Rechtsseiten sind echt und gepflegt: `kontakt@marcoarpa.com`, +49 152 5461 1314, Frankfurt am Main. Impressum, Datenschutz und AGB sind eigene Seiten unter `app/`, keine Platzhalter-Links mehr.
 
-### Calendly (Terminbuchung)
-In `Contact.js` ist ein Tab "Termin buchen" vorbereitet. Aktuell ein Button-Link. Für echtes Embedding:
-```bash
-npm install react-calendly
-```
-Dann in `Contact.js` den Button durch `<InlineWidget url="https://calendly.com/MARCOS-LINK" />` ersetzen.
+## Integrationen
 
-### Kontaktformular-Backend
-Das Formular ist aktuell nur Frontend (State → Success-Screen). Optionen:
-1. **Formspree** — Einfachste Variante, kein Code nötig
-2. **Resend + Next.js API Route** — Professionell, eigene E-Mail-Templates
-3. **Next.js API Route** — `app/api/contact/route.js` mit z.B. Nodemailer
+### Kontaktformular und Fragebogen (erledigt)
+Beide Formulare laufen ueber eigene API-Routes: `app/api/contact/route.js` und `app/api/submissions/route.js`. Leads landen in Supabase, die Benachrichtigung geht per Resend an `NOTIFICATION_EMAIL`. Der Versand steckt in `lib/notify.js` samt Retry mit Backoff.
 
-### SEO / Analytics
-- Meta-Tags sind in `layout.js` gesetzt
-- Google Analytics: Script in `layout.js` einfügen
-- Favicon/OG-Image: In `public/` ablegen, in `layout.js` referenzieren
+Absender ist `leads@marcoarpa.com` ueber die in Resend verifizierte Domain. SPF und Return-Path liegen auf der Subdomain `send.marcoarpa.com`, damit sie nicht mit den IONOS-Mail-Records auf dem Apex kollidieren.
+
+### Terminbuchung
+Calendly ist **nicht** eingebunden, im Code gibt es keinen Verweis darauf. Falls gewuenscht, muesste das neu gebaut werden.
+
+### SEO
+- `metadataBase`, Canonical und OpenGraph-URL in `app/layout.js`, gespeist aus `lib/site.js`
+- `app/robots.js` erzeugt robots.txt, schliesst `/admin` und `/api/` aus
+- `app/sitemap.js` erzeugt sitemap.xml mit Startseite und den drei Rechtsseiten
+- Google Search Console verifiziert per Datei `public/google68817280ddcea0ce.html` (muss liegen bleiben)
+- Google Analytics ist nicht eingebunden
 
 ## Code-Konventionen
 
