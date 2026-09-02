@@ -56,7 +56,7 @@ Die Seite laeuft unter `marcoarpa.com`, `www` leitet per 308 darauf um. DNS lieg
 
 ### Kontaktformular
 
-Ist angebunden, kein Handlungsbedarf. Beide Formulare schreiben ueber eigene API-Routes nach Supabase und loesen eine Benachrichtigung per Resend aus (`lib/notify.js`). Absender ist `leads@marcoarpa.com`, Empfaenger steht in der Umgebungsvariable `NOTIFICATION_EMAIL`.
+Ist angebunden, kein Handlungsbedarf. Beide Formulare schreiben ueber eigene API-Routes nach Supabase und loesen eine Benachrichtigung per Resend aus (`lib/notify.js`). Absender ist `kontakt@marcoarpa.com`, Empfaenger steht in der Umgebungsvariable `NOTIFICATION_EMAIL`.
 
 Benoetigte Umgebungsvariablen in Vercel: `RESEND_API_KEY`, `NOTIFICATION_EMAIL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_PASSWORD`, `ADMIN_SECRET`.
 
