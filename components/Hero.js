@@ -121,22 +121,19 @@ export default function Hero() {
           <div className="hero-logo" style={{
             flexShrink: 0,
             width: 432,
-            overflow: 'hidden',
+            aspectRatio: '1 / 1',
             opacity: visible ? 1 : 0,
             transform: visible ? 'scale(1)' : 'scale(0.9)',
             transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.2s',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <img
-              src={theme === 'dark' ? '/logo-white.svg?v=4' : '/logo-black.svg?v=4'}
+              src={theme === 'dark' ? '/logo-white.svg?v=5' : '/logo-black.svg?v=5'}
               alt="Marco Arpa"
               style={{
-                // Drawn 20 % larger than its layout box; the negative margin
-                // gives the extra space back, overflow: hidden trims only the
-                // transparent side margins of the SVG.
-                width: '120%', height: 'auto', aspectRatio: '1 / 1',
-                margin: '-10%',
-                objectFit: 'contain',
+                // The SVG is tightly cropped; 60.83 % of the square box keeps
+                // the visible crest at the size it had with the old file.
+                width: '60.83%', height: 'auto',
               }}
             />
           </div>

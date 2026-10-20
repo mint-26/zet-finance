@@ -171,9 +171,9 @@ function AdminContent() {
           gap: 20,
         }}>
           <img
-            src={theme === 'dark' ? '/logo-white.svg?v=4' : '/logo-black.svg?v=4'}
+            src={theme === 'dark' ? '/logo-white.svg?v=5' : '/logo-black.svg?v=5'}
             alt="Marco Arpa"
-            style={{ height: 72, width: 'auto', margin: '0 auto' }}
+            style={{ height: 59, width: 'auto', margin: '6.5px auto' }}
           />
           <h1 style={{
             fontFamily: "'Playfair Display', serif",
@@ -238,9 +238,9 @@ function AdminContent() {
         <div style={{ maxWidth: 1400, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
             <img
-              src={theme === 'dark' ? '/logo-white.svg?v=4' : '/logo-black.svg?v=4'}
+              src={theme === 'dark' ? '/logo-white.svg?v=5' : '/logo-black.svg?v=5'}
               alt="Marco Arpa"
-              style={{ height: 56, width: 'auto' }}
+              style={{ height: 46, width: 'auto', margin: '5px 0' }}
             />
           </a>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

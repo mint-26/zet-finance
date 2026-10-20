@@ -22,9 +22,9 @@ function ImpressumContent() {
         <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
             <img
-              src={theme === 'dark' ? '/logo-white.svg?v=4' : '/logo-black.svg?v=4'}
+              src={theme === 'dark' ? '/logo-white.svg?v=5' : '/logo-black.svg?v=5'}
               alt="Marco Arpa"
-              style={{ height: 56, width: 'auto' }}
+              style={{ height: 46, width: 'auto', margin: '5px 0' }}
             />
           </a>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
