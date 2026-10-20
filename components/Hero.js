@@ -126,7 +126,7 @@ export default function Hero() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <img
-              src={theme === 'dark' ? '/logo-white.svg?v=3' : '/logo-black.svg?v=3'}
+              src={theme === 'dark' ? '/logo-white.svg?v=4' : '/logo-black.svg?v=4'}
               alt="Marco Arpa"
               style={{
                 width: 432, height: 432,
