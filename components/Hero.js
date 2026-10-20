@@ -129,8 +129,7 @@ export default function Hero() {
               src={theme === 'dark' ? '/logo-white.svg?v=4' : '/logo-black.svg?v=4'}
               alt="Marco Arpa"
               style={{
-                width: 518, height: 518,
-                maxWidth: '46vw', maxHeight: '46vw',
+                width: 432, height: 432,
                 objectFit: 'contain',
               }}
             />
@@ -178,6 +177,12 @@ export default function Hero() {
           border-color: var(--accent) !important;
           color: var(--accent) !important;
         }
+        @media (min-width: 1200px) {
+          .hero-logo img {
+            width: 518px !important;
+            height: 518px !important;
+          }
+        }
         @media (max-width: 900px) {
           .hero-layout {
             flex-direction: column-reverse !important;
@@ -193,7 +198,6 @@ export default function Hero() {
             width: 355px !important;
             height: 355px !important;
             max-width: 100% !important;
-            max-height: none !important;
           }
         }
       `}</style>
