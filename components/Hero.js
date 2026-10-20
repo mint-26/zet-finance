@@ -33,7 +33,7 @@ export default function Hero() {
         backgroundSize: '80px 80px',
       }} />
 
-      <div style={{
+      <div className="hero-inner" style={{
         maxWidth: 1200, margin: '0 auto', padding: '130px 24px 80px',
         position: 'relative', zIndex: 2, width: '100%',
       }}>
@@ -189,7 +189,11 @@ export default function Hero() {
           }
         }
         @media (max-width: 900px) {
+          .hero-inner {
+            padding-top: 110px !important;
+          }
           .hero-layout {
+            gap: 15px !important;
             flex-direction: column-reverse !important;
             text-align: center;
             align-items: center !important;
