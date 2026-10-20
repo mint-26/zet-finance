@@ -24,7 +24,7 @@ function ImpressumContent() {
             <img
               src={theme === 'dark' ? '/logo-white.svg?v=4' : '/logo-black.svg?v=4'}
               alt="Marco Arpa"
-              style={{ height: 47, width: 'auto' }}
+              style={{ height: 56, width: 'auto' }}
             />
           </a>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
