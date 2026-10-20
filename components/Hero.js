@@ -120,6 +120,8 @@ export default function Hero() {
           {/* Logo rechts */}
           <div className="hero-logo" style={{
             flexShrink: 0,
+            width: 432,
+            overflow: 'hidden',
             opacity: visible ? 1 : 0,
             transform: visible ? 'scale(1)' : 'scale(0.9)',
             transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.2s',
@@ -129,7 +131,11 @@ export default function Hero() {
               src={theme === 'dark' ? '/logo-white.svg?v=4' : '/logo-black.svg?v=4'}
               alt="Marco Arpa"
               style={{
-                width: 432, height: 432,
+                // Drawn 20 % larger than its layout box; the negative margin
+                // gives the extra space back, overflow: hidden trims only the
+                // transparent side margins of the SVG.
+                width: '120%', height: 'auto', aspectRatio: '1 / 1',
+                margin: '-10%',
                 objectFit: 'contain',
               }}
             />
@@ -178,9 +184,8 @@ export default function Hero() {
           color: var(--accent) !important;
         }
         @media (min-width: 1200px) {
-          .hero-logo img {
+          .hero-logo {
             width: 518px !important;
-            height: 518px !important;
           }
         }
         @media (max-width: 900px) {
@@ -194,10 +199,8 @@ export default function Hero() {
             flex-direction: column;
             align-items: center;
           }
-          .hero-logo img {
-            width: 355px !important;
-            height: 355px !important;
-            max-width: 100% !important;
+          .hero-logo {
+            width: min(355px, 100%) !important;
           }
         }
       `}</style>
