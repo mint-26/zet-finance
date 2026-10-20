@@ -47,7 +47,7 @@ export default function Nav({ activeSection }) {
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         >
           <img
-            src={theme === 'dark' ? '/logo-white.svg?v=2' : '/logo-black.svg'}
+            src={theme === 'dark' ? '/logo-white.svg?v=3' : '/logo-black.svg?v=3'}
             alt="Marco Arpa"
             style={{ height: 47, width: 'auto', transition: 'opacity 0.3s' }}
           />

@@ -10,7 +10,7 @@ export const metadata = {
     canonical: '/',
   },
   icons: {
-    icon: '/favicon.svg',
+    icon: '/favicon.svg?v=2',
   },
   openGraph: {
     title: 'Marco Arpa | Unabhängige Finanzberatung',

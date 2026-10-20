@@ -34,7 +34,7 @@ function DatenschutzContent() {
         <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
             <img
-              src={theme === 'dark' ? '/logo-white.svg?v=2' : '/logo-black.svg'}
+              src={theme === 'dark' ? '/logo-white.svg?v=3' : '/logo-black.svg?v=3'}
               alt="Marco Arpa"
               style={{ height: 47, width: 'auto' }}
             />
