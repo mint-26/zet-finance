@@ -168,7 +168,7 @@ export default function HomePage() {
               display: 'inline-flex', alignItems: 'center', gap: 29, minHeight: 62, padding: '0 26px',
               background: C.champagneDark, color: C.ivory, textDecoration: 'none', fontSize: 17,
             }}>
-              Formular ausfüllen <Arrow size={13} />
+              Jetzt Formular ausfüllen <Arrow size={13} />
             </a>
           </div>
           <dl className="stats-row">
