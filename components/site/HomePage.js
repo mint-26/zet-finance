@@ -163,17 +163,12 @@ export default function HomePage() {
             ))}
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 36 }}>
+            {/* Same gold as the headline above, 20 % larger than the other buttons. */}
             <a href="/zahnzusatz#fragebogen" className="dental-primary" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 24, minHeight: 52, padding: '0 22px',
-              background: C.black, color: C.ivory, textDecoration: 'none', fontSize: 14,
+              display: 'inline-flex', alignItems: 'center', gap: 29, minHeight: 62, padding: '0 26px',
+              background: C.champagneDark, color: C.ivory, textDecoration: 'none', fontSize: 17,
             }}>
-              Jetzt Angebot anfordern <Arrow size={11} />
-            </a>
-            <a href="/zahnzusatz#process" className="dental-secondary" style={{
-              display: 'inline-flex', alignItems: 'center', minHeight: 52, padding: '0 22px',
-              border: `1px solid ${C.black}`, color: C.black, textDecoration: 'none', fontSize: 14,
-            }}>
-              So läuft&apos;s ab
+              Formular ausfüllen <Arrow size={13} />
             </a>
           </div>
           <dl className="stats-row">
@@ -301,9 +296,8 @@ export default function HomePage() {
         .qa-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px clamp(24px, 3vw, 40px); margin-top: 40px; }
         .stats-row { display: flex; flex-wrap: wrap; gap: 24px clamp(32px, 5vw, 64px); margin: 56px 0 0; }
         .stats-row > div { display: flex; flex-direction: column; }
-        .dental-primary, .dental-secondary { transition: background 0.2s ease, color 0.2s ease; }
-        .dental-primary:hover { background: #2a2826 !important; }
-        .dental-secondary:hover { background: ${C.black} !important; color: ${C.ivory} !important; }
+        .dental-primary { transition: background 0.2s ease; }
+        .dental-primary:hover { background: #685a3b !important; }
         .quotes-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px clamp(24px, 3vw, 48px); margin-top: 48px; }
         @media (max-width: 860px) {
           .hero-grid { grid-template-columns: 1fr; gap: 40px; }

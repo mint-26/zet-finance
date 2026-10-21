@@ -15,8 +15,8 @@ export default function Nav({ activeSection }) {
   }, []);
 
   const links = [
-    { id: 'process', label: 'So läuft\'s' },
     { id: 'fragebogen', label: 'Fragebogen', highlight: true },
+    { id: 'process', label: 'So läuft\'s' },
   ];
 
   const scrollTo = (id) => {

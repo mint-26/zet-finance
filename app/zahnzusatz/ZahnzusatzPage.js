@@ -12,7 +12,7 @@ function PageContent() {
   const [activeSection, setActiveSection] = useState('');
 
   useEffect(() => {
-    const sections = ['process', 'fragebogen'];
+    const sections = ['fragebogen', 'process'];
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -38,8 +38,8 @@ function PageContent() {
       {/* Only process and questionnaire live here; intro, about, testimonials
           and contact moved to the start page. Top padding clears the fixed nav. */}
       <main style={{ paddingTop: 72 }}>
-        <Process />
         <Questionnaire />
+        <Process />
       </main>
       <Footer />
       <CookieConsent />

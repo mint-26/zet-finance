@@ -45,6 +45,27 @@
   --step-num: rgba(160,130,42,0.35);
 }
 
+/* Questionnaire on /zahnzusatz uses the gold of the main site (lib/brand.js):
+   champagne #B5A171 on the dark theme, dark champagne #7D6D49 on the light theme
+   (the dark one would be unreadable on the grey dark background). Flat, no gradient. */
+#fragebogen {
+  --accent: #B5A171;
+  --accent-light: #B5A171;
+  --accent-dim: rgba(181,161,113,0.12);
+  --border: rgba(181,161,113,0.22);
+  --border-strong: rgba(181,161,113,0.4);
+  --shadow-accent: rgba(181,161,113,0.2);
+}
+
+[data-theme="light"] #fragebogen {
+  --accent: #7D6D49;
+  --accent-light: #7D6D49;
+  --accent-dim: rgba(125,109,73,0.1);
+  --border: rgba(125,109,73,0.22);
+  --border-strong: rgba(125,109,73,0.4);
+  --shadow-accent: rgba(125,109,73,0.18);
+}
+
 * {
   margin: 0;
   padding: 0;
