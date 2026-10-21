@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import SiteShell from './SiteShell';
-import { Arrow, Plus } from './Icons';
+import { Arrow, Plus, Mail, Phone } from './Icons';
 import { C, SERIF, SANS, CONTACT } from '../../lib/brand';
 
 const WRAP = { maxWidth: 1120, margin: '0 auto', padding: '0 clamp(20px, 5vw, 56px)' };
@@ -53,6 +53,19 @@ function TextLink({ href, children, color = C.black }) {
       borderBottom: `1px solid ${C.champagne}`,
     }}>
       {children} <Arrow size={11} />
+    </a>
+  );
+}
+
+function ContactButton({ href, icon, children }) {
+  return (
+    <a href={href} className="contact-btn" style={{
+      display: 'flex', alignItems: 'center', gap: 14, minHeight: 60, padding: '0 22px',
+      background: C.ivory, color: C.black, textDecoration: 'none', fontSize: 16,
+    }}>
+      {icon}
+      <span style={{ flex: 1 }}>{children}</span>
+      <Arrow size={11} />
     </a>
   );
 }
@@ -165,14 +178,18 @@ export default function HomePage() {
       <section id="ueber-marco" aria-labelledby="person-title" style={{ background: C.black, scrollMarginTop: 76 }}>
         <div className="person-grid" style={{ ...WRAP, paddingTop: 'clamp(64px, 8vw, 104px)', paddingBottom: 'clamp(64px, 8vw, 104px)' }}>
           <div>
-            <p style={eyebrow(C.champagne)}>Marco Arpa</p>
             <h2 id="person-title" style={{
               fontFamily: SERIF, fontWeight: 400, color: C.ivory,
-              fontSize: 'clamp(34px, 4.2vw, 48px)', lineHeight: 1.12, margin: '24px 0 0',
+              fontSize: 'clamp(34px, 4.2vw, 48px)', lineHeight: 1.12, margin: 0,
             }}>
               Ein Ansprechpartner.<br />Auch danach.
             </h2>
             <p style={{ fontFamily: SERIF, fontSize: 18, color: C.champagne, margin: '28px 0 0' }}>Marco Arpa</p>
+            {/* Same black-and-white portrait as on /zahnzusatz; 640 px source, max 320 px wide for sharp retina display. */}
+            <img
+              src="/marco.jpg" alt="Porträt von Marco Arpa" width="640" height="640" loading="lazy"
+              style={{ display: 'block', width: '100%', maxWidth: 320, height: 'auto', marginTop: 20 }}
+            />
           </div>
           <div>
             <p style={{ fontSize: 15, lineHeight: 1.7, color: C.grey, margin: '0 0 28px', maxWidth: 420 }}>
@@ -216,9 +233,9 @@ export default function HomePage() {
           }}>
             Ihr Anliegen beginnt<br />mit einem Gespräch.
           </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
-            <TextLink href={`mailto:${CONTACT.email}`} color={C.ivory}>{CONTACT.email}</TextLink>
-            <TextLink href={CONTACT.phoneHref} color={C.ivory}>{CONTACT.phone}</TextLink>
+          <div className="contact-actions">
+            <ContactButton href={`mailto:${CONTACT.email}`} icon={<Mail />}>{CONTACT.email}</ContactButton>
+            <ContactButton href={CONTACT.phoneHref} icon={<Phone />}>{CONTACT.phone}</ContactButton>
           </div>
         </div>
       </section>
@@ -234,14 +251,18 @@ export default function HomePage() {
         .areas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 clamp(32px, 5vw, 72px); align-items: start; }
         .area-toggle:hover span span:first-child { color: ${C.champagneDark}; }
         .person-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
-        .contact-grid { display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: end; }
+        .contact-grid { display: flex; flex-wrap: wrap; align-items: center; gap: 32px clamp(40px, 6vw, 88px); }
+        .contact-actions { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 340px; }
+        .contact-btn { transition: background 0.2s ease; }
+        .contact-btn:hover { background: #ffffff !important; }
         @media (max-width: 860px) {
           .hero-grid { grid-template-columns: 1fr; gap: 40px; }
           .hero-crest { width: 160px; justify-self: end; }
           .areas-grid { grid-template-columns: 1fr; }
           .areas-grid > div:last-child { border-bottom: 1px solid ${C.lineLight}; }
           .person-grid { grid-template-columns: 1fr; gap: 40px; }
-          .contact-grid { grid-template-columns: 1fr; align-items: start; }
+          .contact-grid { flex-direction: column; align-items: flex-start; }
+          .contact-actions { max-width: none; }
         }
       `}</style>
     </SiteShell>
