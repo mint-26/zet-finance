@@ -143,7 +143,7 @@ export default function HomePage() {
                 Lassen Sie uns sprechen <Arrow size={11} />
               </a>
             </div>
-            <img src="/wappen-white.svg?v=1" alt="Wappen von Marco Arpa" className="hero-crest" width="607" height="549" />
+            <img src="/logo-white.svg?v=6" alt="Logo von Marco Arpa" className="hero-crest" width="627.6" height="662.3" />
           </div>
 
           <div style={{
@@ -185,11 +185,22 @@ export default function HomePage() {
               Ein Ansprechpartner.<br />Auch danach.
             </h2>
             <p style={{ fontFamily: SERIF, fontSize: 18, color: C.champagne, margin: '28px 0 0' }}>Marco Arpa</p>
-            {/* Same black-and-white portrait as on /zahnzusatz; 640 px source, max 320 px wide for sharp retina display. */}
-            <img
-              src="/marco.jpg" alt="Porträt von Marco Arpa" width="640" height="640" loading="lazy"
-              style={{ display: 'block', width: '100%', maxWidth: 320, height: 'auto', marginTop: 20 }}
-            />
+            {/* Same black-and-white portrait as on /zahnzusatz, with the offset frame from there
+                in brand colours; 640 px source, max 320 px wide for sharp retina display. */}
+            <div style={{ position: 'relative', maxWidth: 320, margin: '36px 12px 12px 12px' }}>
+              <div aria-hidden="true" style={{
+                position: 'absolute', top: -12, left: -12, right: 12, bottom: 12,
+                border: '1.5px solid rgba(181,161,113,0.5)',
+              }} />
+              <div aria-hidden="true" style={{
+                position: 'absolute', top: 12, left: 12, right: -12, bottom: -12,
+                background: `linear-gradient(135deg, ${C.champagne}, ${C.champagneDark})`, opacity: 0.22,
+              }} />
+              <img
+                src="/marco.jpg" alt="Porträt von Marco Arpa" width="640" height="640" loading="lazy"
+                style={{ position: 'relative', zIndex: 1, display: 'block', width: '100%', height: 'auto' }}
+              />
+            </div>
           </div>
           <div>
             <p style={{ fontSize: 15, lineHeight: 1.7, color: C.grey, margin: '0 0 28px', maxWidth: 420 }}>
@@ -257,7 +268,7 @@ export default function HomePage() {
         .contact-btn:hover { background: #ffffff !important; }
         @media (max-width: 860px) {
           .hero-grid { grid-template-columns: 1fr; gap: 40px; }
-          .hero-crest { width: 160px; justify-self: end; }
+          .hero-crest { width: 180px; justify-self: end; }
           .areas-grid { grid-template-columns: 1fr; }
           .areas-grid > div:last-child { border-bottom: 1px solid ${C.lineLight}; }
           .person-grid { grid-template-columns: 1fr; gap: 40px; }
