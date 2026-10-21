@@ -8,8 +8,9 @@ const HEADER_HEIGHT = 76;
 
 // Entries either jump to a section of the start page (hash) or open a page (href).
 const NAV = [
-  { label: 'Zahnzusatz', href: '/zahnzusatz' },
+  { label: 'Zahnzusatz', hash: 'zahnzusatz' },
   { label: 'Über Marco', hash: 'ueber-marco' },
+  { label: 'Kundenstimmen', hash: 'kundenstimmen' },
 ];
 
 const target = (l, base) => l.href || `${base}#${l.hash}`;

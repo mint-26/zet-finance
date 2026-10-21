@@ -1,8 +1,10 @@
 'use client';
 
 import SiteShell from './SiteShell';
-import { Arrow, Mail, Phone } from './Icons';
-import { C, SERIF, SANS, CONTACT } from '../../lib/brand';
+import ContactSection from './ContactSection';
+import { Arrow } from './Icons';
+import { C, SERIF, SANS } from '../../lib/brand';
+import { TESTIMONIALS } from '../Testimonials';
 
 const WRAP = { maxWidth: 1120, margin: '0 auto', padding: '0 clamp(20px, 5vw, 56px)' };
 
@@ -36,6 +38,27 @@ const AREAS = [
   },
 ];
 
+// Taken over from the dental lead page (/zahnzusatz).
+const DENTAL_QA = [
+  { q: 'Was kostet meine Beratung?', a: 'Nichts.' },
+  { q: 'Für wen arbeite ich?', a: 'Für Sie. Nicht für eine Versicherung.' },
+  { q: 'Und dann?', a: 'Einmal im Jahr checke ich, ob Ihr Tarif noch der beste ist. Wenn nicht, wechseln wir. Ohne Papierkram für Sie.' },
+];
+
+const STATS = [
+  { num: '500+', label: 'Zufriedene Kunden' },
+  { num: '7+', label: 'Jahre Erfahrung' },
+  { num: '100%', label: 'Unabhängig' },
+];
+
+const ABOUT = [
+  'Seit über sieben Jahren begleite ich Menschen und Unternehmen bei ihrer Absicherung. Mein Ansatz ist einfach: Ich höre zu, verstehe Ihre Situation und entwickle eine Lösung, die wirklich zu Ihnen passt.',
+  'Kein Fachjargon und keine Verkaufsgespräche. Stattdessen bekommen Sie eine ehrliche Beratung von jemandem, der sein Handwerk versteht und Ihr Interesse in den Mittelpunkt stellt.',
+  'Ob private Krankenversicherung, Zahnzusatz oder betriebliche Themen: Ich finde die Lösung, die genau das abdeckt, was Sie brauchen. Nicht mehr, nicht weniger.',
+];
+
+const ABOUT_TAGS = ['Versicherungsmakler nach § 34d GewO', 'Privat und Unternehmen', 'Kostenlose Beratung'];
+
 const STEPS = [
   { title: 'Kennenlernen', text: 'Wir sprechen über Ihre Situation und Ihr Anliegen.' },
   { title: 'Gesamtanalyse', text: 'Ich sehe mir Ihre bestehenden Verträge und Ihren Bedarf an.' },
@@ -52,19 +75,6 @@ function TextLink({ href, children, color = C.black }) {
       borderBottom: `1px solid ${C.champagne}`,
     }}>
       {children} <Arrow size={11} />
-    </a>
-  );
-}
-
-function ContactButton({ href, icon, children }) {
-  return (
-    <a href={href} className="contact-btn" style={{
-      display: 'flex', alignItems: 'center', gap: 14, minHeight: 60, padding: '0 22px',
-      background: C.ivory, color: C.black, textDecoration: 'none', fontSize: 16,
-    }}>
-      {icon}
-      <span style={{ flex: 1 }}>{children}</span>
-      <Arrow size={11} />
     </a>
   );
 }
@@ -134,8 +144,51 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Zahnzusatz, uebernommen von /zahnzusatz */}
+      <section id="zahnzusatz" aria-labelledby="zahn-title" style={{ background: C.ivory, color: C.black }}>
+        <div style={{ ...WRAP, paddingTop: 'clamp(56px, 7vw, 88px)', paddingBottom: 'clamp(56px, 7vw, 88px)' }}>
+          <p style={eyebrow(C.champagneDark)}>Zahnzusatzversicherung</p>
+          <h2 id="zahn-title" style={{
+            fontFamily: SERIF, fontWeight: 400, fontSize: 'clamp(38px, 5.2vw, 64px)',
+            lineHeight: 1.06, letterSpacing: '-0.01em', margin: '24px 0 0',
+          }}>
+            <span style={{ color: C.champagneDark }}>Damit die Zahnkosten</span><br />nicht wehtun.
+          </h2>
+          <div className="qa-grid">
+            {DENTAL_QA.map((x) => (
+              <div key={x.q} style={{ borderTop: `1px solid ${C.lineLight}`, paddingTop: 16 }}>
+                <p style={{ fontSize: 16, fontWeight: 700, margin: 0, color: C.black }}>{x.q}</p>
+                <p style={{ fontSize: 16, lineHeight: 1.6, margin: '6px 0 0', color: C.graphite }}>{x.a}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 36 }}>
+            <a href="/zahnzusatz#fragebogen" className="dental-primary" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 24, minHeight: 52, padding: '0 22px',
+              background: C.black, color: C.ivory, textDecoration: 'none', fontSize: 14,
+            }}>
+              Jetzt Angebot anfordern <Arrow size={11} />
+            </a>
+            <a href="/zahnzusatz#process" className="dental-secondary" style={{
+              display: 'inline-flex', alignItems: 'center', minHeight: 52, padding: '0 22px',
+              border: `1px solid ${C.black}`, color: C.black, textDecoration: 'none', fontSize: 14,
+            }}>
+              So läuft&apos;s ab
+            </a>
+          </div>
+          <dl className="stats-row">
+            {STATS.map((x) => (
+              <div key={x.label} style={{ borderLeft: `1px solid ${C.lineLight}`, paddingLeft: 20 }}>
+                <dt style={{ fontSize: 13, color: C.graphite, marginTop: 6, order: 2 }}>{x.label}</dt>
+                <dd style={{ margin: 0, fontFamily: SERIF, fontSize: 'clamp(32px, 3.6vw, 42px)', color: C.champagneDark, order: 1 }}>{x.num}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+
       {/* Privat und Unternehmen */}
-      <section id="absichern" aria-labelledby="absichern-title" style={{ background: C.ivory, color: C.black }}>
+      <section id="absichern" aria-labelledby="absichern-title" style={{ background: C.ivory, color: C.black, borderTop: `1px solid ${C.lineLight}` }}>
         <div style={{ ...WRAP, paddingTop: 'clamp(56px, 7vw, 88px)', paddingBottom: 'clamp(56px, 7vw, 88px)' }}>
           <h2 id="absichern-title" style={{ ...eyebrow(C.champagneDark), fontWeight: 400, marginBottom: 28 }}>Was möchten Sie absichern?</h2>
           <div className="areas-grid">
@@ -173,9 +226,15 @@ export default function HomePage() {
             </div>
           </div>
           <div>
-            <p style={{ fontSize: 15, lineHeight: 1.7, color: C.grey, margin: '0 0 28px', maxWidth: 420 }}>
-              Ich ordne Ihre Versicherungen verständlich und bleibe auch nach dem Abschluss an Ihrer Seite.
-            </p>
+            <p style={{ fontFamily: SERIF, fontSize: 26, color: C.ivory, margin: 0 }}>Hallo, ich bin Marco.</p>
+            {ABOUT.map((t) => (
+              <p key={t.slice(0, 20)} style={{ fontSize: 15, lineHeight: 1.75, color: C.grey, margin: '18px 0 0', maxWidth: 460 }}>{t}</p>
+            ))}
+            <ul style={{ listStyle: 'none', padding: 0, margin: '24px 0 36px', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {ABOUT_TAGS.map((t) => (
+                <li key={t} style={{ fontSize: 12, color: C.champagne, border: '1px solid rgba(181,161,113,0.45)', padding: '7px 12px' }}>{t}</li>
+              ))}
+            </ul>
             <div style={{ borderTop: `1px solid ${C.lineDark}`, borderBottom: `1px solid ${C.lineDark}` }}>
               <h3 style={{
                 margin: 0, minHeight: 56, display: 'flex', alignItems: 'center',
@@ -199,21 +258,35 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Kontakt */}
-      <section id="kontakt" aria-labelledby="kontakt-title" style={{ background: C.black, borderTop: `1px solid ${C.lineDark}` }}>
-        <div className="contact-grid" style={{ ...WRAP, paddingTop: 'clamp(56px, 7vw, 80px)', paddingBottom: 'clamp(56px, 7vw, 80px)' }}>
-          <h2 id="kontakt-title" style={{
-            fontFamily: SERIF, fontWeight: 400, color: C.ivory, margin: 0,
-            fontSize: 'clamp(28px, 3.2vw, 38px)', lineHeight: 1.2,
+      {/* Kundenstimmen, uebernommen von /zahnzusatz */}
+      <section id="kundenstimmen" aria-labelledby="stimmen-title" style={{ background: C.ivory, color: C.black }}>
+        <div style={{ ...WRAP, paddingTop: 'clamp(64px, 8vw, 104px)', paddingBottom: 'clamp(64px, 8vw, 104px)' }}>
+          <p style={eyebrow(C.champagneDark)}>Kundenstimmen</p>
+          <h2 id="stimmen-title" style={{
+            fontFamily: SERIF, fontWeight: 400, fontSize: 'clamp(34px, 4.2vw, 48px)', lineHeight: 1.12, margin: '24px 0 0',
           }}>
-            Ihr Anliegen beginnt<br />mit einem Gespräch.
+            Was Kunden sagen.
           </h2>
-          <div className="contact-actions">
-            <ContactButton href={`mailto:${CONTACT.email}`} icon={<Mail />}>{CONTACT.email}</ContactButton>
-            <ContactButton href={CONTACT.phoneHref} icon={<Phone />}>{CONTACT.phone}</ContactButton>
+          <div className="quotes-grid">
+            {TESTIMONIALS.map((t) => (
+              <figure key={t.name} style={{ margin: 0, borderTop: `1px solid ${C.lineLight}`, paddingTop: 24 }}>
+                <div aria-label={`${t.rating} von 5 Sternen`} role="img" style={{ color: C.champagneDark, letterSpacing: 3, fontSize: 14 }}>
+                  {'★'.repeat(t.rating)}
+                </div>
+                <blockquote style={{ margin: '16px 0 0', fontFamily: SERIF, fontSize: 17, lineHeight: 1.65, color: C.black }}>
+                  {t.text}
+                </blockquote>
+                <figcaption style={{ marginTop: 20, fontSize: 14 }}>
+                  <span style={{ display: 'block', fontWeight: 700 }}>{t.name}</span>
+                  <span style={{ display: 'block', color: C.graphite, marginTop: 2, fontSize: 13 }}>{t.role}</span>
+                </figcaption>
+              </figure>
+            ))}
           </div>
         </div>
       </section>
+
+      <ContactSection />
 
       <style jsx global>{`
         .hero-grid {
@@ -225,18 +298,20 @@ export default function HomePage() {
         .hero-cta:hover { background: #ffffff !important; }
         .areas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 clamp(32px, 5vw, 72px); align-items: start; }
         .person-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
-        .contact-grid { display: flex; flex-wrap: wrap; align-items: center; gap: 32px clamp(40px, 6vw, 88px); }
-        .contact-actions { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 340px; }
-        .contact-btn { transition: background 0.2s ease; }
-        .contact-btn:hover { background: #ffffff !important; }
+        .qa-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px clamp(24px, 3vw, 40px); margin-top: 40px; }
+        .stats-row { display: flex; flex-wrap: wrap; gap: 24px clamp(32px, 5vw, 64px); margin: 56px 0 0; }
+        .stats-row > div { display: flex; flex-direction: column; }
+        .dental-primary, .dental-secondary { transition: background 0.2s ease, color 0.2s ease; }
+        .dental-primary:hover { background: #2a2826 !important; }
+        .dental-secondary:hover { background: ${C.black} !important; color: ${C.ivory} !important; }
+        .quotes-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px clamp(24px, 3vw, 48px); margin-top: 48px; }
         @media (max-width: 860px) {
           .hero-grid { grid-template-columns: 1fr; gap: 40px; }
           .hero-crest { width: 180px; justify-self: end; }
           .areas-grid { grid-template-columns: 1fr; }
           .areas-grid > div:last-child { border-bottom: 1px solid ${C.lineLight}; }
           .person-grid { grid-template-columns: 1fr; gap: 40px; }
-          .contact-grid { flex-direction: column; align-items: flex-start; }
-          .contact-actions { max-width: none; }
+          .qa-grid, .quotes-grid { grid-template-columns: 1fr; }
         }
       `}</style>
     </SiteShell>

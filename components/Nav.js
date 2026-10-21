@@ -15,11 +15,8 @@ export default function Nav({ activeSection }) {
   }, []);
 
   const links = [
-    { id: 'about', label: 'Über mich' },
     { id: 'process', label: 'So läuft\'s' },
     { id: 'fragebogen', label: 'Fragebogen', highlight: true },
-    { id: 'testimonials', label: 'Kundenstimmen' },
-    { id: 'contact', label: 'Kontakt' },
   ];
 
   const scrollTo = (id) => {

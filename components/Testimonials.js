@@ -2,7 +2,8 @@
 
 import { useInView } from './useInView';
 
-const TESTIMONIALS = [
+// Also shown on the start page (components/site/HomePage.js).
+export const TESTIMONIALS = [
   {
     name: 'Julia S.',
     role: 'Kundin seit 2023',
