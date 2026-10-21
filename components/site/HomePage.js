@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import SiteShell from './SiteShell';
-import { Arrow, Plus, Mail, Phone } from './Icons';
+import { Arrow, Mail, Phone } from './Icons';
 import { C, SERIF, SANS, CONTACT } from '../../lib/brand';
 
 const WRAP = { maxWidth: 1120, margin: '0 auto', padding: '0 clamp(20px, 5vw, 56px)' };
@@ -70,57 +69,33 @@ function ContactButton({ href, icon, children }) {
   );
 }
 
-function Area({ area, open, onToggle }) {
-  const panelId = `bereich-${area.key}`;
+function Area({ area }) {
   return (
-    <div id={area.key} style={{ borderTop: `1px solid ${C.lineLight}`, scrollMarginTop: 100 }}>
-      <h3 style={{ margin: 0 }}>
-        <button
-          type="button" aria-expanded={open} aria-controls={panelId} onClick={onToggle}
-          className="area-toggle"
-          style={{
-            width: '100%', background: 'none', border: 'none', cursor: 'pointer',
-            display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16,
-            padding: '24px 0 28px', textAlign: 'left', color: C.black,
-          }}
-        >
-          <span>
-            <span style={{
-              display: 'block', fontFamily: SERIF, fontWeight: 400,
-              fontSize: 'clamp(36px, 4.4vw, 50px)', lineHeight: 1.1, letterSpacing: '-0.01em',
-            }}>{area.title}</span>
-            <span style={{ display: 'block', marginTop: 12, fontFamily: SANS, fontSize: 14, color: C.graphite }}>{area.sub}</span>
-          </span>
-          <span style={{ color: C.champagneDark, paddingTop: 18 }}><Plus open={open} size={18} /></span>
-        </button>
+    <div id={area.key} style={{ borderTop: `1px solid ${C.lineLight}`, scrollMarginTop: 100, paddingBottom: 32 }}>
+      <h3 style={{ margin: 0, padding: '24px 0 28px', color: C.black }}>
+        <span style={{
+          display: 'block', fontFamily: SERIF, fontWeight: 400,
+          fontSize: 'clamp(36px, 4.4vw, 50px)', lineHeight: 1.1, letterSpacing: '-0.01em',
+        }}>{area.title}</span>
+        <span style={{ display: 'block', marginTop: 12, fontFamily: SANS, fontSize: 14, fontWeight: 400, color: C.graphite }}>{area.sub}</span>
       </h3>
-      <div id={panelId} hidden={!open} style={{ paddingBottom: 32 }}>
-        <p style={{ fontSize: 15, lineHeight: 1.65, color: C.graphite, margin: '0 0 20px', maxWidth: 460 }}>{area.intro}</p>
-        <ul style={{ listStyle: 'none', margin: '0 0 24px', padding: 0 }}>
-          {area.items.map((item) => (
-            <li key={item} style={{
-              borderTop: `1px solid ${C.lineLight}`, padding: '13px 0',
-              fontSize: 15, lineHeight: 1.5, color: C.black,
-            }}>{item}</li>
-          ))}
-        </ul>
-        <TextLink href="#kontakt">Lassen Sie uns sprechen</TextLink>
-      </div>
+      <p style={{ fontSize: 15, lineHeight: 1.65, color: C.graphite, margin: '0 0 20px', maxWidth: 460 }}>{area.intro}</p>
+      <ul style={{ listStyle: 'none', margin: '0 0 24px', padding: 0 }}>
+        {area.items.map((item) => (
+          <li key={item} style={{
+            borderTop: `1px solid ${C.lineLight}`, padding: '13px 0',
+            fontSize: 15, lineHeight: 1.5, color: C.black,
+          }}>{item}</li>
+        ))}
+      </ul>
+      <TextLink href="#kontakt">Lassen Sie uns sprechen</TextLink>
     </div>
   );
 }
 
 export default function HomePage() {
-  const [openArea, setOpenArea] = useState(null);
-  const [stepsOpen, setStepsOpen] = useState(false);
-
-  // Menu links "Privatkunden" / "Unternehmen" open the matching area.
-  const onNavigate = (hash) => {
-    if (hash === 'privat' || hash === 'unternehmen') setOpenArea(hash);
-  };
-
   return (
-    <SiteShell onNavigate={onNavigate}>
+    <SiteShell>
       {/* Einstieg */}
       <section id="top" aria-labelledby="hero-title" style={{ background: C.black }}>
         <div style={{ ...WRAP, paddingTop: 'clamp(56px, 9vw, 112px)', paddingBottom: 'clamp(28px, 4vw, 40px)' }}>
@@ -164,12 +139,7 @@ export default function HomePage() {
         <div style={{ ...WRAP, paddingTop: 'clamp(56px, 7vw, 88px)', paddingBottom: 'clamp(56px, 7vw, 88px)' }}>
           <h2 id="absichern-title" style={{ ...eyebrow(C.champagneDark), fontWeight: 400, marginBottom: 28 }}>Was möchten Sie absichern?</h2>
           <div className="areas-grid">
-            {AREAS.map((a) => (
-              <Area
-                key={a.key} area={a} open={openArea === a.key}
-                onToggle={() => setOpenArea((v) => (v === a.key ? null : a.key))}
-              />
-            ))}
+            {AREAS.map((a) => <Area key={a.key} area={a} />)}
           </div>
         </div>
       </section>
@@ -207,19 +177,13 @@ export default function HomePage() {
               Ich ordne Ihre Versicherungen verständlich und bleibe auch nach dem Abschluss an Ihrer Seite.
             </p>
             <div style={{ borderTop: `1px solid ${C.lineDark}`, borderBottom: `1px solid ${C.lineDark}` }}>
-              <button
-                type="button" aria-expanded={stepsOpen} aria-controls="so-arbeite-ich"
-                onClick={() => setStepsOpen((v) => !v)}
-                style={{
-                  width: '100%', minHeight: 56, background: 'none', border: 'none', cursor: 'pointer',
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  color: C.ivory, fontFamily: SANS, fontSize: 14, padding: 0,
-                }}
-              >
+              <h3 style={{
+                margin: 0, minHeight: 56, display: 'flex', alignItems: 'center',
+                color: C.ivory, fontFamily: SANS, fontSize: 14, fontWeight: 400,
+              }}>
                 So arbeite ich
-                <span style={{ color: C.champagne }}><Plus open={stepsOpen} /></span>
-              </button>
-              <ol id="so-arbeite-ich" hidden={!stepsOpen} style={{ listStyle: 'none', margin: 0, padding: '0 0 12px' }}>
+              </h3>
+              <ol id="so-arbeite-ich" style={{ listStyle: 'none', margin: 0, padding: '0 0 12px' }}>
                 {STEPS.map((s, i) => (
                   <li key={s.title} style={{ display: 'flex', gap: 18, padding: '14px 0', borderTop: `1px solid ${C.lineDark}` }}>
                     <span style={{ fontFamily: SERIF, fontSize: 14, color: C.champagne, minWidth: 18 }}>{i + 1}</span>
@@ -260,7 +224,6 @@ export default function HomePage() {
         .hero-cta { transition: background 0.2s ease; }
         .hero-cta:hover { background: #ffffff !important; }
         .areas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 clamp(32px, 5vw, 72px); align-items: start; }
-        .area-toggle:hover span span:first-child { color: ${C.champagneDark}; }
         .person-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
         .contact-grid { display: flex; flex-wrap: wrap; align-items: center; gap: 32px clamp(40px, 6vw, 88px); }
         .contact-actions { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 340px; }

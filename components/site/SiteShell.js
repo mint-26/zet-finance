@@ -6,16 +6,18 @@ import { Arrow } from './Icons';
 
 const HEADER_HEIGHT = 76;
 
+// Entries either jump to a section of the start page (hash) or open a page (href).
 const NAV = [
-  { label: 'Privatkunden', hash: 'privat' },
-  { label: 'Unternehmen', hash: 'unternehmen' },
+  { label: 'Zahnzusatz', href: '/zahnzusatz' },
   { label: 'Über Marco', hash: 'ueber-marco' },
 ];
+
+const target = (l, base) => l.href || `${base}#${l.hash}`;
 
 // Frame of the main site: sticky header with mobile menu, footer and
 // shared global styles. `base` is '' on the start page and '/' elsewhere,
 // so the menu links jump back to the start page sections.
-export default function SiteShell({ base = '', onNavigate, children }) {
+export default function SiteShell({ base = '', children }) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -25,10 +27,7 @@ export default function SiteShell({ base = '', onNavigate, children }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
 
-  const follow = (hash) => {
-    setOpen(false);
-    if (onNavigate) onNavigate(hash);
-  };
+  const close = () => setOpen(false);
 
   const pad = '0 clamp(20px, 5vw, 56px)';
 
@@ -56,7 +55,7 @@ export default function SiteShell({ base = '', onNavigate, children }) {
           }}>
             {NAV.map((l) => (
               <a
-                key={l.hash} href={`${base}#${l.hash}`} onClick={() => follow(l.hash)}
+                key={l.label} href={target(l, base)}
                 className="site-link" style={{ fontSize: 13, color: C.ivory, textDecoration: 'none', padding: '14px 0' }}
               >
                 {l.label}
@@ -96,7 +95,7 @@ export default function SiteShell({ base = '', onNavigate, children }) {
           }}>
             {[...NAV, { label: 'Gespräch anfragen', hash: 'kontakt' }].map((l) => (
               <a
-                key={l.hash} href={`${base}#${l.hash}`} onClick={() => follow(l.hash)}
+                key={l.label} href={target(l, base)} onClick={close}
                 className="site-link"
                 style={{
                   display: 'flex', alignItems: 'center', minHeight: 52,
