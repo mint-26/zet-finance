@@ -6,8 +6,8 @@ Website von Marco Arpa, Versicherungsmakler nach § 34d GewO. Gebaut mit Next.js
 
 Seit dem Relaunch (Oktober 2026) gibt es zwei Auftritte in einer App:
 
-- **Hauptseite `/`**: allgemeine Maklerseite im reduzierten Design aus dem Handout (`CI/Handout für Adrian.pdf` im Hauptordner). Komponenten unter `components/site/`, Farben und Schriften in `lib/brand.js`. Kein Hell-Dunkel-Schalter.
-- **Zahnzusatz `/zahnzusatz`**: die frühere Startseite mit Fragebogen, Kontaktformular, Mailversand und CRM-Anbindung, unverändert umgezogen (`app/zahnzusatz/ZahnzusatzPage.js` plus die alten Komponenten in `components/`). Wird nur über QR-Code und Direktlink verteilt, ist nirgends verlinkt und per `noindex` aus Suchmaschinen heraus.
+- **Hauptseite `/`**: allgemeine Maklerseite im reduzierten Design aus dem Handout (`CI/Handout für Adrian.pdf` im Hauptordner). Komponenten unter `components/site/`, Farben und Schriften in `lib/brand.js`. Kein Hell-Dunkel-Schalter. Abschnitte: Einstieg, Zahnzusatz-Teaser („Damit die Zahnkosten nicht wehtun.", verlinkt auf `/zahnzusatz`), Privat/Unternehmen, Über Marco, Kundenstimmen (Daten aus `components/Testimonials.js`), Kontakt mit Formular (`components/site/ContactSection.js`, schickt an `/api/contact`).
+- **Zahnzusatz `/zahnzusatz`**: im alten Design, nur noch „So läuft's ab" (`components/Process.js`) und der Fragebogen (`components/Questionnaire.js`, schreibt ins CRM). Per `noindex` aus Suchmaschinen heraus. `/zahnkosten` leitet vorläufig (307) dorthin weiter. `components/Hero.js`, `About.js` und `Contact.js` werden aktuell nicht mehr eingebunden.
 - **`/erstinformation`**: Entwurf aus den Impressum-Angaben, offene Punkte als „zu prüfen" markiert, bis zur fachlichen Prüfung `noindex` und nicht in der Sitemap.
 
 ### Startseiten-Schalter (Notfall-Anker)
