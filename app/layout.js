@@ -3,18 +3,14 @@ import { SITE_URL } from '../lib/site';
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
-  title: 'Marco Arpa | Unabhängige Finanzberatung',
-  description: 'Personalisierte und unabhängige Finanzberatung. Altersvorsorge, Versicherungen, Geldanlage und Immobilienfinanzierung.',
-  keywords: 'Finanzberatung, Altersvorsorge, Versicherung, Geldanlage, Immobilienfinanzierung, unabhängig',
-  alternates: {
-    canonical: '/',
-  },
+  title: 'Marco Arpa | Ihr persönlicher Versicherungsmakler',
+  description: 'Persönlich beraten. Langfristig begleitet. Marco Arpa, Versicherungsmakler nach § 34d GewO für Privatkunden und Unternehmen, Beratung deutschlandweit.',
   icons: {
     icon: '/favicon.svg?v=2',
   },
   openGraph: {
-    title: 'Marco Arpa | Unabhängige Finanzberatung',
-    description: 'Deine Finanzen. Klar durchdacht. Kostenloses Erstgespräch buchen.',
+    title: 'Marco Arpa | Ihr persönlicher Versicherungsmakler',
+    description: 'Klarheit für Ihre Absicherung. Persönlich beraten. Langfristig begleitet.',
     url: SITE_URL,
     siteName: 'Marco Arpa',
     locale: 'de_DE',

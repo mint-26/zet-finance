@@ -128,12 +128,12 @@ export default function Hero() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <img
-              src={theme === 'dark' ? '/logo-white.svg?v=5' : '/logo-black.svg?v=5'}
+              src={theme === 'dark' ? '/logo-white.svg?v=6' : '/logo-black.svg?v=6'}
               alt="Marco Arpa"
               style={{
-                // The SVG is tightly cropped; 60.83 % of the square box keeps
+                // The SVG is tightly cropped; 61.39 % of the square box keeps
                 // the visible crest at the size it had with the old file.
-                width: '60.83%', height: 'auto',
+                width: '61.39%', height: 'auto',
               }}
             />
           </div>
