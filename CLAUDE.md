@@ -1,8 +1,22 @@
-# CLAUDE.md — Marco Finanzen Website
+# CLAUDE.md — Marco Arpa Website
 
 ## Projekt-Überblick
 
-Moderne Landingpage für einen unabhängigen Finanzberater ("Marco"). Ersetzt ein Google Form mit einer vollwertigen, professionellen Web-Präsenz. Gebaut mit Next.js 14 (App Router), deployed auf Vercel.
+Website von Marco Arpa, Versicherungsmakler nach § 34d GewO. Gebaut mit Next.js 14 (App Router), deployed auf Vercel.
+
+Seit dem Relaunch (Oktober 2026) gibt es zwei Auftritte in einer App:
+
+- **Hauptseite `/`**: allgemeine Maklerseite im reduzierten Design aus dem Handout (`CI/Handout für Adrian.pdf` im Hauptordner). Komponenten unter `components/site/`, Farben und Schriften in `lib/brand.js`. Kein Hell-Dunkel-Schalter.
+- **Zahnzusatz `/zahnzusatz`**: die frühere Startseite mit Fragebogen, Kontaktformular, Mailversand und CRM-Anbindung, unverändert umgezogen (`app/zahnzusatz/ZahnzusatzPage.js` plus die alten Komponenten in `components/`). Wird nur über QR-Code und Direktlink verteilt, ist nirgends verlinkt und per `noindex` aus Suchmaschinen heraus.
+- **`/erstinformation`**: Entwurf aus den Impressum-Angaben, offene Punkte als „zu prüfen" markiert, bis zur fachlichen Prüfung `noindex` und nicht in der Sitemap.
+
+### Startseiten-Schalter (Notfall-Anker)
+
+`app/page.js` liest die Umgebungsvariable `STARTSEITE`. Steht sie in Vercel auf `zahnzusatz`, zeigt `/` nach einem Redeploy wieder die Zahnzusatz-Seite (mit altem Titel, für Google freigegeben). Ohne Variable kommt die neue Maklerseite. `/zahnzusatz` funktioniert in beiden Fällen. Die Variable wird beim Build gelesen, eine Änderung braucht also immer einen neuen Deploy.
+
+### Logos
+
+`public/logo-black.svg`, `logo-white.svg`, `logo-gold.svg` sind die MA-Dateien aus `CI/` (Wappen mit Namenszug), nur mit eng gesetzter viewBox. `public/wappen-white.svg` ist derselbe weiße Logo-Ausschnitt ohne Namenszug für den Einstieg der Hauptseite. Gold (`#C6A15B`) weicht vom UI-Champagner (`#B5A171`) ab und ist bewusst noch nirgends eingesetzt. Bei Logo-Wechseln den Cache-Buster `?v=` an allen Einbindungen erhöhen.
 
 ## Tech Stack
 

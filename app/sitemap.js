@@ -6,6 +6,5 @@ export default function sitemap() {
     { url: `${SITE_URL}/impressum`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${SITE_URL}/datenschutz`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${SITE_URL}/agb`, changeFrequency: 'yearly', priority: 0.3 },
-    { url: `${SITE_URL}/erstinformation`, changeFrequency: 'yearly', priority: 0.3 },
   ];
 }

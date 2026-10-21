@@ -6,6 +6,11 @@ export const metadata = {
   alternates: {
     canonical: '/erstinformation',
   },
+  // Draft until reviewed: keep out of search engines, remove after approval.
+  robots: {
+    index: false,
+    follow: true,
+  },
 };
 
 export default function Page() {
