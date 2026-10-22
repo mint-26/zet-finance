@@ -246,10 +246,10 @@ export default function HomePage() {
       )} />
 
       {/* Privat und Unternehmen */}
-      {/* Gold gradient texture plus a small champagne ornament on the seam, so the two
-          light sections (marble above, gold here) read as separate chapters. */}
+      {/* Greyscale gradient texture plus a small champagne ornament on the seam, so the two
+          light sections (marble above, gradient here) read as separate chapters. */}
       <section id="absichern" aria-labelledby="absichern-title" style={{ position: 'relative', isolation: 'isolate', background: C.ivory, color: C.black }}>
-        <Texture name="goldverlauf" />
+        <Texture name="verlauf" />
         <div aria-hidden="true" style={{
           position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1,
           display: 'flex', alignItems: 'center', gap: 14,
