@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Arrow, Mail, Phone } from './Icons';
+import Texture from './Texture';
 import { C, SERIF, SANS, CONTACT } from '../../lib/brand';
 
 const TOPICS = ['Privat', 'Unternehmen', 'Zahnzusatz', 'Sonstiges'];
@@ -11,8 +12,8 @@ const EMPTY = { name: '', email: '', phone: '', service: '', message: '' };
 function ContactButton({ href, icon, children }) {
   return (
     <a href={href} className="contact-btn" style={{
-      display: 'flex', alignItems: 'center', gap: 14, minHeight: 60, padding: '0 22px',
-      background: C.ivory, color: C.black, textDecoration: 'none', fontSize: 16,
+      display: 'flex', alignItems: 'center', gap: 14, minHeight: 60, padding: '0 26px',
+      borderRadius: 999, background: C.ivory, color: C.black, textDecoration: 'none', fontSize: 16,
     }}>
       {icon}
       <span style={{ flex: 1 }}>{children}</span>
@@ -65,9 +66,12 @@ export default function ContactSection() {
   };
 
   return (
-    <section id="kontakt" aria-labelledby="kontakt-title" style={{ background: C.black, borderTop: `1px solid ${C.lineDark}` }}>
+    <section id="kontakt" aria-labelledby="kontakt-title" style={{
+      position: 'relative', isolation: 'isolate', background: C.black, borderTop: `1px solid ${C.lineDark}`,
+    }}>
+      <Texture name="irisierend" />
       <div className="cf-grid" style={{
-        maxWidth: 1120, margin: '0 auto', padding: 'clamp(64px, 8vw, 104px) clamp(20px, 5vw, 56px)',
+        position: 'relative', maxWidth: 1120, margin: '0 auto', padding: 'clamp(64px, 8vw, 104px) clamp(20px, 5vw, 56px)',
       }}>
         <div>
           <p style={{ fontSize: 11, letterSpacing: '0.24em', textTransform: 'uppercase', color: C.champagne, margin: 0 }}>Kontakt</p>
@@ -133,7 +137,7 @@ export default function ContactSection() {
               <button
                 type="submit" disabled={sending} className="cf-submit"
                 style={{
-                  minHeight: 56, border: 'none', cursor: sending ? 'wait' : 'pointer',
+                  minHeight: 56, border: 'none', borderRadius: 999, cursor: sending ? 'wait' : 'pointer',
                   background: C.ivory, color: C.black, fontFamily: SANS, fontSize: 15,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 12,
                   opacity: sending ? 0.7 : 1,
@@ -154,7 +158,7 @@ export default function ContactSection() {
         .cf-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 32px clamp(40px, 6vw, 88px); align-items: start; }
         .cf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
         .cf-input {
-          width: 100%; box-sizing: border-box; padding: 14px 16px; border-radius: 0;
+          width: 100%; box-sizing: border-box; padding: 14px 16px; border-radius: 12px;
           background: rgba(241,238,230,0.06); border: 1px solid rgba(241,238,230,0.22);
           color: ${C.ivory}; font-family: ${SANS}; font-size: 16px;
           transition: border-color 0.2s ease;

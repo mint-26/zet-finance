@@ -66,11 +66,15 @@ export default function SiteShell({ base = '', children }) {
               href={`${base}#kontakt`} className="site-link"
               style={{
                 fontSize: 13, color: C.ivory, textDecoration: 'none',
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                padding: '14px 0 8px', borderBottom: `1px solid ${C.champagne}`,
+                display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 0',
               }}
             >
-              Gespräch anfragen <Arrow size={10} />
+              {/* Underline on the text only, so the link sits on the same line as the others. */}
+              <span style={{
+                textDecoration: 'underline', textDecorationColor: C.champagne,
+                textDecorationThickness: 1, textUnderlineOffset: 7,
+              }}>Gespräch anfragen</span>
+              <Arrow size={10} />
             </a>
           </nav>
 
