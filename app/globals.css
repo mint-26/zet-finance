@@ -1,69 +1,49 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-  /* Dark theme (default) */
+  /* Dark theme (default). Gold = champagne of the main site (lib/brand.js), flat, no gradient. */
   --bg-primary: #494949;
   --bg-secondary: #3d3d3d;
   --bg-card: rgba(61,61,61,0.65);
-  --accent: #c8a445;
-  --accent-light: #e2c872;
-  --accent-dim: rgba(200,164,69,0.12);
+  --accent: #B5A171;
+  --accent-light: #B5A171;
+  --accent-dim: rgba(181,161,113,0.12);
   --text-primary: #ffffff;
   --text-body: #e8e4dc;
   --text-muted: #9ca3af;
   --text-dim: #6b7280;
-  --border: rgba(200,164,69,0.18);
-  --border-strong: rgba(200,164,69,0.35);
+  --border: rgba(181,161,113,0.22);
+  --border-strong: rgba(181,161,113,0.4);
   --success: #4ade80;
-  --shadow-accent: rgba(200,164,69,0.25);
+  --shadow-accent: rgba(181,161,113,0.2);
   --nav-bg: rgba(73,73,73,0.92);
   --grid-opacity: 0.03;
   --input-bg: rgba(255,255,255,0.07);
   --select-option-bg: #3d3d3d;
-  --step-num: rgba(200,164,69,0.35);
+  --step-num: rgba(181,161,113,0.35);
 }
 
 [data-theme="light"] {
+  /* Light theme: dark champagne, the light champagne is too weak on light grey. */
   --bg-primary: #e8e8e8;
   --bg-secondary: #dedede;
   --bg-card: rgba(255,255,255,0.7);
-  --accent: #a0822a;
-  --accent-light: #c8a445;
-  --accent-dim: rgba(160,130,42,0.08);
+  --accent: #7D6D49;
+  --accent-light: #7D6D49;
+  --accent-dim: rgba(125,109,73,0.1);
   --text-primary: #1a1a1a;
   --text-body: #2d2d2d;
   --text-muted: #6b6b6b;
   --text-dim: #9a9a9a;
-  --border: rgba(160,130,42,0.15);
-  --border-strong: rgba(160,130,42,0.3);
+  --border: rgba(125,109,73,0.22);
+  --border-strong: rgba(125,109,73,0.4);
   --success: #22a355;
-  --shadow-accent: rgba(160,130,42,0.15);
+  --shadow-accent: rgba(125,109,73,0.18);
   --nav-bg: rgba(232,232,232,0.92);
   --grid-opacity: 0.025;
   --input-bg: rgba(0,0,0,0.04);
   --select-option-bg: #e8e8e8;
-  --step-num: rgba(160,130,42,0.35);
-}
-
-/* Questionnaire on /zahnzusatz uses the gold of the main site (lib/brand.js):
-   champagne #B5A171 on the dark theme, dark champagne #7D6D49 on the light theme
-   (the dark one would be unreadable on the grey dark background). Flat, no gradient. */
-#fragebogen {
-  --accent: #B5A171;
-  --accent-light: #B5A171;
-  --accent-dim: rgba(181,161,113,0.12);
-  --border: rgba(181,161,113,0.22);
-  --border-strong: rgba(181,161,113,0.4);
-  --shadow-accent: rgba(181,161,113,0.2);
-}
-
-[data-theme="light"] #fragebogen {
-  --accent: #7D6D49;
-  --accent-light: #7D6D49;
-  --accent-dim: rgba(125,109,73,0.1);
-  --border: rgba(125,109,73,0.22);
-  --border-strong: rgba(125,109,73,0.4);
-  --shadow-accent: rgba(125,109,73,0.18);
+  --step-num: rgba(125,109,73,0.35);
 }
 
 * {

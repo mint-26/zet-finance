@@ -7,7 +7,7 @@ Website von Marco Arpa, Versicherungsmakler nach § 34d GewO. Gebaut mit Next.js
 Seit dem Relaunch (Oktober 2026) gibt es zwei Auftritte in einer App:
 
 - **Hauptseite `/`**: allgemeine Maklerseite im reduzierten Design aus dem Handout (`CI/Handout für Adrian.pdf` im Hauptordner). Komponenten unter `components/site/`, Farben und Schriften in `lib/brand.js`. Kein Hell-Dunkel-Schalter. Abschnitte: Einstieg mit Hintergrundvideo (`public/video/`, H.264 ohne Ton, Quelle `Header_v1.mp4`), Zahnzusatz-Teaser („Damit die Zahnkosten nicht wehtun."; der Button klappt den Fragebogen direkt darunter auf, `components/site/DentalReveal.js`, `/#fragebogen` öffnet ihn sofort), Privat/Unternehmen als zwei Karten, Über Marco, Kundenstimmen (Daten aus `components/Testimonials.js`), Kontakt mit Formular (`components/site/ContactSection.js`, schickt an `/api/contact`). Texturen aus `CI/Content` liegen in `public/textures/`, Auswahl und Stärke in `components/site/Texture.js`.
-- **Zahnzusatz `/zahnzusatz`**: Backup und QR-Code-Ziel, im alten Design, nur noch „So läuft's ab" (`components/Process.js`) und der Fragebogen (`components/Questionnaire.js`, schreibt ins CRM). Per `noindex` aus Suchmaschinen heraus. `/zahnkosten` leitet vorläufig (307) dorthin weiter. `components/Hero.js`, `About.js` und `Contact.js` werden aktuell nicht mehr eingebunden.
+- **Zahnzusatz `/zahnzusatz`**: Backup und QR-Code-Ziel, mit Menü und Fußzeile der Hauptseite (`SiteShell`), immer hell in den Brand-Farben (`components/site/BrandLight.js` setzt die alten CSS-Variablen um). Nur noch Fragebogen (`components/Questionnaire.js`, schreibt ins CRM) und „So läuft's ab" (`components/Process.js`, im Layout der Hauptseite). Per `noindex` aus Suchmaschinen heraus. `/zahnkosten` leitet vorläufig (307) dorthin weiter. `components/Hero.js`, `About.js` und `Contact.js` werden aktuell nicht mehr eingebunden.
 - **`/erstinformation`**: Entwurf aus den Impressum-Angaben, offene Punkte als „zu prüfen" markiert, bis zur fachlichen Prüfung `noindex` und nicht in der Sitemap.
 
 ### Startseiten-Schalter (Notfall-Anker)
@@ -68,8 +68,8 @@ vercel               # Deploy auf Vercel (CLI)
 
 Das gesamte Theming läuft über CSS Custom Properties in `globals.css`. Zwei Themes:
 
-- **Dark (Standard):** Dunkles Navy (#0a0f1a) mit Gold-Akzent (#c8a445)
-- **Light:** Warmes Off-White (#f8f6f1) mit dunklerem Gold (#a0822a)
+- **Dark (Standard):** Grau (#494949) mit Champagner der Hauptseite (#B5A171)
+- **Light:** Hellgrau (#e8e8e8) mit dunklem Champagner (#7D6D49)
 
 Theme wird per `data-theme="light"` auf `<html>` gesetzt und im `localStorage` persistiert.
 

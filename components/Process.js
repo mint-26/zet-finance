@@ -1,6 +1,7 @@
 'use client';
 
 import { useInView } from './useInView';
+import { C, SERIF } from '../lib/brand';
 
 const STEPS = [
   { num: '01', title: 'Kurzes Gespräch', desc: '5 Minuten reichen. Wir klären Ihre Zahnsituation und was Ihnen wichtig ist. Telefonisch, per WhatsApp oder vor Ort.' },
@@ -9,74 +10,55 @@ const STEPS = [
   { num: '04', title: 'Rechnung einreichen, fertig', desc: 'Sie reichen Ihre Zahnarztrechnung ein. Den Rest erledige ich. Kommunikation mit der Versicherung, Nachfragen, Abwicklung. Und wenn mal was ist: Ich bin 24/7, 365 Tage im Jahr für Sie erreichbar.' },
 ];
 
+// Process steps on /zahnzusatz, in the layout of the start page (lib/brand.js):
+// four columns with a hairline on top, two on tablets, one on phones.
 export default function Process() {
   const [ref, inView] = useInView();
 
   return (
-    <section id="process" ref={ref} style={{
-      padding: '100px 24px',
-      background: 'linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%)',
-      transition: 'background 0.5s ease',
+    <section id="process" ref={ref} aria-labelledby="process-title" style={{
+      background: C.ivory, color: C.black, borderTop: `1px solid ${C.lineLight}`,
     }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ marginBottom: 60 }}>
-          <span style={{
-            fontSize: 13, fontWeight: 600, color: 'var(--accent)',
-            letterSpacing: 2, textTransform: 'uppercase',
-          }}>
-            Prozess
-          </span>
-          <h2 style={{
-            fontFamily: "'Playfair Display', serif",
-            fontSize: 'clamp(28px, 4vw, 44px)',
-            fontWeight: 700, color: 'var(--text-primary)',
-            marginTop: 12, lineHeight: 1.2,
-          }}>
-            So läuft&apos;s ab
-          </h2>
-        </div>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: 24,
+      <div style={{ maxWidth: 1120, margin: '0 auto', padding: 'clamp(64px, 8vw, 104px) clamp(20px, 5vw, 56px)' }}>
+        <p style={{
+          fontSize: 11, letterSpacing: '0.24em', textTransform: 'uppercase',
+          color: C.champagneDark, margin: 0,
         }}>
+          Ablauf
+        </p>
+        <h2 id="process-title" style={{
+          fontFamily: SERIF, fontWeight: 400, fontSize: 'clamp(34px, 4.2vw, 48px)',
+          lineHeight: 1.12, margin: '24px 0 0', color: C.black,
+        }}>
+          So läuft&apos;s ab.
+        </h2>
+
+        <ol className="process-grid">
           {STEPS.map((step, i) => (
-            <div key={i} style={{
-              position: 'relative', padding: '32px 28px',
+            <li key={step.num} style={{
+              borderTop: `1px solid ${C.lineLight}`, paddingTop: 22,
               opacity: inView ? 1 : 0,
               transform: inView ? 'translateY(0)' : 'translateY(20px)',
-              transition: `all 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 0.12}s`,
+              transition: `all 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 0.1}s`,
             }}>
-              <div style={{
-                fontSize: 48, fontWeight: 800,
-                color: 'var(--step-num)',
-                marginBottom: 16, lineHeight: 1,
-                transition: 'all 0.3s',
-              }}>{step.num}</div>
-              <h3 style={{
-                fontSize: 18, fontWeight: 600,
-                color: 'var(--text-primary)',
-                marginBottom: 8,
-              }}>{step.title}</h3>
-              <p style={{
-                fontSize: 14, color: 'var(--text-muted)',
-                lineHeight: 1.7,
-              }}>{step.desc}</p>
-              {i < STEPS.length - 1 && (
-                <div className="step-arrow" style={{
-                  position: 'absolute', right: -12, top: '50%',
-                  color: 'var(--border)', fontSize: 20,
-                }}>→</div>
-              )}
-            </div>
+              <span style={{ display: 'block', fontFamily: SERIF, fontSize: 40, lineHeight: 1, color: C.champagneDark }}>{step.num}</span>
+              <h3 style={{ fontSize: 17, fontWeight: 700, color: C.black, margin: '20px 0 0' }}>{step.title}</h3>
+              <p style={{ fontSize: 15, lineHeight: 1.65, color: C.graphite, margin: '8px 0 0' }}>{step.desc}</p>
+            </li>
           ))}
-        </div>
+        </ol>
       </div>
 
       <style jsx>{`
-        @media (max-width: 768px) {
-          .step-arrow { display: none !important; }
+        .process-grid {
+          list-style: none; padding: 0; margin: 48px 0 0;
+          display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 40px clamp(24px, 3vw, 40px);
+        }
+        @media (max-width: 960px) {
+          .process-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 600px) {
+          .process-grid { grid-template-columns: 1fr; gap: 32px; }
         }
       `}</style>
     </section>

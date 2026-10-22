@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Questionnaire from '../Questionnaire';
-import { C, SERIF, SANS } from '../../lib/brand';
+import BrandLight from './BrandLight';
+import { C, SANS } from '../../lib/brand';
 
 const HEADER = 76;
 const DURATION = 1200;
@@ -86,44 +87,21 @@ export default function DentalReveal({ teaser }) {
       }}>
         <div style={{ overflow: 'hidden', minHeight: 0 }}>
           {state !== 'closed' && (
-            <div className="dental-form" style={{
+            <BrandLight style={{
               opacity: expanded ? 1 : 0,
               transition: `opacity ${DURATION}ms ${EASE}`,
             }}>
               <div style={{ maxWidth: 680, margin: '0 auto', padding: '28px 24px 0', textAlign: 'right' }}>
                 <button type="button" onClick={close} className="dental-close">Fragebogen schließen ×</button>
               </div>
-              <Questionnaire />
-            </div>
+              <div className="dental-form"><Questionnaire /></div>
+            </BrandLight>
           )}
         </div>
       </div>
 
       <style jsx global>{`
-        .dental-form {
-          background: #E9E5DB;
-          --bg-secondary: #E9E5DB;
-          --bg-card: #F6F4EE;
-          --text-primary: ${C.black};
-          --text-body: ${C.black};
-          --text-muted: ${C.graphite};
-          --text-dim: #8C877E;
-          --input-bg: #FFFFFF;
-          --select-option-bg: #FFFFFF;
-          --bg-primary: ${C.ivory};
-          --success: #3E7B4F;
-        }
-        .dental-form #fragebogen {
-          --accent: ${C.champagneDark};
-          --accent-light: ${C.champagneDark};
-          --accent-dim: rgba(125,109,73,0.1);
-          --border: rgba(9,9,9,0.14);
-          --border-strong: rgba(9,9,9,0.3);
-          --shadow-accent: rgba(125,109,73,0.18);
-          padding-top: 24px !important;
-          font-family: ${SANS};
-        }
-        .dental-form h2, .dental-form h3 { font-family: ${SERIF} !important; font-weight: 400 !important; }
+        .dental-form #fragebogen { padding-top: 24px !important; }
         .dental-close {
           background: none; border: 0; cursor: pointer; padding: 10px 0; min-height: 44px;
           font-family: ${SANS}; font-size: 13px; color: ${C.graphite};

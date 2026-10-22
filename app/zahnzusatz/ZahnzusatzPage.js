@@ -1,56 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { ThemeProvider } from '../../components/ThemeProvider';
-import Nav from '../../components/Nav';
+import SiteShell from '../../components/site/SiteShell';
+import BrandLight from '../../components/site/BrandLight';
 import Process from '../../components/Process';
 import Questionnaire from '../../components/Questionnaire';
-import Footer from '../../components/Footer';
 import CookieConsent from '../../components/CookieConsent';
 
-function PageContent() {
-  const [activeSection, setActiveSection] = useState('');
-
-  useEffect(() => {
-    const sections = ['fragebogen', 'process'];
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveSection(entry.target.id);
-          }
-        });
-      },
-      { threshold: 0.3 }
-    );
-
-    sections.forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <>
-      <Nav activeSection={activeSection} />
-      {/* Only process and questionnaire live here; intro, about, testimonials
-          and contact moved to the start page. Top padding clears the fixed nav. */}
-      <main style={{ paddingTop: 72 }}>
-        <Questionnaire />
-        <Process />
-      </main>
-      <Footer />
-      <CookieConsent />
-    </>
-  );
-}
-
+// Only process and questionnaire live here; intro, about, testimonials and contact
+// moved to the start page. Header and footer are the start page's (SiteShell), the
+// content always uses the light brand palette (no light/dark switch any more).
 export default function ZahnzusatzPage() {
   return (
-    <ThemeProvider autoSchedule>
-      <PageContent />
-    </ThemeProvider>
+    <SiteShell base="/">
+      <BrandLight>
+        <Questionnaire />
+        <Process />
+        <CookieConsent />
+      </BrandLight>
+    </SiteShell>
   );
 }
