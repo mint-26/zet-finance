@@ -96,6 +96,18 @@ textarea::placeholder {
   to { opacity: 1; }
 }
 
+/* Questionnaire: each step fades in while the card height glides (SmoothHeight). */
+.q-step { animation: qStepIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@keyframes qStepIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .q-step { animation: none; }
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

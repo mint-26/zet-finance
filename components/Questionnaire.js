@@ -2,11 +2,14 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useInView } from './useInView';
+import SmoothHeight from './SmoothHeight';
 
 export default function Questionnaire() {
   const [ref, inView] = useInView(0.05);
   const [step, setStep] = useState(1);
   const totalSteps = 5;
+  const cardRef = useRef(null);
+  const firstStep = useRef(true);
   // Refs for step-2 inputs so we can read autofilled values the browser
   // populated without triggering React's onChange handler.
   const step2Refs = useRef({});
@@ -65,6 +68,14 @@ export default function Questionnaire() {
     if (step === 4) return step3Valid;
     return false;
   };
+
+  // On a step change, bring the card top back into view if it scrolled away
+  // (a long step was filled in), so the next step starts at its beginning.
+  useEffect(() => {
+    if (firstStep.current) { firstStep.current = false; return; }
+    const card = cardRef.current;
+    if (card && card.getBoundingClientRect().top < 80) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [step]);
 
   // Warn user if they try to close the tab while a submission is in flight.
   // The browser shows a generic confirmation; the lead is already being saved
@@ -283,9 +294,9 @@ export default function Questionnaire() {
           }}>Ihr persönliches Angebot</h2>
         </div>
 
-        <div style={{
+        <div ref={cardRef} style={{
           background: 'var(--bg-card)', border: '1px solid var(--border)',
-          borderRadius: 20, padding: 36,
+          borderRadius: 20, padding: 36, scrollMarginTop: 96,
         }}>
           {/* Progress Bar */}
           <div style={{ marginBottom: 28 }}>
@@ -307,7 +318,9 @@ export default function Questionnaire() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Height glides between steps and follow-up questions; each step fades in. */}
+          <SmoothHeight>
+          <form key={step} className="q-step" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
             {/* ═══ STEP 1: Einführung ═══ */}
             {step === 1 && (
@@ -633,6 +646,7 @@ export default function Questionnaire() {
               </>
             )}
           </form>
+          </SmoothHeight>
         </div>
       </div>
     </section>

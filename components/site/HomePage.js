@@ -246,8 +246,19 @@ export default function HomePage() {
       )} />
 
       {/* Privat und Unternehmen */}
-      <section id="absichern" aria-labelledby="absichern-title" style={{ background: C.ivory, color: C.black, borderTop: `1px solid ${C.lineLight}` }}>
-        <div style={{ ...WRAP, paddingTop: 'clamp(56px, 7vw, 88px)', paddingBottom: 'clamp(56px, 7vw, 88px)' }}>
+      {/* Gold gradient texture plus a small champagne ornament on the seam, so the two
+          light sections (marble above, gold here) read as separate chapters. */}
+      <section id="absichern" aria-labelledby="absichern-title" style={{ position: 'relative', isolation: 'isolate', background: C.ivory, color: C.black }}>
+        <Texture name="goldverlauf" />
+        <div aria-hidden="true" style={{
+          position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1,
+          display: 'flex', alignItems: 'center', gap: 14,
+        }}>
+          <span style={{ width: 56, height: 1, background: C.champagne }} />
+          <span style={{ width: 7, height: 7, background: C.champagne, transform: 'rotate(45deg)' }} />
+          <span style={{ width: 56, height: 1, background: C.champagne }} />
+        </div>
+        <div style={{ ...WRAP, position: 'relative', paddingTop: 'clamp(72px, 9vw, 112px)', paddingBottom: 'clamp(64px, 8vw, 104px)' }}>
           <p style={eyebrow(C.champagneDark)}>Leistungen</p>
           <h2 id="absichern-title" style={{
             fontFamily: SERIF, fontWeight: 400, fontSize: 'clamp(34px, 4.2vw, 48px)', lineHeight: 1.12, margin: '24px 0 0',
