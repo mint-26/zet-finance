@@ -4,8 +4,6 @@ export const TEXTURES = {
   marmor: { src: '/textures/marmor.jpg', opacity: 0.4, blend: 'multiply' },
   damast: { src: '/textures/damast.jpg', opacity: 0.2, blend: 'screen' },
   irisierend: { src: '/textures/irisierend.jpg', opacity: 0.4, blend: 'screen' },
-  // Gold gradient from CI/Content, stored in greyscale.
-  verlauf: { src: '/textures/verlauf-grau.jpg', opacity: 0.5, blend: 'multiply' },
 };
 
 // Sits behind the section content: the section needs position relative and

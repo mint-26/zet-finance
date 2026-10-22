@@ -246,17 +246,25 @@ export default function HomePage() {
       )} />
 
       {/* Privat und Unternehmen */}
-      {/* Greyscale gradient texture plus a small champagne ornament on the seam, so the two
-          light sections (marble above, gradient here) read as separate chapters. */}
-      <section id="absichern" aria-labelledby="absichern-title" style={{ position: 'relative', isolation: 'isolate', background: C.ivory, color: C.black }}>
-        <Texture name="verlauf" />
+      {/* Clear seam to the dental section above: a shadow falling onto this section, a
+          champagne line across the full width and a small medallion in its centre. The
+          plain sand tone sets this chapter apart from the white marble above. */}
+      <section id="absichern" aria-labelledby="absichern-title" style={{
+        position: 'relative', background: C.stone, color: C.black,
+        // Shadow on both edges, so the sand area reads as one recessed panel. The bottom one
+        // is stronger: next to the black section below, the same value would barely show.
+        boxShadow: 'inset 0 22px 28px -22px rgba(9,9,9,0.22), inset 0 -28px 32px -22px rgba(9,9,9,0.4)',
+      }}>
+        <div aria-hidden="true" style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: 1, zIndex: 1,
+          background: `linear-gradient(90deg, transparent, ${C.champagne} 18%, ${C.champagne} 82%, transparent)`,
+        }} />
         <div aria-hidden="true" style={{
           position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1,
-          display: 'flex', alignItems: 'center', gap: 14,
+          width: 34, height: 34, borderRadius: '50%', background: C.ivory,
+          border: `1px solid ${C.champagne}`, display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <span style={{ width: 56, height: 1, background: C.champagne }} />
           <span style={{ width: 7, height: 7, background: C.champagne, transform: 'rotate(45deg)' }} />
-          <span style={{ width: 56, height: 1, background: C.champagne }} />
         </div>
         <div style={{ ...WRAP, position: 'relative', paddingTop: 'clamp(72px, 9vw, 112px)', paddingBottom: 'clamp(64px, 8vw, 104px)' }}>
           <p style={eyebrow(C.champagneDark)}>Leistungen</p>
