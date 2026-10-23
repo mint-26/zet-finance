@@ -291,8 +291,8 @@ export default function HomePage() {
               Ein Ansprechpartner.<br />Auch danach.
             </h2>
             <p style={{ fontFamily: SERIF, fontSize: 18, color: C.champagne, margin: '28px 0 0' }}>Marco Arpa</p>
-            {/* Same black-and-white portrait as on /zahnzusatz, with the offset frame from there
-                in brand colours; 640 px source, max 320 px wide for sharp retina display. */}
+            {/* Colour portrait (Oct 2026) with the offset frame in brand colours; 640 x 768 px
+                source, max 320 px wide for sharp retina display. Bump ?v= when replacing it. */}
             <div style={{ position: 'relative', maxWidth: 320, margin: '36px 12px 12px 12px' }}>
               <div aria-hidden="true" style={{
                 position: 'absolute', top: -12, left: -12, right: 12, bottom: 12,
@@ -303,7 +303,7 @@ export default function HomePage() {
                 background: `linear-gradient(135deg, ${C.champagne}, ${C.champagneDark})`, opacity: 0.22,
               }} />
               <img
-                src="/marco.jpg" alt="Porträt von Marco Arpa" width="640" height="640" loading="lazy"
+                src="/marco.jpg?v=2" alt="Porträt von Marco Arpa" width="640" height="768" loading="lazy"
                 style={{ position: 'relative', zIndex: 1, display: 'block', width: '100%', height: 'auto' }}
               />
             </div>
