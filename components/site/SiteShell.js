@@ -6,9 +6,11 @@ import { Arrow } from './Icons';
 
 const HEADER_HEIGHT = 76;
 
-// Entries either jump to a section of the start page (hash) or open a page (href).
+// Entries either jump to a section of the start page (hash) or open a page (href),
+// in the order the sections appear on the start page.
 const NAV = [
   { label: 'Zahnzusatz', hash: 'zahnzusatz' },
+  { label: 'Portfolio', hash: 'portfolio' },
   { label: 'Über Marco', hash: 'ueber-marco' },
   { label: 'Kundenstimmen', hash: 'kundenstimmen' },
 ];
