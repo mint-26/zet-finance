@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isConfigured, sendReplies, verifyWebhook } from '../../../lib/whatsapp/api';
+import { isConfigured, sendReplies, verifyWebhook, IS_SANDBOX } from '../../../lib/whatsapp/api';
 import { handleMessage, pauseForManualReply, markSeen, forgetSeen, cleanup } from '../../../lib/whatsapp/bot';
 import { notifySubmission } from '../../../lib/submissions';
 
@@ -68,7 +68,7 @@ async function processMessage(message) {
 
   let result;
   try {
-    result = await handleMessage({ waId: message.from, input: readInput(message) });
+    result = await handleMessage({ waId: message.from, input: readInput(message), test: IS_SANDBOX });
   } catch (err) {
     console.error('WhatsApp message handling failed:', err);
     // Nothing was stored, so the provider's retry may handle it again.
@@ -83,7 +83,7 @@ async function processMessage(message) {
   } catch (err) {
     console.error('WhatsApp reply failed:', err);
   }
-  if (result.submission) await notifySubmission(result.submission);
+  if (result.submission && !IS_SANDBOX) await notifySubmission(result.submission);
 }
 
 // Text of a typed message or of a tapped button / list row.
