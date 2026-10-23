@@ -50,7 +50,7 @@ function ImpressumContent() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32, fontSize: 16, lineHeight: 1.8, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
           <section>
             <h2 style={h2Style}><span style={numStyle}>§</span> Angaben gemäß § 5 TMG</h2>
-            <p>Marco Arpa<br />Versicherungsmakler nach §34d GewO<br /><br />Alte Dieburger Str. 46<br />64367 Trautheim</p>
+            <p>Marco Arpa<br />Versicherungsmakler nach §34d GewO<br /><br />Königsteiner Straße 6a<br />65812 Bad Soden am Taunus</p>
           </section>
 
           <section>

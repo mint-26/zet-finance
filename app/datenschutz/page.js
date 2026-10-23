@@ -69,8 +69,8 @@ function DatenschutzContent() {
             <p>
               Marco Arpa<br />
               Versicherungsmakler nach §34d GewO<br />
-              Alte Dieburger Str. 46<br />
-              64367 Trautheim<br />
+              Königsteiner Straße 6a<br />
+              65812 Bad Soden am Taunus<br />
               E-Mail: <a href="mailto:kontakt@marcoarpa.com" style={linkStyle}>kontakt@marcoarpa.com</a><br />
               Telefon: +49 152 5461 1314
             </p>

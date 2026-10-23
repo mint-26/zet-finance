@@ -66,7 +66,7 @@ function AGBContent() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32, fontSize: 16, lineHeight: 1.8, color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
           <section>
             <h2 style={h2Style}><span style={numStyle}>1.</span> Geltungsbereich</h2>
-            <p>Diese Nutzungsbedingungen gelten für die Nutzung der Website von Marco Arpa, Alte Dieburger Str. 46, 64367 Trautheim. Die Website dient ausschließlich der Erfassung von Kontakt- und Bedarfsdaten zur Erstellung eines unverbindlichen Angebots für Zahnzusatzversicherungen.</p>
+            <p>Diese Nutzungsbedingungen gelten für die Nutzung der Website von Marco Arpa, Königsteiner Straße 6a, 65812 Bad Soden am Taunus. Die Website dient ausschließlich der Erfassung von Kontakt- und Bedarfsdaten zur Erstellung eines unverbindlichen Angebots für Zahnzusatzversicherungen.</p>
           </section>
 
           <section>
@@ -74,8 +74,8 @@ function AGBContent() {
             <p>
               Marco Arpa<br />
               Versicherungsmakler nach §34d GewO<br />
-              Alte Dieburger Str. 46<br />
-              64367 Trautheim<br />
+              Königsteiner Straße 6a<br />
+              65812 Bad Soden am Taunus<br />
               E-Mail: <a href="mailto:kontakt@marcoarpa.com" style={linkStyle}>kontakt@marcoarpa.com</a><br />
               Telefon: +49 152 5461 1314<br />
               Registernummer: D-4GG1-I1LV5-50

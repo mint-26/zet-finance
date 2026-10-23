@@ -18,27 +18,26 @@ const eyebrow = (color) => ({
   color, margin: 0,
 });
 
-// Only services Marco has confirmed (handout, sections 03 to 05).
+// Texts supplied by Marco (23.10.2026).
 const AREAS = [
   {
     key: 'privat',
     title: 'Privat.',
-    sub: 'Für Ihr Leben und das, was Ihnen wichtig ist.',
-    intro: 'Ich betrachte zuerst Ihre Situation und Ihre Ziele. Erst danach ordne ich ein, welche Absicherung zu Ihnen passt.',
-    items: [
-      'Private Krankenversicherung: Neuabschluss und Wechsel',
-      'Biometrische Absicherung, etwa bei Berufsunfähigkeit',
-      'Energievergleich für Strom und Gas',
+    sub: 'Ihre Absicherung verdient mehr als einen Tarifvergleich.',
+    intro: [
+      'Jede Lebensphase bringt neue Chancen, Veränderungen und Herausforderungen mit sich. Ob berufliche Entwicklung, Familienzuwachs oder der Kauf einer Immobilie: Ich begleite Sie langfristig und passe Ihre Absicherung gemeinsam mit Ihnen an Ihre persönliche Situation an.',
+      'Als zentraler Ansprechpartner behalte ich Ihre Versicherungsangelegenheiten im Blick, überprüfe regelmäßig mögliche Optimierungen und achte auf ein ausgewogenes Verhältnis von Preis und Leistung.',
+      'Dabei steht Vertrauen für mich an erster Stelle. Ich berate transparent, nehme Ihnen organisatorischen Aufwand ab und bin auch im Schadenfall persönlich an Ihrer Seite, weit über den Vertragsabschluss hinaus.',
     ],
   },
   {
     key: 'unternehmen',
     title: 'Unternehmen.',
-    sub: 'Für Ihren Betrieb und Ihre Verantwortung.',
-    intro: 'Für betriebliche Themen arbeite ich mit einem Netzwerk aus Spezialisten zusammen. Ihr Ansprechpartner bleibe ich.',
-    items: [
-      'Betriebliche Krankenversicherung, gemeinsam mit einem Spezialisten',
-      'Größere betriebliche Themen über mein Spezialistennetzwerk',
+    sub: 'Sie führen Ihr Unternehmen. Ich kümmere mich um Ihre Absicherung.',
+    intro: [
+      'Als Unternehmer weiß ich, wie wertvoll Ihre Zeit ist. Deshalb übernehme ich die Koordination Ihrer Versicherungsangelegenheiten, analysiere betriebliche Risiken und entwickle bedarfsgerechte Lösungen, die Ihnen im Geschäftsalltag den Rücken freihalten.',
+      'Ob neue Mitarbeiter, Investitionen oder die Weiterentwicklung Ihres Unternehmens: Ich begleite Sie langfristig, überprüfe Ihre Absicherung regelmäßig und identifiziere Möglichkeiten, Leistungen und Kosten sinnvoll zu optimieren.',
+      [{ em: 'Sie profitieren von einem festen Ansprechpartner, kurzen Kommunikationswegen und persönlicher Unterstützung im Schadenfall.' }, ' Damit Sie sich auf das konzentrieren können, was wirklich zählt: Ihr Unternehmen.'],
     ],
   },
 ];
@@ -57,20 +56,14 @@ const STATS = [
 ];
 
 const ABOUT = [
-  'Seit über sieben Jahren begleite ich Menschen und Unternehmen bei ihrer Absicherung. Mein Ansatz ist einfach: Ich höre zu, verstehe Ihre Situation und entwickle eine Lösung, die wirklich zu Ihnen passt.',
-  'Kein Fachjargon und keine Verkaufsgespräche. Stattdessen bekommen Sie eine ehrliche Beratung von jemandem, der sein Handwerk versteht und Ihr Interesse in den Mittelpunkt stellt.',
-  'Ob private Krankenversicherung, Zahnzusatz oder betriebliche Themen: Ich finde die Lösung, die genau das abdeckt, was Sie brauchen. Nicht mehr, nicht weniger.',
+  'Meine Vorstellung von guter Beratung entstand aus einer persönlichen Erfahrung: Ich habe miterlebt, welche finanziellen Folgen unzureichende Beratung für meine eigene Familie haben kann. Diese Erfahrung hat mich nachhaltig geprägt und meinen Anspruch gefestigt, Menschen ehrlich, transparent und mit einem klaren Verantwortungsbewusstsein zu beraten.',
+  'Nach meinem Betriebswirtschaftsstudium und meiner Tätigkeit im Management begann ich 2018 meine Selbstständigkeit in der Versicherungsbranche. Seit 2024 bin ich als Versicherungsmakler tätig, um meine Beratung noch individueller und mit größerer Freiheit bei der Auswahl geeigneter Lösungen gestalten zu können.',
+  'Vertrauen, Loyalität und Verlässlichkeit sind für mich keine leeren Versprechen, sondern die Grundlage meiner täglichen Arbeit. Mein Anspruch ist es, meine Kunden langfristig zu begleiten, ihre Interessen konsequent in den Mittelpunkt zu stellen und auch dann persönlich an ihrer Seite zu stehen, wenn es darauf ankommt.',
+  'Denn für mich endet Verantwortung nicht mit einer Unterschrift. Sie zeigt sich vor allem in dem, was danach kommt.',
 ];
 
-const ABOUT_TAGS = ['Versicherungsmakler nach § 34d GewO', 'Privat und Unternehmen', 'Kostenlose Beratung'];
+const ABOUT_TAGS = ['Versicherungsmakler nach § 34d GewO', 'Privat und Unternehmen', 'Kostenlose Beratung und Betreuung'];
 
-const STEPS = [
-  { title: 'Kennenlernen', text: 'Wir sprechen über Ihre Situation und Ihr Anliegen.' },
-  { title: 'Gesamtanalyse', text: 'Ich sehe mir Ihre bestehenden Verträge und Ihren Bedarf an.' },
-  { title: 'Empfehlung', text: 'Sie erhalten eine verständliche Empfehlung, die zu Ihnen passt.' },
-  { title: 'Umsetzung', text: 'Ich kümmere mich um Antrag und Abschluss.' },
-  { title: 'Betreuung', text: 'Ich bleibe auch nach dem Abschluss Ihr Ansprechpartner.' },
-];
 
 // Looping background clip behind the hero text. Rendered only after mount and only
 // when the visitor allows motion; otherwise the poster (section background) stays.
@@ -107,12 +100,11 @@ function HeroVideo() {
 }
 
 // Two cards side by side: Privat light, Unternehmen dark, so the pair reads as one
-// decision. Numbered like the steps further down; the list uses champagne dashes.
+// decision. Numbered 01 and 02; title, italic lead sentence, then Marco's paragraphs.
 function Area({ area, index }) {
   const dark = index === 1;
   const fg = dark ? C.ivory : C.black;
   const muted = dark ? C.grey : C.graphite;
-  const line = dark ? C.lineDark : C.lineLight;
   return (
     <article id={area.key} aria-labelledby={`${area.key}-title`} style={{
       scrollMarginTop: 100, borderRadius: 24, padding: 'clamp(28px, 4vw, 48px)',
@@ -132,19 +124,14 @@ function Area({ area, index }) {
           fontSize: 18, fontWeight: 400, color: dark ? C.champagne : C.champagneDark,
         }}>{area.sub}</span>
       </h3>
-      <p style={{ fontSize: 15, lineHeight: 1.7, color: muted, margin: '24px 0 0', maxWidth: 440 }}>{area.intro}</p>
-      <ul style={{ listStyle: 'none', margin: '28px 0 0', padding: 0, borderTop: `1px solid ${line}` }}>
-        {area.items.map((item) => (
-          <li key={item} style={{
-            display: 'flex', gap: 16, alignItems: 'baseline',
-            borderBottom: `1px solid ${line}`, padding: '15px 0',
-            fontSize: 15, lineHeight: 1.5, color: fg,
-          }}>
-            <span aria-hidden="true" style={{ flex: 'none', width: 14, height: 1, background: C.champagne, transform: 'translateY(-4px)' }} />
-            {item}
-          </li>
-        ))}
-      </ul>
+      {/* Paragraphs are strings, or arrays of strings and { em } parts set in italics. */}
+      {area.intro.map((para, i) => (
+        <p key={i} style={{ fontSize: 15, lineHeight: 1.7, color: muted, margin: i === 0 ? '24px 0 0' : '14px 0 0', maxWidth: 460 }}>
+          {[].concat(para).map((part, j) => (part.em
+            ? <em key={j} style={{ color: fg, fontStyle: 'italic' }}>{part.em}</em>
+            : <span key={j}>{part}</span>))}
+        </p>
+      ))}
     </article>
   );
 }
@@ -175,7 +162,12 @@ export default function HomePage() {
                 color: 'rgba(241,238,230,0.82)', letterSpacing: '0.01em',
               }}>
                 <span aria-hidden="true" style={{ flex: 'none', width: 36, height: 1, background: C.champagne }} />
-                <span>Persönlich beraten. <span style={{ whiteSpace: 'nowrap' }}>Langfristig begleitet.</span></span>
+                {/* Each claim stays on one line, so the three only break between each other. */}
+                <span>
+                  <span style={{ whiteSpace: 'nowrap' }}>Ein Ansprechpartner.</span>{' '}
+                  <span style={{ whiteSpace: 'nowrap' }}>Kontinuierliche Optimierung.</span>{' '}
+                  <span style={{ whiteSpace: 'nowrap' }}>Persönliche Verantwortung.</span>
+                </span>
               </p>
             </div>
             <img src="/logo-white.svg?v=6" alt="Logo von Marco Arpa" className="hero-crest" width="627.6" height="662.3" />
@@ -291,6 +283,7 @@ export default function HomePage() {
               Ein Ansprechpartner.<br />Auch danach.
             </h2>
             <p style={{ fontFamily: SERIF, fontSize: 18, color: C.champagne, margin: '28px 0 0' }}>Marco Arpa</p>
+            <p style={{ fontSize: 13, letterSpacing: '0.04em', color: C.grey, margin: '6px 0 0' }}>Geschäftsführer</p>
             {/* Colour portrait (Oct 2026) with the offset frame in brand colours; 640 x 768 px
                 source, max 320 px wide for sharp retina display. Bump ?v= when replacing it. */}
             <div style={{ position: 'relative', maxWidth: 320, margin: '36px 12px 12px 12px' }}>
@@ -310,33 +303,16 @@ export default function HomePage() {
           </div>
           <div>
             <p style={{ fontFamily: SERIF, fontSize: 26, color: C.ivory, margin: 0 }}>Hallo, ich bin Marco.</p>
-            {ABOUT.map((t) => (
-              <p key={t.slice(0, 20)} style={{ fontSize: 15, lineHeight: 1.75, color: C.grey, margin: '18px 0 0', maxWidth: 460 }}>{t}</p>
+            {/* The last paragraph is the closing thought, set as a serif quote line. */}
+            {ABOUT.map((t, i) => (i === ABOUT.length - 1
+              ? <p key={t.slice(0, 20)} style={{ fontFamily: SERIF, fontStyle: 'italic', fontSize: 19, lineHeight: 1.5, color: C.ivory, margin: '24px 0 0', maxWidth: 460 }}>{t}</p>
+              : <p key={t.slice(0, 20)} style={{ fontSize: 15, lineHeight: 1.75, color: C.grey, margin: '18px 0 0', maxWidth: 460 }}>{t}</p>
             ))}
-            <ul style={{ listStyle: 'none', padding: 0, margin: '24px 0 36px', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '28px 0 0', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {ABOUT_TAGS.map((t) => (
                 <li key={t} style={{ fontSize: 12, color: C.champagne, border: '1px solid rgba(181,161,113,0.45)', padding: '7px 12px' }}>{t}</li>
               ))}
             </ul>
-            <div style={{ borderTop: `1px solid ${C.lineDark}`, borderBottom: `1px solid ${C.lineDark}` }}>
-              <h3 style={{
-                margin: 0, minHeight: 56, display: 'flex', alignItems: 'center',
-                color: C.ivory, fontFamily: SANS, fontSize: 14, fontWeight: 400,
-              }}>
-                So arbeite ich
-              </h3>
-              <ol id="so-arbeite-ich" style={{ listStyle: 'none', margin: 0, padding: '0 0 12px' }}>
-                {STEPS.map((s, i) => (
-                  <li key={s.title} style={{ display: 'flex', gap: 18, padding: '14px 0', borderTop: `1px solid ${C.lineDark}` }}>
-                    <span style={{ fontFamily: SERIF, fontSize: 14, color: C.champagne, minWidth: 18 }}>{i + 1}</span>
-                    <span>
-                      <span style={{ display: 'block', fontSize: 14, color: C.ivory }}>{s.title}</span>
-                      <span style={{ display: 'block', fontSize: 14, lineHeight: 1.6, color: C.grey, marginTop: 4 }}>{s.text}</span>
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            </div>
           </div>
         </div>
       </section>

@@ -55,7 +55,7 @@ export default function Erstinformation() {
           </div>
 
           <Block title="Angaben zur Person">
-            <p>Marco Arpa<br />Versicherungsmakler<br />Alte Dieburger Str. 46<br />64367 Trautheim</p>
+            <p>Marco Arpa<br />Versicherungsmakler<br />Königsteiner Straße 6a<br />65812 Bad Soden am Taunus</p>
             <p style={{ marginTop: 12 }}>
               Telefon: <a href={CONTACT.phoneHref} style={link}>{CONTACT.phone}</a><br />
               E-Mail: <a href={`mailto:${CONTACT.email}`} style={link}>{CONTACT.email}</a>
