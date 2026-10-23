@@ -14,6 +14,9 @@ const STATUS_LABELS = {
   kein_interesse: 'Kein Interesse',
 };
 
+const QUELLE_LABELS = { web: 'Website', whatsapp: 'WhatsApp', whatsapp_test: 'WhatsApp (Test)' };
+const TYP_LABELS = { zahnzusatz: 'Zahnzusatz', gespraech: 'Gespräch' };
+
 function boolLabel(v) {
   if (v === true) return 'Ja';
   if (v === false) return 'Nein';
@@ -53,6 +56,8 @@ export async function GET() {
     { header: 'Neue Vertragsunterlagen erhalten', key: 'neue_vertragsunterlagen_erhalten', width: 30 },
     { header: 'Grund', key: 'grund', width: 30 },
     { header: 'Zeitstempel', key: 'zeitstempel', width: 20 },
+    { header: 'Quelle', key: 'quelle', width: 14 },
+    { header: 'Anfrage', key: 'anfrage_typ', width: 14 },
     { header: 'Vor- und Nachnamen', key: 'name', width: 24 },
     { header: 'Anschrift', key: 'anschrift', width: 34 },
     { header: 'Geburtsdatum', key: 'geburtsdatum', width: 14 },
@@ -75,6 +80,7 @@ export async function GET() {
     { header: 'Kontaktweg', key: 'kontaktweg', width: 22 },
     { header: 'Zusatzversicherung', key: 'zusatzversicherung', width: 26 },
     { header: 'Beratungstermin', key: 'beratungstermin', width: 22 },
+    { header: 'Anliegen', key: 'anliegen', width: 34 },
     { header: 'Notizen', key: 'notizen', width: 34 },
   ];
 
@@ -98,6 +104,8 @@ export async function GET() {
       neue_vertragsunterlagen_erhalten: boolLabel(row.neue_vertragsunterlagen_erhalten),
       grund: row.grund,
       zeitstempel: row.created_at ? new Date(row.created_at) : null,
+      quelle: QUELLE_LABELS[row.quelle] || row.quelle,
+      anfrage_typ: TYP_LABELS[row.anfrage_typ] || row.anfrage_typ,
       name: row.name,
       anschrift: row.anschrift,
       geburtsdatum: formatBirthdate(row.geburtsdatum),
@@ -120,6 +128,7 @@ export async function GET() {
       kontaktweg: row.kontaktweg,
       zusatzversicherung: row.zusatzversicherung,
       beratungstermin: row.beratungstermin,
+      anliegen: row.anliegen,
       notizen: row.notizen,
     });
   }

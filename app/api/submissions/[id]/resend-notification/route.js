@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '../../../../../lib/supabase';
 import { isAuthenticated } from '../../../../../lib/auth';
-import { sendNotification, buildQuestionnairePayload } from '../../../../../lib/notify';
+import { sendNotification, buildPayload } from '../../../../../lib/notify';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -30,7 +30,7 @@ export async function POST(_request, { params }) {
     return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
   }
 
-  const payload = buildQuestionnairePayload(row);
+  const payload = buildPayload(row);
   const result = await sendNotification(payload);
 
   const totalAttempts = (row.notification_attempts || 0) + result.attempts;

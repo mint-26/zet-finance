@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '../../../lib/supabase';
 import { isAuthenticated } from '../../../lib/auth';
-import { sendNotification, buildQuestionnairePayload } from '../../../lib/notify';
+import { formToRow, insertSubmission, notifySubmission } from '../../../lib/submissions';
 
 export const dynamic = 'force-dynamic';
 // Generous: notification path can take up to ~16 s in worst case.
@@ -20,61 +20,15 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
-    .from('zahnzusatz_submissions')
-    .insert({
-      status: 'offen',
-      name: body.name || null,
-      anschrift: body.anschrift || null,
-      geburtsdatum: body.geburtsdatum || null,
-      geschlecht: body.geschlecht || null,
-      familienstand: body.familienstand || null,
-      telefon: body.telefon || null,
-      email: body.email || null,
-      beruf: body.beruf || null,
-      versicherungsart: body.versicherungsart || null,
-      krankenkasse: body.krankenkasse || null,
-      wechsel: body.wechsel || null,
-      bonusprogramm: body.bonusprogramm || null,
-      behandlung: body.behandlung || null,
-      heilkostenplan: body.heilkostenplan || null,
-      fehlende_zaehne: body.fehlendeZaehne != null ? String(body.fehlendeZaehne) : null,
-      zahnluecke: body.zahnluecke || null,
-      parodontose: body.parodontose || null,
-      schwerpunkt: Array.isArray(body.schwerpunkt) ? body.schwerpunkt.join(', ') : (body.schwerpunkt || null),
-      vorherige_versicherung: body.vorherigeVersicherung || null,
-      kontaktweg: Array.isArray(body.kontaktweg) ? body.kontaktweg.join(', ') : (body.kontaktweg || null),
-      zusatzversicherung: Array.isArray(body.zusatzversicherung) ? body.zusatzversicherung.join(', ') : (body.zusatzversicherung || null),
-      beratungstermin: Array.isArray(body.beratungstermin) ? body.beratungstermin.join(', ') : (body.beratungstermin || null),
-    })
-    .select('*')
-    .single();
-
-  if (error) {
-    console.error('Supabase insert error:', error);
+  let data;
+  try {
+    data = await insertSubmission(formToRow(body));
+  } catch (error) {
+    console.error(error);
     return NextResponse.json({ error: 'Failed to save submission' }, { status: 500 });
   }
 
-  // ─── Notification ───
-  const payload = buildQuestionnairePayload(data);
-  const result = await sendNotification(payload);
-
-  const notificationPatch = result.success
-    ? { notification_sent_at: new Date().toISOString(), notification_attempts: result.attempts, notification_last_error: null }
-    : { notification_attempts: result.attempts, notification_last_error: result.lastError || 'unknown' };
-
-  const { error: patchError } = await supabase
-    .from('zahnzusatz_submissions')
-    .update(notificationPatch)
-    .eq('id', data.id);
-
-  if (patchError) {
-    console.error('Notification status patch error:', patchError);
-  }
-  if (!result.success) {
-    console.warn(`Notification failed for submission ${data.id} after ${result.attempts} attempts: ${result.lastError}`);
-  }
+  const result = await notifySubmission(data);
 
   return NextResponse.json({
     ok: true,

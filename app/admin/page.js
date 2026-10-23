@@ -12,6 +12,9 @@ const STATUS_OPTIONS = [
   { value: 'kein_interesse', label: 'Kein Interesse', color: '#64748b' },
 ];
 
+// Where a lead came from (column `quelle`). WhatsApp tests come from the bot preview.
+const QUELLE_LABELS = { web: 'Website', whatsapp: 'WhatsApp', whatsapp_test: 'WhatsApp (Test)' };
+
 const ABLEHNUNGSGRUND_OPTIONS = ['mehr als 4 fehlende Zähne', 'Bonität'];
 
 const GESELLSCHAFT_OPTIONS = [
@@ -33,6 +36,7 @@ function AdminContent() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('alle');
+  const [quelleFilter, setQuelleFilter] = useState('alle');
   const [expandedId, setExpandedId] = useState(null);
 
   const load = useCallback(async () => {
@@ -136,6 +140,8 @@ function AdminContent() {
   // ─── Filter ───
   const filtered = submissions.filter((s) => {
     if (statusFilter !== 'alle' && s.status !== statusFilter) return false;
+    if (quelleFilter === 'web' && s.quelle && s.quelle !== 'web') return false;
+    if (quelleFilter === 'whatsapp' && !(s.quelle || '').startsWith('whatsapp')) return false;
     if (search) {
       const q = search.toLowerCase();
       const hay = `${s.name || ''} ${s.email || ''} ${s.telefon || ''}`.toLowerCase();
@@ -244,6 +250,7 @@ function AdminContent() {
             />
           </a>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <a href="/admin/whatsapp" style={{ fontSize: 14, color: 'var(--accent)', textDecoration: 'none', fontWeight: 500 }}>WhatsApp-Bot testen</a>
             <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>Admin</span>
             <button onClick={toggle} aria-label="Theme wechseln" style={{
               width: 36, height: 36, borderRadius: '50%', background: 'var(--accent-dim)',
@@ -357,6 +364,21 @@ function AdminContent() {
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
+          <select value={quelleFilter} onChange={(e) => setQuelleFilter(e.target.value)} aria-label="Quelle" style={{
+            padding: '10px 16px',
+            background: 'var(--input-bg)',
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+            color: 'var(--text-body)',
+            fontSize: 14,
+            fontFamily: "'DM Sans', sans-serif",
+            outline: 'none',
+            cursor: 'pointer',
+          }}>
+            <option value="alle">Alle Quellen</option>
+            <option value="web">Website</option>
+            <option value="whatsapp">WhatsApp</option>
+          </select>
         </div>
 
         {/* List */}
@@ -400,7 +422,14 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
   const notificationSentAt = s.notification_sent_at ? new Date(s.notification_sent_at) : null;
   const mailDelivered = !!s.notification_sent_at;
 
-  const fields = [
+  const viaWhatsApp = (s.quelle || '').startsWith('whatsapp');
+  const isGespraech = s.anfrage_typ === 'gespraech';
+
+  // A conversation request from WhatsApp only has name, number and topic.
+  const fields = isGespraech ? [
+    ['Telefon / WhatsApp', s.telefon],
+    ['Anliegen', s.anliegen],
+  ] : [
     ['E-Mail', s.email],
     ['Telefon', s.telefon],
     ['Anschrift', s.anschrift],
@@ -473,8 +502,12 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
             : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
         </span>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {s.name || '(Kein Name)'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+            <span style={{ fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {s.name || '(Kein Name)'}
+            </span>
+            {viaWhatsApp && <Tag color="#25a35a">{QUELLE_LABELS[s.quelle]}</Tag>}
+            {isGespraech && <Tag color="#7D6D49">Gespräch</Tag>}
           </div>
         </div>
         {/* Abgerechnet */}
@@ -692,6 +725,23 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
         </div>
       )}
     </div>
+  );
+}
+
+// Small label next to the name, e.g. the lead source.
+function Tag({ color, children }) {
+  return (
+    <span style={{
+      flexShrink: 0,
+      padding: '2px 8px',
+      borderRadius: 999,
+      border: `1px solid ${color}66`,
+      background: color + '1a',
+      color,
+      fontSize: 11,
+      fontWeight: 600,
+      whiteSpace: 'nowrap',
+    }}>{children}</span>
   );
 }
 

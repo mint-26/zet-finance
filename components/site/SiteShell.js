@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { C, SERIF, SANS, CONTACT } from '../../lib/brand';
 import { Arrow } from './Icons';
+import { whatsappLink } from '../../lib/whatsapp/link';
 
 const HEADER_HEIGHT = 76;
 
@@ -16,6 +17,9 @@ const NAV = [
 ];
 
 const target = (l, base) => l.href || `${base}#${l.hash}`;
+
+// Opens the WhatsApp bot; only shown when NEXT_PUBLIC_WHATSAPP_NUMBER is set.
+const WHATSAPP_HREF = whatsappLink();
 
 // Frame of the main site: sticky header with mobile menu, footer and
 // shared global styles. `base` is '' on the start page and '/' elsewhere,
@@ -147,6 +151,14 @@ export default function SiteShell({ base = '', children }) {
             >
               Vermittlerregister <Arrow size={9} />
             </a>
+            {WHATSAPP_HREF && (
+              <a
+                href={WHATSAPP_HREF} target="_blank" rel="noopener noreferrer" className="site-link"
+                style={{ fontSize: 12, color: C.grey, textDecoration: 'none', padding: '15px 0', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              >
+                Per WhatsApp schreiben <Arrow size={9} />
+              </a>
+            )}
           </nav>
         </div>
       </footer>

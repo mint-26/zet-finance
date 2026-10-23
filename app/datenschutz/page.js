@@ -101,7 +101,24 @@ function DatenschutzContent() {
           </section>
 
           <section>
-            <h2 style={h2Style}><span style={numStyle}>4.</span> Weitergabe von Daten</h2>
+            <h2 style={h2Style}><span style={numStyle}>4.</span> Anfragen per WhatsApp</h2>
+            <p>Sie können uns über WhatsApp schreiben. Wenn Sie den WhatsApp-Link auf dieser Website nutzen, beantwortet zunächst ein automatischer Assistent Ihre Nachricht. Er fragt, ob Sie ein Angebot für eine Zahnzusatzversicherung oder ein persönliches Gespräch wünschen, und nimmt Ihre Angaben Schritt für Schritt auf. Der Assistent arbeitet nach festen Regeln, es kommt keine künstliche Intelligenz zum Einsatz. Danach führt Marco Arpa das Gespräch persönlich weiter.</p>
+            <p style={{ marginTop: 12 }}>Dabei werden verarbeitet:</p>
+            <ul style={{ paddingLeft: 24, marginTop: 8, marginBottom: 12 }}>
+              <li>Ihre Mobilfunknummer und Ihr WhatsApp-Profilname</li>
+              <li>Inhalt und Zeitpunkt Ihrer Nachrichten</li>
+              <li>beim Zahnzusatz-Angebot dieselben Angaben wie im Fragebogen (siehe Abschnitt 3), einschließlich Angaben zum Zahnzustand (Gesundheitsdaten)</li>
+              <li>bei einer Gesprächsanfrage Ihr Name und Ihr Anliegen</li>
+            </ul>
+            <p>Gesundheitsdaten erfragt der Assistent erst, nachdem Sie im Chat ausdrücklich eingewilligt haben (Art. 9 Abs. 2 lit. a DSGVO). Ohne Einwilligung werden keine Angaben aufgenommen. Im Übrigen ist Rechtsgrundlage Art. 6 Abs. 1 lit. b DSGVO (Vertragsanbahnung). Mit „abbrechen“ können Sie den Assistenten jederzeit beenden, bereits gemachte Angaben werden dann verworfen.</p>
+            <p style={{ marginTop: 12 }}>Ihre Antworten werden während des Chats zwischengespeichert. Nach Abschluss übernehmen wir sie in unsere Kundenverwaltung (Supabase, Server in der EU) und löschen den Zwischenstand. Nicht abgeschlossene Chats löschen wir nach 30 Tagen. Für die Kundenverwaltung gilt die Speicherdauer aus Abschnitt 7.</p>
+            <p style={{ marginTop: 12 }}>WhatsApp ist ein Dienst der WhatsApp Ireland Limited, Merrion Road, Dublin 4, D04 X2K5, Irland, einem Unternehmen der Meta-Gruppe. Für den Empfang und Versand der Nachrichten nutzen wir die WhatsApp Business Platform von Meta, gegebenenfalls über einen technischen Dienstleister (Business Solution Provider), mit dem ein Auftragsverarbeitungsvertrag besteht. Nachrichten sind auf dem Transportweg verschlüsselt, werden aber auf den Servern von Meta bzw. des Dienstleisters entschlüsselt verarbeitet. Dabei können Daten in die USA übermittelt werden. Meta ist nach dem EU-US Data Privacy Framework zertifiziert, ergänzend gelten die EU-Standardvertragsklauseln (Art. 46 Abs. 2 lit. c DSGVO). Einzelheiten finden Sie in der{' '}
+              <a href="https://www.whatsapp.com/legal/privacy-policy-eea" target="_blank" rel="noopener noreferrer" style={linkStyle}>Datenschutzrichtlinie von WhatsApp</a>.</p>
+            <p style={{ marginTop: 12 }}>Wenn Sie WhatsApp nicht nutzen möchten, erreichen Sie uns ebenso über den Fragebogen, das Kontaktformular, per E-Mail oder per Telefon.</p>
+          </section>
+
+          <section>
+            <h2 style={h2Style}><span style={numStyle}>5.</span> Weitergabe von Daten</h2>
             <p>Im Rahmen der Angebotserstellung können Ihre Daten an folgende Empfänger weitergegeben werden:</p>
             <ul style={{ paddingLeft: 24, marginTop: 8, marginBottom: 12 }}>
               <li>Fondsfinanz Maklerservice GmbH, Riesstraße 25, 80992 München (Maklerpool zur Vertragsvermittlung)</li>
@@ -111,7 +128,7 @@ function DatenschutzContent() {
           </section>
 
           <section>
-            <h2 style={h2Style}><span style={numStyle}>5.</span> Ihre Rechte</h2>
+            <h2 style={h2Style}><span style={numStyle}>6.</span> Ihre Rechte</h2>
             <p>Sie haben gegenüber uns folgende Rechte hinsichtlich Ihrer personenbezogenen Daten:</p>
             <ul style={{ paddingLeft: 24, marginTop: 8, marginBottom: 12 }}>
               <li>Recht auf Auskunft (Art. 15 DSGVO)</li>
@@ -134,22 +151,22 @@ function DatenschutzContent() {
           </section>
 
           <section>
-            <h2 style={h2Style}><span style={numStyle}>6.</span> Speicherdauer</h2>
+            <h2 style={h2Style}><span style={numStyle}>7.</span> Speicherdauer</h2>
             <p>Personenbezogene Daten werden gelöscht, sobald der Zweck der Speicherung entfällt. Für Daten aus dem Fragebogen gilt: Kommt kein Vertrag zustande, werden Ihre Daten spätestens 6 Monate nach dem letzten Kontakt gelöscht. Für Vertragsdaten gelten die gesetzlichen Aufbewahrungsfristen von bis zu 10 Jahren gemäß HGB und AO.</p>
           </section>
 
           <section>
-            <h2 style={h2Style}><span style={numStyle}>7.</span> Hosting</h2>
+            <h2 style={h2Style}><span style={numStyle}>8.</span> Hosting</h2>
             <p>Diese Website wird bei Vercel Inc. (440 N Barranca Ave #4133, Covina, CA 91723, USA) gehostet. Die Datenübertragung in die USA erfolgt auf Grundlage der EU-Standardvertragsklauseln gemäß Art. 46 Abs. 2 lit. c DSGVO.</p>
           </section>
 
           <section>
-            <h2 style={h2Style}><span style={numStyle}>8.</span> Cookies</h2>
+            <h2 style={h2Style}><span style={numStyle}>9.</span> Cookies</h2>
             <p>Diese Website verwendet keine Tracking-Cookies und keine Analyse-Tools. Es wird lediglich ein technisch notwendiges Cookie zur Speicherung Ihrer Theme-Präferenz (Hell-/Dunkelmodus) im lokalen Speicher des Browsers gesetzt. Dieses Cookie enthält keine personenbezogenen Daten.</p>
           </section>
 
           <section>
-            <h2 style={h2Style}><span style={numStyle}>9.</span> SSL-/TLS-Verschlüsselung</h2>
+            <h2 style={h2Style}><span style={numStyle}>10.</span> SSL-/TLS-Verschlüsselung</h2>
             <p>Diese Website nutzt aus Sicherheitsgründen eine SSL- bzw. TLS-Verschlüsselung. Eine verschlüsselte Verbindung erkennen Sie daran, dass die Adresszeile des Browsers von &quot;http://&quot; auf &quot;https://&quot; wechselt und an dem Schloss-Symbol in Ihrer Browserzeile.</p>
           </section>
         </div>

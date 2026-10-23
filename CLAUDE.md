@@ -124,6 +124,15 @@ Beide Formulare laufen ueber eigene API-Routes: `app/api/contact/route.js` und `
 
 Absender ist `kontakt@marcoarpa.com` ueber die in Resend verifizierte Domain, also dieselbe Adresse, die auch Empfaenger ist. SPF und Return-Path liegen auf der Subdomain `send.marcoarpa.com`, damit sie nicht mit den IONOS-Mail-Records auf dem Apex kollidieren.
 
+### WhatsApp-Bot (Stand 23.10.2026: lokal getestet, noch nicht live verbunden)
+Regelbasierter Bot ohne KI. Er startet nur, wenn ein Chat mit dem vorausgefüllten Text aus `lib/whatsapp/link.js` beginnt („… über marcoarpa.com“), also über den Link in der Fußzeile oder einen QR-Code. Alle anderen Nachrichten an die Nummer beantwortet Marco selbst. Erst fragt der Bot: Zahnzusatz-Angebot oder Gespräch. Zahnzusatz holt zuerst die Einwilligung und geht dann den Fragebogen durch (gleiche Werte wie `components/Questionnaire.js`). Gespräch fragt nur Name und Anliegen. Beides landet in `zahnzusatz_submissions` mit `quelle = 'whatsapp'` und `anfrage_typ`, die Mail geht wie gewohnt über `lib/notify.js`. Danach schweigt der Bot und Marco antwortet in der Business-App.
+
+- `app/api/whatsapp/route.js` ist der Webhook (GET-Verifizierung, POST-Nachrichten). Dialog in `lib/whatsapp/flow.js`, Ablauf und Speicherung in `lib/whatsapp/bot.js`, Versand in `lib/whatsapp/api.js`. Web und WhatsApp speichern beide über `lib/submissions.js`.
+- Gesprächszustand in `whatsapp_conversations`, schon verarbeitete Nachrichten in `whatsapp_seen_messages`. Unfertige Chats werden nach 30 Tagen gelöscht. Schreibt Marco während eines laufenden Bot-Dialogs selbst (Coexistence-Echo), pausiert der Bot für diesen Kontakt.
+- Bot-Vorschau ohne WhatsApp: `/admin/whatsapp`. Tests landen im CRM als „WhatsApp (Test)“ und lösen keine Mail aus.
+- Umgebungsvariablen: `WHATSAPP_PROVIDER` (`meta` oder `360dialog`), `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` (nur Meta), `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET` (Meta signiert die Webhooks) oder `WHATSAPP_WEBHOOK_KEY` (360dialog, Webhook-URL mit `?key=`), `NEXT_PUBLIC_WHATSAPP_NUMBER` (Nummer für den Fußzeilen-Link; ohne sie gibt es keinen Link). `WHATSAPP_DRY_RUN=1` schreibt nur ins Log statt zu senden.
+- Plan: Erst kostenlos mit Metas Testnummer (Cloud API direkt, bis zu 5 freigeschaltete Empfänger). Für Marcos echte Nummer mit Coexistence (Nummer bleibt in seiner Business-App) über 360dialog, dafür nur die Variablen tauschen. Kosten: ab der 1.001. Antwortnachricht im Monat pro Nummer zahlt Meta-Tarif (seit 01.10.2026).
+
 ### Terminbuchung
 Calendly ist **nicht** eingebunden, im Code gibt es keinen Verweis darauf. Falls gewuenscht, muesste das neu gebaut werden.
 
