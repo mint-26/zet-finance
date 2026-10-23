@@ -16,7 +16,7 @@ Seit dem Relaunch (Oktober 2026) gibt es zwei Auftritte in einer App:
 
 ### Logos
 
-`public/logo-black.svg`, `logo-white.svg`, `logo-gold.svg` sind die MA-Dateien aus `CI/` (Wappen mit Namenszug), nur mit eng gesetzter viewBox. `public/wappen-white.svg` ist derselbe weiße Logo-Ausschnitt ohne Namenszug für den Einstieg der Hauptseite. Gold (`#C6A15B`) weicht vom UI-Champagner (`#B5A171`) ab und ist bewusst noch nirgends eingesetzt. Bei Logo-Wechseln den Cache-Buster `?v=` an allen Einbindungen erhöhen.
+`public/logo-black.svg`, `logo-white.svg`, `logo-gold.svg` sind die MA-Dateien aus `CI/Content/Logo` (Stand 23.10.2026: `8.svg` Schwarz, `9.svg` Weiß, `7.svg` Gold; Wappen mit Namenszug), nur mit eng gesetzter viewBox. `public/wappen-white.svg` ist ein älterer weißer Ausschnitt ohne Namenszug und aktuell nicht eingebunden. Gold (`#C6A15B`) weicht vom UI-Champagner (`#B5A171`) ab und ist bewusst noch nirgends eingesetzt. Bei Logo-Wechseln den Cache-Buster `?v=` an allen Einbindungen erhöhen.
 
 ## Tech Stack
 

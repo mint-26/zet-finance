@@ -170,7 +170,7 @@ export default function HomePage() {
                 </span>
               </p>
             </div>
-            <img src="/logo-white.svg?v=6" alt="Logo von Marco Arpa" className="hero-crest" width="627.6" height="662.3" />
+            <img src="/logo-white.svg?v=7" alt="Logo von Marco Arpa" className="hero-crest" width="591" height="623.5" />
           </div>
 
           <div className="hero-foot" style={{

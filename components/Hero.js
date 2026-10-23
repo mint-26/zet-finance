@@ -128,7 +128,7 @@ export default function Hero() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <img
-              src={theme === 'dark' ? '/logo-white.svg?v=6' : '/logo-black.svg?v=6'}
+              src={theme === 'dark' ? '/logo-white.svg?v=7' : '/logo-black.svg?v=7'}
               alt="Marco Arpa"
               style={{
                 // The SVG is tightly cropped; 61.39 % of the square box keeps
