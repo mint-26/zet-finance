@@ -5,6 +5,7 @@ import SiteShell from './SiteShell';
 import ContactSection from './ContactSection';
 import DentalReveal from './DentalReveal';
 import Texture from './Texture';
+import Portfolio from './Portfolio';
 import { Arrow } from './Icons';
 import { C, SERIF, SANS } from '../../lib/brand';
 import { TESTIMONIALS } from '../Testimonials';
@@ -258,7 +259,7 @@ export default function HomePage() {
         }}>
           <span style={{ width: 7, height: 7, background: C.champagne, transform: 'rotate(45deg)' }} />
         </div>
-        <div style={{ ...WRAP, position: 'relative', paddingTop: 'clamp(72px, 9vw, 112px)', paddingBottom: 'clamp(64px, 8vw, 104px)' }}>
+        <div style={{ ...WRAP, position: 'relative', paddingTop: 'clamp(72px, 9vw, 112px)' }}>
           <p style={eyebrow(C.champagneDark)}>Leistungen</p>
           <h2 id="absichern-title" style={{
             fontFamily: SERIF, fontWeight: 400, fontSize: 'clamp(34px, 4.2vw, 48px)', lineHeight: 1.12, margin: '24px 0 0',
@@ -268,6 +269,9 @@ export default function HomePage() {
           <div className="areas-grid">
             {AREAS.map((a, i) => <Area key={a.key} area={a} index={i} />)}
           </div>
+        </div>
+        <div style={{ paddingTop: 'clamp(72px, 9vw, 112px)', paddingBottom: 'clamp(64px, 8vw, 104px)' }}>
+          <Portfolio />
         </div>
       </section>
 
