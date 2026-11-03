@@ -10,17 +10,19 @@ const isSearchable = (q) => /[a-zäöüß]{3}/i.test(q);
 // Text field with address suggestions from /api/adresse. Free typing always works, so a
 // missing address or a failing service never blocks the form. The list opens in the page
 // flow because the questionnaire card clips overflowing content.
-const AddressInput = forwardRef(function AddressInput({ id, value, onChange, style, placeholder, ...rest }, ref) {
+const AddressInput = forwardRef(function AddressInput({ id, value, onChange, onPick, style, placeholder, ...rest }, ref) {
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const [loading, setLoading] = useState(false);
-  const [missingNumber, setMissingNumber] = useState(false);
+  const [more, setMore] = useState(false);
+  const [noMatch, setNoMatch] = useState(false);
+  const typedNumber = useRef('');
   // Also true on mount: a value restored by "Zurück" should not trigger a new search.
   const skipSearch = useRef(true);
-  // The service answers in 1 to 3 seconds, far slower than typing. So a running request is
-  // never cancelled: its answer is shown, then the newest text is searched. Only one request
-  // runs at a time, which also keeps the load on the free service low.
+  // The service can answer slower than people type. So a running request is never cancelled:
+  // its answer is shown, then the newest text is searched. Only one request runs at a time,
+  // which also keeps the load on the free service low.
   const wanted = useRef('');
   const running = useRef(false);
 
@@ -35,6 +37,9 @@ const AddressInput = forwardRef(function AddressInput({ id, value, onChange, sty
       if (wanted.current) {
         const found = data.results || [];
         setResults(found);
+        typedNumber.current = data.number || '';
+        setMore(!!data.more);
+        setNoMatch(found.length === 0);
         setActive(-1);
         setOpen(found.length > 0 && document.activeElement?.id === id);
       }
@@ -52,6 +57,7 @@ const AddressInput = forwardRef(function AddressInput({ id, value, onChange, sty
     if (!isSearchable(q)) {
       wanted.current = '';
       setResults([]);
+      setNoMatch(false);
       setOpen(false);
       return undefined;
     }
@@ -63,9 +69,8 @@ const AddressInput = forwardRef(function AddressInput({ id, value, onChange, sty
   const choose = (item) => {
     skipSearch.current = true;
     wanted.current = '';
-    // A street without number: leave the cursor behind it, so the number can be typed right away.
-    onChange(item.complete ? item.label : `${item.label} `);
-    setMissingNumber(!item.complete);
+    setNoMatch(false);
+    onPick(item.label, typedNumber.current);
     setOpen(false);
   };
 
@@ -83,16 +88,16 @@ const AddressInput = forwardRef(function AddressInput({ id, value, onChange, sty
         {...rest} ref={ref} id={id} style={style} value={value} placeholder={placeholder}
         role="combobox" aria-autocomplete="list" aria-expanded={open} aria-controls={`${id}-list`}
         aria-activedescendant={open && active >= 0 ? `${id}-opt-${active}` : undefined}
-        onChange={(e) => { setMissingNumber(false); onChange(e.target.value); }}
+        onChange={(e) => onChange(e.target.value)}
         onKeyDown={onKeyDown}
         onBlur={() => setOpen(false)}
-        onFocus={() => { if (results.length && !missingNumber) setOpen(true); }}
+        onFocus={() => { if (results.length) setOpen(true); }}
       />
-      {loading && !open && !missingNumber && (
+      {loading && !open && (
         <p aria-live="polite" style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.45, margin: '7px 0 0' }}>Adressen werden gesucht …</p>
       )}
-      {missingNumber && (
-        <p style={{ fontSize: 13, color: 'var(--accent)', lineHeight: 1.45, margin: '7px 0 0' }}>Bitte ergänzen Sie noch Ihre Hausnummer.</p>
+      {noMatch && !loading && (
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.45, margin: '7px 0 0' }}>Keine passende Straße gefunden. Tippen Sie Postleitzahl, Ort und Straße einfach selbst ein.</p>
       )}
       {open && (
         <div style={{ marginTop: 8, background: 'var(--input-bg)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
@@ -112,7 +117,7 @@ const AddressInput = forwardRef(function AddressInput({ id, value, onChange, sty
             ))}
           </ul>
           <p style={{ margin: 0, padding: '6px 16px 8px', fontSize: 11, color: 'var(--text-muted)', borderTop: '1px solid var(--border)' }}>
-            Adressdaten © OpenStreetMap-Mitwirkende
+            {more ? 'Mehr Treffer: Ort oder Postleitzahl ergänzen. ' : ''}Straßenverzeichnis: OpenPLZ API
           </p>
         </div>
       )}

@@ -20,7 +20,7 @@ const EMPTY_FORM = {
   erwerbsstatus: '', beihilfe: '', versicherungsart: '',
   kasse: '', kasseIstAndere: false, kasseFreitext: '', wechsel: '', bonusprogramm: '',
   // Step 4
-  name: '', anschrift: '', geburtsdatum: '', geschlecht: '', familienstand: '',
+  name: '', anschrift: '', hausnummer: '', geburtsdatum: '', geschlecht: '', familienstand: '',
   kontaktweg: [], email: '', telefon: '',
 };
 
@@ -98,7 +98,8 @@ function validateStep(step, form) {
   }
   if (step === 4) {
     if (form.name.trim().length < 3) e.name = 'Bitte geben Sie Ihren Vor- und Nachnamen an.';
-    if (!/\d/.test(form.anschrift) || form.anschrift.trim().length < 10) e.anschrift = 'Bitte geben Sie Ihre vollständige Anschrift mit Postleitzahl und Hausnummer an.';
+    if (!/\b\d{5}\b/.test(form.anschrift) || !/\p{L}{3}/u.test(form.anschrift)) e.anschrift = 'Bitte wählen Sie einen Vorschlag oder tragen Sie Postleitzahl, Ort und Straße ein.';
+    if (!form.hausnummer.trim()) e.hausnummer = 'Bitte geben Sie Ihre Hausnummer an. Falls es keine gibt, schreiben Sie „ohne“.';
     const birth = form.geburtsdatum ? new Date(form.geburtsdatum) : null;
     if (!birth || Number.isNaN(birth.getTime())) e.geburtsdatum = 'Bitte geben Sie Ihr Geburtsdatum an.';
     else if (birth > new Date() || birth.getFullYear() < 1900) e.geburtsdatum = 'Bitte prüfen Sie Ihr Geburtsdatum.';
@@ -140,7 +141,7 @@ function buildPayload(form) {
     wechsel: kind === 'gkv' ? form.wechsel : '',
     bonusprogramm: kind === 'gkv' ? form.bonusprogramm : '',
     name: form.name.trim(),
-    anschrift: form.anschrift.trim(),
+    anschrift: `${form.anschrift.trim()} ${form.hausnummer.trim()}`,
     geburtsdatum: form.geburtsdatum,
     geschlecht: form.geschlecht,
     familienstand: form.familienstand,
@@ -722,18 +723,28 @@ export default function Questionnaire() {
                 </div>
 
                 <div>
-                  <label htmlFor="q-anschrift" style={labelStyle}>Vollständige Anschrift *<br />
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Einfach lostippen, z. B. Straße und Ort. Passende Adressen erscheinen direkt darunter.</span>
+                  <label htmlFor="q-anschrift" style={labelStyle}>Straße und Ort *<br />
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Einfach lostippen, passende Adressen erscheinen direkt darunter.</span>
                   </label>
                   <AddressInput
                     id="q-anschrift" ref={bindRef('anschrift')} autoComplete="off"
-                    placeholder="60311 Frankfurt am Main, Musterstraße 1"
+                    placeholder="z. B. Musterstraße Frankfurt"
                     style={{ ...inputStyle(!!errors.anschrift), scrollMarginTop: 24 }}
                     value={form.anschrift} onChange={update('anschrift')}
+                    onPick={(label, number) => {
+                      patch(number ? { anschrift: label, hausnummer: number } : { anschrift: label });
+                      personalRefs.current.hausnummer?.focus();
+                    }}
                     aria-invalid={errors.anschrift ? true : undefined}
                     aria-describedby={errors.anschrift ? 'q-anschrift-error' : undefined}
                   />
                   <FieldError id="q-anschrift" message={errors.anschrift} />
+                </div>
+
+                <div>
+                  <label htmlFor="q-hausnummer" style={labelStyle}>Hausnummer *</label>
+                  <input {...inputProps('hausnummer')} ref={bindRef('hausnummer')} autoComplete="off" placeholder="z. B. 6a" style={{ ...inputProps('hausnummer').style, maxWidth: 160 }} />
+                  <FieldError id="q-hausnummer" message={errors.hausnummer} />
                 </div>
 
                 <div>
