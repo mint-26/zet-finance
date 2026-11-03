@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useInView } from './useInView';
 import SmoothHeight from './SmoothHeight';
 import InsurerSelect from './InsurerSelect';
-import AddressInput from './AddressInput';
+import StreetInput from './StreetInput';
 import { GKV, PKV, RATES_AS_OF } from '../lib/insurers';
 
 const TOTAL_STEPS = 4;
@@ -20,7 +20,7 @@ const EMPTY_FORM = {
   erwerbsstatus: '', beihilfe: '', versicherungsart: '',
   kasse: '', kasseIstAndere: false, kasseFreitext: '', wechsel: '', bonusprogramm: '',
   // Step 4
-  name: '', anschrift: '', hausnummer: '', geburtsdatum: '', geschlecht: '', familienstand: '',
+  name: '', plz: '', ort: '', strasse: '', hausnummer: '', geburtsdatum: '', geschlecht: '', familienstand: '',
   kontaktweg: [], email: '', telefon: '',
 };
 
@@ -98,7 +98,9 @@ function validateStep(step, form) {
   }
   if (step === 4) {
     if (form.name.trim().length < 3) e.name = 'Bitte geben Sie Ihren Vor- und Nachnamen an.';
-    if (!/\b\d{5}\b/.test(form.anschrift) || !/\p{L}{3}/u.test(form.anschrift)) e.anschrift = 'Bitte wählen Sie einen Vorschlag oder tragen Sie Postleitzahl, Ort und Straße ein.';
+    if (!/^\d{5}$/.test(form.plz)) e.plz = 'Bitte geben Sie Ihre fünfstellige Postleitzahl an.';
+    if (form.ort.trim().length < 2) e.ort = 'Bitte geben Sie Ihren Ort an.';
+    if (form.strasse.trim().length < 3) e.strasse = 'Bitte geben Sie Ihre Straße an.';
     if (!form.hausnummer.trim()) e.hausnummer = 'Bitte geben Sie Ihre Hausnummer an. Falls es keine gibt, schreiben Sie „ohne“.';
     const birth = form.geburtsdatum ? new Date(form.geburtsdatum) : null;
     if (!birth || Number.isNaN(birth.getTime())) e.geburtsdatum = 'Bitte geben Sie Ihr Geburtsdatum an.';
@@ -141,7 +143,7 @@ function buildPayload(form) {
     wechsel: kind === 'gkv' ? form.wechsel : '',
     bonusprogramm: kind === 'gkv' ? form.bonusprogramm : '',
     name: form.name.trim(),
-    anschrift: `${form.anschrift.trim()} ${form.hausnummer.trim()}`,
+    anschrift: `${form.plz} ${form.ort.trim()}, ${form.strasse.trim()} ${form.hausnummer.trim()}`,
     geburtsdatum: form.geburtsdatum,
     geschlecht: form.geschlecht,
     familienstand: form.familienstand,
@@ -314,6 +316,8 @@ export default function Questionnaire() {
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendFailed, setSendFailed] = useState(false);
+  const [orte, setOrte] = useState([]);
+  const [plzUnknown, setPlzUnknown] = useState(false);
   const headingRef = useRef(null);
   const firstStep = useRef(true);
   // Inputs of step 4, so we can read values the browser autofilled without
@@ -358,6 +362,12 @@ export default function Questionnaire() {
     patch(sameKind ? { versicherungsart: val } : { versicherungsart: val, ...resetInsurer });
   };
 
+  // Town and street belong to the postcode, so a different postcode clears them.
+  const setPlz = (val) => {
+    const plz = val.replace(/\D/g, '').slice(0, 5);
+    patch(plz === form.plz ? { plz } : { plz, ort: '', strasse: '' });
+  };
+
   const toggleKontaktweg = (val) => {
     const next = form.kontaktweg.includes(val) ? form.kontaktweg.filter((v) => v !== val) : [...form.kontaktweg, val];
     const changes = { kontaktweg: next };
@@ -365,6 +375,28 @@ export default function Questionnaire() {
     if (!next.includes(WANTS_PHONE) && !next.includes(WANTS_WHATSAPP)) changes.telefon = '';
     patch(changes);
   };
+
+  // A complete postcode fills in the town. Several towns become a selection, an unknown
+  // postcode only gets a hint: the town can always be typed by hand.
+  useEffect(() => {
+    if (!/^\d{5}$/.test(form.plz)) { setOrte([]); setPlzUnknown(false); return undefined; }
+    let stale = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/adresse?plz=${form.plz}`);
+        const data = await res.json();
+        if (stale) return;
+        const found = data.orte || [];
+        setOrte(found);
+        setPlzUnknown(!!data.ok && found.length === 0);
+        if (found.length === 1) patch({ ort: found[0] });
+      } catch {
+        // Offline or service down: the town is typed by hand.
+      }
+    })();
+    return () => { stale = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.plz]);
 
   // After every step change jump to the new heading, for keyboard and screen reader too.
   useEffect(() => {
@@ -722,29 +754,58 @@ export default function Questionnaire() {
                   <FieldError id="q-name" message={errors.name} />
                 </div>
 
-                <div>
-                  <label htmlFor="q-anschrift" style={labelStyle}>Straße und Ort *<br />
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Einfach lostippen, passende Adressen erscheinen direkt darunter.</span>
-                  </label>
-                  <AddressInput
-                    id="q-anschrift" ref={bindRef('anschrift')} autoComplete="off"
-                    placeholder="z. B. Musterstraße Frankfurt"
-                    style={{ ...inputStyle(!!errors.anschrift), scrollMarginTop: 24 }}
-                    value={form.anschrift} onChange={update('anschrift')}
-                    onPick={(label, number) => {
-                      patch(number ? { anschrift: label, hausnummer: number } : { anschrift: label });
-                      personalRefs.current.hausnummer?.focus();
-                    }}
-                    aria-invalid={errors.anschrift ? true : undefined}
-                    aria-describedby={errors.anschrift ? 'q-anschrift-error' : undefined}
-                  />
-                  <FieldError id="q-anschrift" message={errors.anschrift} />
+                <div className="q-row-plz">
+                  <div>
+                    <label htmlFor="q-plz" style={labelStyle}>Postleitzahl *</label>
+                    <input
+                      {...inputProps('plz')} ref={bindRef('plz')} onChange={(e) => setPlz(e.target.value)}
+                      inputMode="numeric" autoComplete="postal-code" maxLength={5} placeholder="60311"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="q-ort" style={labelStyle}>Ort *</label>
+                    {orte.length > 1 ? (
+                      <select {...inputProps('ort')} style={{ ...inputProps('ort').style, height: 52 }}>
+                        <option value="">Bitte wählen</option>
+                        {orte.map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    ) : (
+                      <input {...inputProps('ort')} ref={bindRef('ort')} autoComplete="address-level2" placeholder="Wird ergänzt" />
+                    )}
+                  </div>
                 </div>
+                {(errors.plz || errors.ort || plzUnknown) && (
+                  <div style={{ marginTop: -14 }}>
+                    <FieldError id="q-plz" message={errors.plz} />
+                    <FieldError id="q-ort" message={errors.ort} />
+                    {plzUnknown && !errors.plz && (
+                      <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.45, margin: '7px 0 0' }}>Diese Postleitzahl ist uns nicht bekannt. Bitte prüfen Sie sie oder tragen Sie den Ort selbst ein.</p>
+                    )}
+                  </div>
+                )}
 
-                <div>
-                  <label htmlFor="q-hausnummer" style={labelStyle}>Hausnummer *</label>
-                  <input {...inputProps('hausnummer')} ref={bindRef('hausnummer')} autoComplete="off" placeholder="z. B. 6a" style={{ ...inputProps('hausnummer').style, maxWidth: 160 }} />
-                  <FieldError id="q-hausnummer" message={errors.hausnummer} />
+                <div className="q-row-street">
+                  <div>
+                    <label htmlFor="q-strasse" style={labelStyle}>Straße *</label>
+                    <StreetInput
+                      id="q-strasse" plz={form.plz} ref={bindRef('strasse')} autoComplete="off"
+                      placeholder="Musterstraße"
+                      style={{ ...inputStyle(!!errors.strasse), scrollMarginTop: 24 }}
+                      value={form.strasse} onChange={update('strasse')}
+                      onPick={(label, number) => {
+                        patch(number ? { strasse: label, hausnummer: number } : { strasse: label });
+                        personalRefs.current.hausnummer?.focus();
+                      }}
+                      aria-invalid={errors.strasse ? true : undefined}
+                      aria-describedby={errors.strasse ? 'q-strasse-error' : undefined}
+                    />
+                    <FieldError id="q-strasse" message={errors.strasse} />
+                  </div>
+                  <div>
+                    <label htmlFor="q-hausnummer" style={labelStyle}>Hausnummer *</label>
+                    <input {...inputProps('hausnummer')} ref={bindRef('hausnummer')} autoComplete="off" placeholder="6a" />
+                    <FieldError id="q-hausnummer" message={errors.hausnummer} />
+                  </div>
                 </div>
 
                 <div>

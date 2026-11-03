@@ -112,10 +112,14 @@ textarea::placeholder {
 .q-section { padding: 100px 24px; }
 .q-card { padding: 36px; }
 .q-opt:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.q-row-plz { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; }
+.q-row-street { display: grid; grid-template-columns: minmax(0, 1fr) 120px; gap: 20px 12px; align-items: start; }
 
 @media (max-width: 600px) {
   .q-section { padding: 64px 16px; }
   .q-card { padding: 22px 16px; }
+  .q-row-plz { grid-template-columns: 100px minmax(0, 1fr); }
+  .q-row-street { grid-template-columns: 1fr; }
 }
 
 /* Scrollbar */
