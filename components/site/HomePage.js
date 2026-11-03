@@ -9,6 +9,7 @@ import Portfolio from './Portfolio';
 import { Arrow } from './Icons';
 import { C, SERIF, SANS } from '../../lib/brand';
 import { TESTIMONIALS } from '../Testimonials';
+import { useLang } from '../LanguageProvider';
 
 const HERO_POSTER = '/video/header-poster.jpg';
 
@@ -103,6 +104,7 @@ function HeroVideo() {
 // Two cards side by side: Privat light, Unternehmen dark, so the pair reads as one
 // decision. Numbered 01 and 02; title, italic lead sentence, then Marco's paragraphs.
 function Area({ area, index }) {
+  const { t } = useLang();
   const dark = index === 1;
   const fg = dark ? C.ivory : C.black;
   const muted = dark ? C.grey : C.graphite;
@@ -119,18 +121,18 @@ function Area({ area, index }) {
         <span style={{
           display: 'block', fontFamily: SERIF, fontWeight: 400,
           fontSize: 'clamp(36px, 4.4vw, 52px)', lineHeight: 1.05, letterSpacing: '-0.01em',
-        }}>{area.title}</span>
+        }}>{t(area.title)}</span>
         <span style={{
           display: 'block', marginTop: 14, fontFamily: SERIF, fontStyle: 'italic',
           fontSize: 18, fontWeight: 400, color: dark ? C.champagne : C.champagneDark,
-        }}>{area.sub}</span>
+        }}>{t(area.sub)}</span>
       </h3>
       {/* Paragraphs are strings, or arrays of strings and { em } parts set in italics. */}
       {area.intro.map((para, i) => (
         <p key={i} style={{ fontSize: 15, lineHeight: 1.7, color: muted, margin: i === 0 ? '24px 0 0' : '14px 0 0', maxWidth: 460 }}>
           {[].concat(para).map((part, j) => (part.em
-            ? <em key={j} style={{ color: fg, fontStyle: 'italic' }}>{part.em}</em>
-            : <span key={j}>{part}</span>))}
+            ? <em key={j} style={{ color: fg, fontStyle: 'italic' }}>{t(part.em)}</em>
+            : <span key={j}>{t(part)}</span>))}
         </p>
       ))}
     </article>
@@ -138,6 +140,7 @@ function Area({ area, index }) {
 }
 
 export default function HomePage() {
+  const { t } = useLang();
   return (
     <SiteShell>
       {/* Einstieg */}
@@ -149,13 +152,13 @@ export default function HomePage() {
         <div style={{ ...WRAP, position: 'relative', paddingTop: 'clamp(56px, 9vw, 112px)', paddingBottom: 'clamp(28px, 4vw, 40px)' }}>
           <div className="hero-grid">
             <div>
-              <p style={eyebrow(C.champagne)}>Ihr persönlicher Versicherungsmakler</p>
+              <p style={eyebrow(C.champagne)}>{t('Ihr persönlicher Versicherungsmakler')}</p>
               <h1 id="hero-title" style={{
                 fontFamily: SERIF, fontWeight: 400, color: C.ivory,
                 fontSize: 'clamp(42px, 6.4vw, 80px)', lineHeight: 1.04,
                 letterSpacing: '-0.015em', margin: '28px 0 0',
               }}>
-                Klarheit für<br />Ihre <em style={{ fontStyle: 'italic' }}>Absicherung</em>.
+                {t('Klarheit für')}<br />{t('Ihre')} <em style={{ fontStyle: 'italic' }}>{t('Absicherung')}</em>.
               </h1>
               <p style={{
                 display: 'flex', alignItems: 'center', gap: 16, margin: '30px 0 0',
@@ -165,13 +168,13 @@ export default function HomePage() {
                 <span aria-hidden="true" style={{ flex: 'none', width: 36, height: 1, background: C.champagne }} />
                 {/* Each claim stays on one line, so the three only break between each other. */}
                 <span>
-                  <span style={{ whiteSpace: 'nowrap' }}>Ein Ansprechpartner.</span>{' '}
-                  <span style={{ whiteSpace: 'nowrap' }}>Kontinuierliche Optimierung.</span>{' '}
-                  <span style={{ whiteSpace: 'nowrap' }}>Persönliche Verantwortung.</span>
+                  <span style={{ whiteSpace: 'nowrap' }}>{t('Ein Ansprechpartner.')}</span>{' '}
+                  <span style={{ whiteSpace: 'nowrap' }}>{t('Kontinuierliche Optimierung.')}</span>{' '}
+                  <span style={{ whiteSpace: 'nowrap' }}>{t('Persönliche Verantwortung.')}</span>
                 </span>
               </p>
             </div>
-            <img src="/logo-white.svg?v=7" alt="Logo von Marco Arpa" className="hero-crest" width="591" height="623.5" />
+            <img src="/logo-white.svg?v=7" alt={t('Logo von Marco Arpa')} className="hero-crest" width="591" height="623.5" />
           </div>
 
           <div className="hero-foot" style={{
@@ -186,12 +189,12 @@ export default function HomePage() {
               backdropFilter: 'blur(14px) saturate(140%)', WebkitBackdropFilter: 'blur(14px) saturate(140%)',
               color: C.ivory, textDecoration: 'none', fontSize: 14,
             }}>
-              Lassen Sie uns sprechen <Arrow size={11} />
+              {t('Lassen Sie uns sprechen')} <Arrow size={11} />
             </a>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 14 }}>
-              Privatkunden &amp; Unternehmen
+              {t('Privatkunden & Unternehmen')}
               <span aria-hidden="true" style={{ width: 40, height: 1, background: C.champagne }} />
-              Deutschlandweit
+              {t('Deutschlandweit')}
             </span>
           </div>
         </div>
@@ -202,18 +205,18 @@ export default function HomePage() {
         <section id="zahnzusatz" aria-labelledby="zahn-title" style={{ position: 'relative', isolation: 'isolate', background: C.ivory, color: C.black }}>
           <Texture name="marmor" />
           <div style={{ ...WRAP, position: 'relative', paddingTop: 'clamp(56px, 7vw, 88px)', paddingBottom: 'clamp(56px, 7vw, 88px)' }}>
-            <p style={eyebrow(C.champagneDark)}>Zahnzusatzversicherung</p>
+            <p style={eyebrow(C.champagneDark)}>{t('Zahnzusatzversicherung')}</p>
             <h2 id="zahn-title" style={{
               fontFamily: SERIF, fontWeight: 400, fontSize: 'clamp(38px, 5.2vw, 64px)',
               lineHeight: 1.06, letterSpacing: '-0.01em', margin: '24px 0 0',
             }}>
-              <span style={{ color: C.champagneDark }}>Damit die Zahnkosten</span><br />nicht wehtun.
+              <span style={{ color: C.champagneDark }}>{t('Damit die Zahnkosten')}</span><br />{t('nicht wehtun.')}
             </h2>
             <div className="qa-grid">
               {DENTAL_QA.map((x) => (
                 <div key={x.q} style={{ borderTop: `1px solid ${C.lineLight}`, paddingTop: 16 }}>
-                  <p style={{ fontSize: 16, fontWeight: 700, margin: 0, color: C.black }}>{x.q}</p>
-                  <p style={{ fontSize: 16, lineHeight: 1.6, margin: '6px 0 0', color: C.graphite }}>{x.a}</p>
+                  <p style={{ fontSize: 16, fontWeight: 700, margin: 0, color: C.black }}>{t(x.q)}</p>
+                  <p style={{ fontSize: 16, lineHeight: 1.6, margin: '6px 0 0', color: C.graphite }}>{t(x.a)}</p>
                 </div>
               ))}
             </div>
@@ -223,13 +226,13 @@ export default function HomePage() {
                 display: 'inline-flex', alignItems: 'center', gap: 29, minHeight: 62, padding: '0 30px',
                 borderRadius: 999, background: C.champagneDark, color: C.ivory, textDecoration: 'none', fontSize: 17,
               }}>
-                Jetzt Formular ausfüllen <Arrow size={13} />
+                {t('Jetzt Formular ausfüllen')} <Arrow size={13} />
               </a>
             </div>
             <dl className="stats-row">
               {STATS.map((x) => (
                 <div key={x.label} style={{ borderLeft: `1px solid ${C.lineLight}`, paddingLeft: 20 }}>
-                  <dt style={{ fontSize: 13, color: C.graphite, marginTop: 6, order: 2 }}>{x.label}</dt>
+                  <dt style={{ fontSize: 13, color: C.graphite, marginTop: 6, order: 2 }}>{t(x.label)}</dt>
                   <dd style={{ margin: 0, fontFamily: SERIF, fontSize: 'clamp(32px, 3.6vw, 42px)', color: C.champagneDark, order: 1 }}>{x.num}</dd>
                 </div>
               ))}
@@ -260,11 +263,11 @@ export default function HomePage() {
           <span style={{ width: 7, height: 7, background: C.champagne, transform: 'rotate(45deg)' }} />
         </div>
         <div style={{ ...WRAP, position: 'relative', paddingTop: 'clamp(72px, 9vw, 112px)' }}>
-          <p style={eyebrow(C.champagneDark)}>Leistungen</p>
+          <p style={eyebrow(C.champagneDark)}>{t('Leistungen')}</p>
           <h2 id="absichern-title" style={{
             fontFamily: SERIF, fontWeight: 400, fontSize: 'clamp(34px, 4.2vw, 48px)', lineHeight: 1.12, margin: '24px 0 0',
           }}>
-            Was möchten Sie absichern?
+            {t('Was möchten Sie absichern?')}
           </h2>
           <div className="areas-grid">
             {AREAS.map((a, i) => <Area key={a.key} area={a} index={i} />)}
@@ -284,10 +287,10 @@ export default function HomePage() {
               fontFamily: SERIF, fontWeight: 400, color: C.ivory,
               fontSize: 'clamp(34px, 4.2vw, 48px)', lineHeight: 1.12, margin: 0,
             }}>
-              Ein Ansprechpartner.<br />Auch danach.
+              {t('Ein Ansprechpartner.')}<br />{t('Auch danach.')}
             </h2>
             <p style={{ fontFamily: SERIF, fontSize: 18, color: C.champagne, margin: '28px 0 0' }}>Marco Arpa</p>
-            <p style={{ fontSize: 13, letterSpacing: '0.04em', color: C.grey, margin: '6px 0 0' }}>Geschäftsführer</p>
+            <p style={{ fontSize: 13, letterSpacing: '0.04em', color: C.grey, margin: '6px 0 0' }}>{t('Geschäftsführer')}</p>
             {/* Colour portrait (Oct 2026) with the offset frame in brand colours; 640 x 768 px
                 source, max 320 px wide for sharp retina display. Bump ?v= when replacing it. */}
             <div style={{ position: 'relative', maxWidth: 320, margin: '36px 12px 12px 12px' }}>
@@ -300,21 +303,21 @@ export default function HomePage() {
                 background: `linear-gradient(135deg, ${C.champagne}, ${C.champagneDark})`, opacity: 0.22,
               }} />
               <img
-                src="/marco.jpg?v=2" alt="Porträt von Marco Arpa" width="640" height="768" loading="lazy"
+                src="/marco.jpg?v=2" alt={t('Porträt von Marco Arpa')} width="640" height="768" loading="lazy"
                 style={{ position: 'relative', zIndex: 1, display: 'block', width: '100%', height: 'auto' }}
               />
             </div>
           </div>
           <div>
-            <p style={{ fontFamily: SERIF, fontSize: 26, color: C.ivory, margin: 0 }}>Hallo, ich bin Marco.</p>
+            <p style={{ fontFamily: SERIF, fontSize: 26, color: C.ivory, margin: 0 }}>{t('Hallo, ich bin Marco.')}</p>
             {/* The last paragraph is the closing thought, set as a serif quote line. */}
-            {ABOUT.map((t, i) => (i === ABOUT.length - 1
-              ? <p key={t.slice(0, 20)} style={{ fontFamily: SERIF, fontStyle: 'italic', fontSize: 19, lineHeight: 1.5, color: C.ivory, margin: '24px 0 0', maxWidth: 460 }}>{t}</p>
-              : <p key={t.slice(0, 20)} style={{ fontSize: 15, lineHeight: 1.75, color: C.grey, margin: '18px 0 0', maxWidth: 460 }}>{t}</p>
+            {ABOUT.map((para, i) => (i === ABOUT.length - 1
+              ? <p key={para.slice(0, 20)} style={{ fontFamily: SERIF, fontStyle: 'italic', fontSize: 19, lineHeight: 1.5, color: C.ivory, margin: '24px 0 0', maxWidth: 460 }}>{t(para)}</p>
+              : <p key={para.slice(0, 20)} style={{ fontSize: 15, lineHeight: 1.75, color: C.grey, margin: '18px 0 0', maxWidth: 460 }}>{t(para)}</p>
             ))}
             <ul style={{ listStyle: 'none', padding: 0, margin: '28px 0 0', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {ABOUT_TAGS.map((t) => (
-                <li key={t} style={{ fontSize: 12, color: C.champagne, border: '1px solid rgba(181,161,113,0.45)', padding: '7px 12px' }}>{t}</li>
+              {ABOUT_TAGS.map((tag) => (
+                <li key={tag} style={{ fontSize: 12, color: C.champagne, border: '1px solid rgba(181,161,113,0.45)', padding: '7px 12px' }}>{t(tag)}</li>
               ))}
             </ul>
           </div>
@@ -324,24 +327,24 @@ export default function HomePage() {
       {/* Kundenstimmen, uebernommen von /zahnzusatz */}
       <section id="kundenstimmen" aria-labelledby="stimmen-title" style={{ background: C.ivory, color: C.black }}>
         <div style={{ ...WRAP, paddingTop: 'clamp(64px, 8vw, 104px)', paddingBottom: 'clamp(64px, 8vw, 104px)' }}>
-          <p style={eyebrow(C.champagneDark)}>Kundenstimmen</p>
+          <p style={eyebrow(C.champagneDark)}>{t('Kundenstimmen')}</p>
           <h2 id="stimmen-title" style={{
             fontFamily: SERIF, fontWeight: 400, fontSize: 'clamp(34px, 4.2vw, 48px)', lineHeight: 1.12, margin: '24px 0 0',
           }}>
-            Was Kunden sagen.
+            {t('Was Kunden sagen.')}
           </h2>
           <div className="quotes-grid">
-            {TESTIMONIALS.map((t) => (
-              <figure key={t.name} style={{ margin: 0, borderTop: `1px solid ${C.lineLight}`, paddingTop: 24 }}>
-                <div aria-label={`${t.rating} von 5 Sternen`} role="img" style={{ color: C.champagneDark, letterSpacing: 3, fontSize: 14 }}>
-                  {'★'.repeat(t.rating)}
+            {TESTIMONIALS.map((q) => (
+              <figure key={q.name} style={{ margin: 0, borderTop: `1px solid ${C.lineLight}`, paddingTop: 24 }}>
+                <div aria-label={`${q.rating} ${t('von 5 Sternen')}`} role="img" style={{ color: C.champagneDark, letterSpacing: 3, fontSize: 14 }}>
+                  {'★'.repeat(q.rating)}
                 </div>
                 <blockquote style={{ margin: '16px 0 0', fontFamily: SERIF, fontSize: 17, lineHeight: 1.65, color: C.black }}>
-                  {t.text}
+                  {t(q.text)}
                 </blockquote>
                 <figcaption style={{ marginTop: 20, fontSize: 14 }}>
-                  <span style={{ display: 'block', fontWeight: 700 }}>{t.name}</span>
-                  <span style={{ display: 'block', color: C.graphite, marginTop: 2, fontSize: 13 }}>{t.role}</span>
+                  <span style={{ display: 'block', fontWeight: 700 }}>{q.name}</span>
+                  <span style={{ display: 'block', color: C.graphite, marginTop: 2, fontSize: 13 }}>{t(q.role)}</span>
                 </figcaption>
               </figure>
             ))}

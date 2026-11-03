@@ -1,5 +1,6 @@
 import './globals.css';
 import { SITE_URL } from '../lib/site';
+import { LanguageProvider } from '../components/LanguageProvider';
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
@@ -21,7 +22,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="de" suppressHydrationWarning>
-      <body>{children}</body>
+      <body><LanguageProvider>{children}</LanguageProvider></body>
     </html>
   );
 }

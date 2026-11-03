@@ -14,6 +14,10 @@ Seit dem Relaunch (Oktober 2026) gibt es zwei Auftritte in einer App:
 
 `app/page.js` liest die Umgebungsvariable `STARTSEITE`. Steht sie in Vercel auf `zahnzusatz`, zeigt `/` nach einem Redeploy wieder die Zahnzusatz-Seite (mit altem Titel, für Google freigegeben). Ohne Variable kommt die neue Maklerseite. `/zahnzusatz` funktioniert in beiden Fällen. Die Variable wird beim Build gelesen, eine Änderung braucht also immer einen neuen Deploy.
 
+### Sprachen (Deutsch und Englisch)
+
+Der Schalter DE | EN (`LanguageSwitch` in `components/LanguageProvider.js`) sitzt im Kopf von `SiteShell` und der Rechtsseiten, die Wahl liegt im `localStorage` (`marco-lang`). Deutsch steht direkt in den Komponenten, `t('deutscher Text')` holt die englische Fassung aus `lib/translations.js`. Fehlt ein Eintrag, erscheint der deutsche Text. Wer einen deutschen Text aendert, muss also auch den Schluessel dort aendern. Impressum, Datenschutz und Nutzungsbedingungen haben ihre englische Fassung in `components/legal/en.js`, dort gilt ausdruecklich die deutsche als verbindlich. Antworten aus Fragebogen und Kontaktformular bleiben auf Deutsch, damit das CRM einheitlich bleibt: uebersetzt wird nur die Anzeige, nie der Wert. Nicht uebersetzt: `/admin`, die Lead-Mails, der WhatsApp-Bot und die Metadaten fuer Suchmaschinen.
+
 ### Logos
 
 `public/logo-black.svg`, `logo-white.svg`, `logo-gold.svg` sind die MA-Dateien aus `CI/Content/Logo` (Stand 23.10.2026: `8.svg` Schwarz, `9.svg` Weiß, `7.svg` Gold; Wappen mit Namenszug), nur mit eng gesetzter viewBox. `public/wappen-white.svg` ist ein älterer weißer Ausschnitt ohne Namenszug und aktuell nicht eingebunden. Gold (`#C6A15B`) weicht vom UI-Champagner (`#B5A171`) ab und ist bewusst noch nirgends eingesetzt. Bei Logo-Wechseln den Cache-Buster `?v=` an allen Einbindungen erhöhen.

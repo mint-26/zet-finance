@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { C, SERIF, SANS, CONTACT } from '../../lib/brand';
 import { Arrow } from './Icons';
 import { whatsappLink } from '../../lib/whatsapp/link';
+import { useLang, LanguageSwitch } from '../LanguageProvider';
 
 const HEADER_HEIGHT = 76;
 
@@ -25,6 +26,7 @@ const WHATSAPP_HREF = whatsappLink();
 // shared global styles. `base` is '' on the start page and '/' elsewhere,
 // so the menu links jump back to the start page sections.
 export default function SiteShell({ base = '', children }) {
+  const { t } = useLang();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function SiteShell({ base = '', children }) {
 
   return (
     <div style={{ background: C.black, color: C.ivory, fontFamily: SANS, minHeight: '100vh' }}>
-      <a href="#inhalt" className="site-skip">Zum Inhalt springen</a>
+      <a href="#inhalt" className="site-skip">{t('Zum Inhalt springen')}</a>
 
       <header style={{
         position: 'sticky', top: 0, zIndex: 50, background: C.black,
@@ -57,7 +59,8 @@ export default function SiteShell({ base = '', children }) {
             MARCO ARPA
           </a>
 
-          <nav aria-label="Hauptnavigation" className="site-nav-desktop" style={{
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(10px, 2.4vw, 28px)' }}>
+          <nav aria-label={t('Hauptnavigation')} className="site-nav-desktop" style={{
             display: 'flex', alignItems: 'center', gap: 32,
           }}>
             {NAV.map((l) => (
@@ -65,7 +68,7 @@ export default function SiteShell({ base = '', children }) {
                 key={l.label} href={target(l, base)}
                 className="site-link" style={{ fontSize: 13, color: C.ivory, textDecoration: 'none', padding: '14px 0' }}
               >
-                {l.label}
+                {t(l.label)}
               </a>
             ))}
             <a
@@ -79,10 +82,13 @@ export default function SiteShell({ base = '', children }) {
               <span style={{
                 textDecoration: 'underline', textDecorationColor: C.champagne,
                 textDecorationThickness: 1, textUnderlineOffset: 7,
-              }}>Gespräch anfragen</span>
+              }}>{t('Gespräch anfragen')}</span>
               <Arrow size={10} />
             </a>
           </nav>
+
+          {/* One switch for both layouts, next to the menu button on phones. */}
+          <LanguageSwitch color={C.ivory} accent={C.champagne} />
 
           <button
             type="button" className="site-nav-mobile"
@@ -94,12 +100,13 @@ export default function SiteShell({ base = '', children }) {
               border: `1px solid ${C.champagne}`, fontFamily: SANS, fontSize: 13,
             }}
           >
-            {open ? 'Schließen' : 'Menü'}
+            {open ? t('Schließen') : t('Menü')}
           </button>
+          </div>
         </div>
 
         {open && (
-          <nav id="site-menu" aria-label="Hauptnavigation" style={{
+          <nav id="site-menu" aria-label={t('Hauptnavigation')} style={{
             position: 'absolute', left: 0, right: 0, top: HEADER_HEIGHT,
             background: C.black, borderBottom: `1px solid ${C.lineDark}`,
             padding: '8px clamp(20px, 5vw, 56px) 24px',
@@ -114,7 +121,7 @@ export default function SiteShell({ base = '', children }) {
                   textDecoration: 'none', fontFamily: SERIF, fontSize: 22,
                 }}
               >
-                {l.label}
+                {t(l.label)}
               </a>
             ))}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 16, fontSize: 14 }}>
@@ -134,29 +141,29 @@ export default function SiteShell({ base = '', children }) {
           justifyContent: 'space-between', gap: '12px 32px',
         }}>
           <span style={{ fontFamily: SERIF, fontSize: 12, letterSpacing: '0.32em', color: C.ivory }}>MARCO ARPA</span>
-          <span style={{ fontSize: 12, color: C.grey }}>Versicherungsmakler nach § 34d GewO</span>
-          <nav aria-label="Rechtliches" style={{ display: 'flex', flexWrap: 'wrap', gap: '0 20px' }}>
+          <span style={{ fontSize: 12, color: C.grey }}>{t('Versicherungsmakler nach § 34d GewO')}</span>
+          <nav aria-label={t('Rechtliches')} style={{ display: 'flex', flexWrap: 'wrap', gap: '0 20px' }}>
             {[
               { label: 'Impressum', href: '/impressum' },
               { label: 'Datenschutz', href: '/datenschutz' },
               { label: 'Erstinformation', href: '/erstinformation' },
             ].map((l) => (
               <a key={l.href} href={l.href} className="site-link" style={{ fontSize: 12, color: C.grey, textDecoration: 'none', padding: '15px 0' }}>
-                {l.label}
+                {t(l.label)}
               </a>
             ))}
             <a
               href="https://www.vermittlerregister.info" target="_blank" rel="noopener noreferrer" className="site-link"
               style={{ fontSize: 12, color: C.grey, textDecoration: 'none', padding: '15px 0', display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
-              Vermittlerregister <Arrow size={9} />
+              {t('Vermittlerregister')} <Arrow size={9} />
             </a>
             {WHATSAPP_HREF && (
               <a
                 href={WHATSAPP_HREF} target="_blank" rel="noopener noreferrer" className="site-link"
                 style={{ fontSize: 12, color: C.grey, textDecoration: 'none', padding: '15px 0', display: 'inline-flex', alignItems: 'center', gap: 6 }}
               >
-                Per WhatsApp schreiben <Arrow size={9} />
+                {t('Per WhatsApp schreiben')} <Arrow size={9} />
               </a>
             )}
           </nav>

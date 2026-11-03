@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useLang } from './LanguageProvider';
 
 const OTHER = '__andere__';
 
@@ -39,6 +40,7 @@ const Rate = ({ value }) => (value ? (
 // because the questionnaire card clips overflowing content (SmoothHeight, DentalReveal).
 // value: name of the chosen item, or '' ; isOther: "Nicht in der Liste" was chosen.
 export default function InsurerSelect({ id, items, value, isOther, onSelect, onChooseOther, placeholder, searchLabel, invalid }) {
+  const { t } = useLang();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
@@ -49,7 +51,7 @@ export default function InsurerSelect({ id, items, value, isOther, onSelect, onC
 
   const q = normalize(query);
   const matches = q ? items.filter((i) => normalize(i.name).includes(q)) : items;
-  const options = [...matches, { name: 'Nicht in der Liste', key: OTHER }];
+  const options = [...matches, { name: t('Nicht in der Liste'), key: OTHER }];
   const selected = items.find((i) => i.name === value);
 
   useEffect(() => {
@@ -101,7 +103,7 @@ export default function InsurerSelect({ id, items, value, isOther, onSelect, onC
       >
         {selected && <Logo item={selected} />}
         <span style={{ flex: 1, minWidth: 0, color: selected || isOther ? 'var(--text-body)' : 'var(--text-muted)', lineHeight: 1.35 }}>
-          {selected ? selected.name : (isOther ? 'Nicht in der Liste' : placeholder)}
+          {selected ? selected.name : (isOther ? t('Nicht in der Liste') : placeholder)}
         </span>
         {selected && <Rate value={selected.rate} />}
         <span aria-hidden="true" style={{ flexShrink: 0, fontSize: 11, color: 'var(--text-muted)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
@@ -113,7 +115,7 @@ export default function InsurerSelect({ id, items, value, isOther, onSelect, onC
             ref={inputRef} type="text" role="combobox" aria-expanded="true" aria-autocomplete="list"
             aria-controls={`${id}-list`} aria-activedescendant={`${id}-opt-${active}`} aria-label={searchLabel}
             value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={onKey}
-            placeholder="Namen eingeben ..." autoComplete="off"
+            placeholder={t('Namen eingeben ...')} autoComplete="off"
             style={{
               width: '100%', boxSizing: 'border-box', padding: '13px 16px', border: 0, outline: 'none',
               borderBottom: '1px solid var(--border)', background: 'transparent',

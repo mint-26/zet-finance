@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { Arrow } from './Icons';
 import { C, SERIF, SANS } from '../../lib/brand';
+import { useLang } from '../LanguageProvider';
 
 // Product portfolio as a horizontal card slider (idea taken from zet-finance.com/#portfolio,
 // texts written for Marco). Insurance topics only: the imprint names a § 34d licence, so
@@ -74,6 +75,7 @@ const PRODUCTS = [
 const EDGE = 'max(clamp(20px, 5vw, 56px), calc((100vw - 1120px) / 2 + clamp(20px, 5vw, 56px)))';
 
 export default function Portfolio() {
+  const { t } = useLang();
   const track = useRef(null);
   const [active, setActive] = useState(0);
 
@@ -105,48 +107,48 @@ export default function Portfolio() {
         <div className="pf-head">
           <div>
             <p style={{ fontSize: 11, letterSpacing: '0.24em', textTransform: 'uppercase', color: C.champagneDark, margin: 0 }}>
-              Produktportfolio
+              {t('Produktportfolio')}
             </p>
             <h3 style={{
               fontFamily: SERIF, fontWeight: 400, fontSize: 'clamp(28px, 3.4vw, 40px)', lineHeight: 1.15,
               margin: '20px 0 0', color: C.black,
             }}>
-              Lösungen für jede Lebenslage.
+              {t('Lösungen für jede Lebenslage.')}
             </h3>
             <p style={{ fontSize: 15, lineHeight: 1.7, color: C.graphite, margin: '14px 0 0', maxWidth: 520 }}>
-              Ein Überblick über die Bereiche, in denen ich Sie berate. Welche davon für Sie wichtig sind, klären wir gemeinsam.
+              {t('Ein Überblick über die Bereiche, in denen ich Sie berate. Welche davon für Sie wichtig sind, klären wir gemeinsam.')}
             </p>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
-            <button type="button" className="pf-nav" aria-label="Vorheriger Bereich" onClick={() => go(active - 1)} disabled={active === 0}>
+            <button type="button" className="pf-nav" aria-label={t('Vorheriger Bereich')} onClick={() => go(active - 1)} disabled={active === 0}>
               <span style={{ display: 'inline-flex', transform: 'rotate(-135deg)' }}><Arrow size={12} /></span>
             </button>
-            <button type="button" className="pf-nav" aria-label="Nächster Bereich" onClick={() => go(active + 1)} disabled={active === PRODUCTS.length - 1}>
+            <button type="button" className="pf-nav" aria-label={t('Nächster Bereich')} onClick={() => go(active + 1)} disabled={active === PRODUCTS.length - 1}>
               <span style={{ display: 'inline-flex', transform: 'rotate(45deg)' }}><Arrow size={12} /></span>
             </button>
           </div>
         </div>
       </div>
 
-      <ul ref={track} className="pf-track" aria-label="Produktportfolio" style={{ paddingLeft: EDGE, paddingRight: EDGE, scrollPaddingLeft: EDGE }}>
+      <ul ref={track} className="pf-track" aria-label={t('Produktportfolio')} style={{ paddingLeft: EDGE, paddingRight: EDGE, scrollPaddingLeft: EDGE }}>
         {PRODUCTS.map((p, i) => (
-          <li key={p.area} className="pf-card" aria-label={`${i + 1} von ${PRODUCTS.length}: ${p.area}`}>
-            <img src={p.image} alt={p.alt} width="800" height="600" loading="lazy" className="pf-img" />
+          <li key={p.area} className="pf-card" aria-label={`${i + 1} ${t('von')} ${PRODUCTS.length}: ${t(p.area)}`}>
+            <img src={p.image} alt={t(p.alt)} width="800" height="600" loading="lazy" className="pf-img" />
             <div className="pf-body">
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
                 <span style={{ fontFamily: SERIF, fontSize: 15, color: C.champagneDark }}>{String(i + 1).padStart(2, '0')}</span>
-                <span style={{ fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: C.graphite }}>{p.area}</span>
+                <span style={{ fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: C.graphite }}>{t(p.area)}</span>
               </div>
               <h4 style={{ fontFamily: SERIF, fontWeight: 400, fontSize: 'clamp(24px, 2.4vw, 28px)', lineHeight: 1.2, margin: '28px 0 0', color: C.black }}>
-                {p.title}
+                {t(p.title)}
               </h4>
-              <p style={{ fontSize: 15, lineHeight: 1.7, color: C.graphite, margin: '16px 0 0' }}>{p.text}</p>
+              <p style={{ fontSize: 15, lineHeight: 1.7, color: C.graphite, margin: '16px 0 0' }}>{t(p.text)}</p>
               <ul style={{ listStyle: 'none', padding: 0, margin: 'auto 0 0', paddingTop: 28, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {p.tags.map((t) => (
-                  <li key={t} style={{
+                {p.tags.map((tag) => (
+                  <li key={tag} style={{
                     fontSize: 12, color: C.black, padding: '7px 12px', borderRadius: 999,
                     border: `1px solid ${C.lineLight}`, background: C.ivory,
-                  }}>{t}</li>
+                  }}>{t(tag)}</li>
                 ))}
               </ul>
             </div>
@@ -154,10 +156,10 @@ export default function Portfolio() {
         ))}
       </ul>
 
-      <div role="tablist" aria-label="Bereich wählen" style={{ display: 'flex', justifyContent: 'center', gap: 4, marginTop: 20 }}>
+      <div role="tablist" aria-label={t('Bereich wählen')} style={{ display: 'flex', justifyContent: 'center', gap: 4, marginTop: 20 }}>
         {PRODUCTS.map((p, i) => (
           <button
-            key={p.area} type="button" role="tab" aria-selected={active === i} aria-label={p.area}
+            key={p.area} type="button" role="tab" aria-selected={active === i} aria-label={t(p.area)}
             onClick={() => go(i)} className="pf-dot"
           >
             <span style={{

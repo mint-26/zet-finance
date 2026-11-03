@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, forwardRef } from 'react';
+import { useLang } from './LanguageProvider';
 
 const DEBOUNCE_MS = 120;
 
@@ -8,6 +9,7 @@ const DEBOUNCE_MS = 120;
 // Free typing always works, so an unknown street or a failing service never blocks the form.
 // The list opens in the page flow because the questionnaire card clips overflowing content.
 const StreetInput = forwardRef(function StreetInput({ id, plz, value, onChange, onPick, style, placeholder, ...rest }, ref) {
+  const { t } = useLang();
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
@@ -79,11 +81,11 @@ const StreetInput = forwardRef(function StreetInput({ id, plz, value, onChange, 
         onFocus={() => { if (results.length) setOpen(true); }}
       />
       {noMatch && (
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.45, margin: '7px 0 0' }}>Keine passende Straße in dieser Postleitzahl gefunden. Sie können sie einfach selbst eintragen.</p>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.45, margin: '7px 0 0' }}>{t('Keine passende Straße in dieser Postleitzahl gefunden. Sie können sie einfach selbst eintragen.')}</p>
       )}
       {open && (
         <div style={{ marginTop: 8, background: 'var(--input-bg)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
-          <ul id={`${id}-list`} role="listbox" aria-label="Straßenvorschläge" style={{ listStyle: 'none', margin: 0, padding: 4 }}>
+          <ul id={`${id}-list`} role="listbox" aria-label={t('Straßenvorschläge')} style={{ listStyle: 'none', margin: 0, padding: 4 }}>
             {results.map((item, i) => (
               <li
                 key={item.label} id={`${id}-opt-${i}`} role="option" aria-selected={active === i}
@@ -99,7 +101,7 @@ const StreetInput = forwardRef(function StreetInput({ id, plz, value, onChange, 
             ))}
           </ul>
           <p style={{ margin: 0, padding: '6px 16px 8px', fontSize: 11, color: 'var(--text-muted)', borderTop: '1px solid var(--border)' }}>
-            Straßenverzeichnis: OpenPLZ API
+            {t('Straßenverzeichnis: OpenPLZ API')}
           </p>
         </div>
       )}

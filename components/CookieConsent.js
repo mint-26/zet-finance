@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLang } from './LanguageProvider';
 
 export default function CookieConsent() {
+  const { t } = useLang();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -40,11 +42,9 @@ export default function CookieConsent() {
           <p style={{
             fontSize: 14, color: 'var(--text-body)', lineHeight: 1.6, margin: 0,
           }}>
-            Diese Website verwendet ein technisch notwendiges Cookie zur Speicherung Ihrer
-            Theme-Präferenz (Hell-/Dunkelmodus). Es werden keine Tracking- oder Analyse-Cookies eingesetzt.
-            Mehr dazu in unserer{' '}
+            {t('Diese Website speichert in Ihrem Browser technisch notwendig Ihre Theme-Präferenz (Hell-/Dunkelmodus) und Ihre Sprachauswahl. Es werden keine Tracking- oder Analyse-Cookies eingesetzt. Mehr dazu in unserer')}{' '}
             <a href="/datenschutz" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
-              Datenschutzerklärung
+              {t('Datenschutzerklärung')}
             </a>.
           </p>
         </div>
@@ -57,7 +57,7 @@ export default function CookieConsent() {
             cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
             fontWeight: 500, transition: 'all 0.3s',
           }}>
-            Ablehnen
+            {t('Ablehnen')}
           </button>
           <button onClick={accept} style={{
             padding: '10px 20px', borderRadius: 8,
@@ -68,7 +68,7 @@ export default function CookieConsent() {
             fontWeight: 700, transition: 'all 0.3s',
             boxShadow: '0 2px 15px var(--shadow-accent)',
           }}>
-            Akzeptieren
+            {t('Akzeptieren')}
           </button>
         </div>
       </div>

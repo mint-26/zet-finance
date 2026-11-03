@@ -6,6 +6,7 @@ import SmoothHeight from './SmoothHeight';
 import InsurerSelect from './InsurerSelect';
 import StreetInput from './StreetInput';
 import { GKV, PKV, RATES_AS_OF } from '../lib/insurers';
+import { useLang } from './LanguageProvider';
 
 const TOTAL_STEPS = 4;
 const STEP_LABELS = ['Einführung', 'Zahnstatus', 'Krankenversicherung', 'Persönliche Angaben'];
@@ -64,7 +65,8 @@ const phoneLabel = (form) => {
 };
 
 // Validation per step. Returns { field: message } for visible required fields only,
-// in the order of the form, so the first key is the field to jump to.
+// in the order of the form, so the first key is the field to jump to. Messages stay German
+// here and are translated where they are shown, so they follow a language switch.
 function validateStep(step, form) {
   const e = {};
   const required = (key, message) => { if (!form[key]) e[key] = message; };
@@ -222,18 +224,21 @@ const navBtn = (isPrimary, enabled = true) => ({
 });
 
 // ─── Form parts ───
+// Answers keep their German value for the CRM; only what is shown goes through t().
 const hiddenInput = { position: 'absolute', opacity: 0, width: 1, height: 1, margin: 0 };
 
 function FieldError({ id, message }) {
+  const { t } = useLang();
   if (!message) return null;
-  return <p id={`${id}-error`} role="alert" style={{ fontSize: 13, color: ERROR, lineHeight: 1.45, margin: '7px 0 0' }}>{message}</p>;
+  return <p id={`${id}-error`} role="alert" style={{ fontSize: 13, color: ERROR, lineHeight: 1.45, margin: '7px 0 0' }}>{t(message)}</p>;
 }
 
 // Fieldset-style wrapper for a question with several answers.
 function Group({ id, label, error, children }) {
+  const { t } = useLang();
   return (
     <div id={`q-${id}`} role="group" aria-labelledby={`q-${id}-label`} tabIndex={-1} style={{ scrollMarginTop: 24, outline: 'none' }}>
-      <div id={`q-${id}-label`} style={labelStyle}>{label}</div>
+      <div id={`q-${id}-label`} style={labelStyle}>{t(label)}</div>
       {children}
       <FieldError id={`q-${id}`} message={error} />
     </div>
@@ -241,6 +246,7 @@ function Group({ id, label, error, children }) {
 }
 
 function RadioGroup({ name, value, options, onChange }) {
+  const { t } = useLang();
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {options.map((opt) => {
@@ -253,7 +259,7 @@ function RadioGroup({ name, value, options, onChange }) {
             <span style={marker(active, true)}>
               {active && <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--bg-primary)' }} />}
             </span>
-            <span style={optionText(active)}>{label}</span>
+            <span style={optionText(active)}>{t(label)}</span>
           </label>
         );
       })}
@@ -262,6 +268,7 @@ function RadioGroup({ name, value, options, onChange }) {
 }
 
 function CheckboxGroup({ name, values, options, onToggle }) {
+  const { t } = useLang();
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {options.map((val) => {
@@ -272,7 +279,7 @@ function CheckboxGroup({ name, values, options, onToggle }) {
             <span style={marker(active, false)}>
               {active && <span style={{ color: 'var(--bg-primary)', fontSize: 12, fontWeight: 700 }}>{'✓'}</span>}
             </span>
-            <span style={optionText(active)}>{val}</span>
+            <span style={optionText(active)}>{t(val)}</span>
           </label>
         );
       })}
@@ -281,13 +288,14 @@ function CheckboxGroup({ name, values, options, onToggle }) {
 }
 
 function Pills({ value, options, onChange, wrap }) {
+  const { t } = useLang();
   return (
     <div style={{ display: 'flex', gap: wrap ? 8 : 10, flexWrap: wrap ? 'wrap' : 'nowrap' }}>
       {options.map((o) => (
         <button
           key={o} type="button" aria-pressed={value === o} onClick={() => onChange(o)}
           style={{ ...pillBtn(value === o), ...(wrap ? { minWidth: 48, flex: '0 0 auto' } : {}) }}
-        >{o}</button>
+        >{t(o)}</button>
       ))}
     </div>
   );
@@ -300,15 +308,17 @@ const headerBox = {
 };
 
 function StepHeading({ headingRef, title, subtitle }) {
+  const { t } = useLang();
   return (
     <div style={headerBox}>
-      <h3 ref={headingRef} tabIndex={-1} style={headingStyle}>{title}</h3>
-      {subtitle && <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '8px 0 0', lineHeight: 1.5 }}>{subtitle}</p>}
+      <h3 ref={headingRef} tabIndex={-1} style={headingStyle}>{t(title)}</h3>
+      {subtitle && <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '8px 0 0', lineHeight: 1.5 }}>{t(subtitle)}</p>}
     </div>
   );
 }
 
 export default function Questionnaire() {
+  const { t } = useLang();
   const [ref, inView] = useInView(0.05);
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -511,9 +521,9 @@ export default function Questionnaire() {
           <h2 style={{
             fontFamily: "'Playfair Display', serif",
             fontSize: 32, color: 'var(--text-primary)', marginBottom: 12,
-          }}>Anfrage gesendet!</h2>
+          }}>{t('Anfrage gesendet!')}</h2>
           <p style={{ fontSize: 16, color: 'var(--text-muted)', lineHeight: 1.7 }}>
-            Danke, {vorname}! Ich melde mich innerhalb von 24 Stunden mit Ihrem persönlichen Angebot.
+            {t('Danke')}, {vorname}! {t('Ich melde mich innerhalb von 24 Stunden mit Ihrem persönlichen Angebot.')}
           </p>
         </div>
       </section>
@@ -537,13 +547,13 @@ export default function Questionnaire() {
           <span style={{
             fontSize: 13, fontWeight: 600, color: 'var(--accent)',
             letterSpacing: 2, textTransform: 'uppercase',
-          }}>Fragebogen</span>
+          }}>{t('Fragebogen')}</span>
           <h2 style={{
             fontFamily: "'Playfair Display', serif",
             fontSize: 'clamp(28px, 4vw, 44px)',
             fontWeight: 700, color: 'var(--text-primary)',
             marginTop: 12, lineHeight: 1.2,
-          }}>Ihr persönliches Angebot</h2>
+          }}>{t('Ihr persönliches Angebot')}</h2>
         </div>
 
         <div className="q-card" style={{
@@ -553,15 +563,15 @@ export default function Questionnaire() {
           <div style={{ marginBottom: 28 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 10 }}>
               <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 500 }}>
-                Schritt {step} von {TOTAL_STEPS}
+                {t('Schritt')} {step} {t('von')} {TOTAL_STEPS}
               </span>
               <span style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'right' }}>
-                {STEP_LABELS[step - 1]}
+                {t(STEP_LABELS[step - 1])}
               </span>
             </div>
             <div
               role="progressbar" aria-valuemin={1} aria-valuemax={TOTAL_STEPS} aria-valuenow={step}
-              aria-label="Fortschritt des Fragebogens"
+              aria-label={t('Fortschritt des Fragebogens')}
               style={{ height: 4, borderRadius: 2, background: 'var(--border)', overflow: 'hidden' }}
             >
               <div style={{
@@ -581,9 +591,9 @@ export default function Questionnaire() {
               <>
                 <StepHeading headingRef={headingRef} title="Ihr Weg zur passenden Zahnzusatzversicherung" />
                 <div style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.75, display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  <p>Welche Absicherung passt zu Ihren Zähnen und Ihren Wünschen? Mit wenigen Angaben helfen Sie mir, passende Möglichkeiten für Sie zu prüfen. Ich schaue mir Ihre Anfrage persönlich an und melde mich über Ihren gewünschten Kontaktweg.</p>
-                  <p>Eine Behandlung wurde bereits empfohlen, ist geplant oder läuft schon? Bitte geben Sie das im Fragebogen an, auch bei einer mündlichen Empfehlung. Ich prüfe, welche Möglichkeiten bestehen. Eine Kostenübernahme für diese Behandlung lässt sich vorab nicht zusagen.</p>
-                  <p style={{ color: 'var(--text-primary)' }}>Ihre Anfrage ist kostenlos und unverbindlich. Sie schließen hier noch keine Versicherung ab.</p>
+                  <p>{t('Welche Absicherung passt zu Ihren Zähnen und Ihren Wünschen? Mit wenigen Angaben helfen Sie mir, passende Möglichkeiten für Sie zu prüfen. Ich schaue mir Ihre Anfrage persönlich an und melde mich über Ihren gewünschten Kontaktweg.')}</p>
+                  <p>{t('Eine Behandlung wurde bereits empfohlen, ist geplant oder läuft schon? Bitte geben Sie das im Fragebogen an, auch bei einer mündlichen Empfehlung. Ich prüfe, welche Möglichkeiten bestehen. Eine Kostenübernahme für diese Behandlung lässt sich vorab nicht zusagen.')}</p>
+                  <p style={{ color: 'var(--text-primary)' }}>{t('Ihre Anfrage ist kostenlos und unverbindlich. Sie schließen hier noch keine Versicherung ab.')}</p>
                 </div>
 
                 <div>
@@ -599,16 +609,16 @@ export default function Questionnaire() {
                       {form.datenschutz && <span style={{ color: 'var(--bg-primary)', fontSize: 12, fontWeight: 700 }}>{'✓'}</span>}
                     </span>
                     <span style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.55 }}>
-                      Ich willige in die Verarbeitung meiner personenbezogenen Daten einschließlich meiner Gesundheitsdaten (Angaben zum Zahnzustand) zur Erstellung eines Versicherungsangebots ein. Details finden Sie in der{' '}
+                      {t('Ich willige in die Verarbeitung meiner personenbezogenen Daten einschließlich meiner Gesundheitsdaten (Angaben zum Zahnzustand) zur Erstellung eines Versicherungsangebots ein. Details finden Sie in der')}{' '}
                       <a href="/datenschutz" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
-                        Datenschutzerklärung
+                        {t('Datenschutzerklärung')}
                       </a>. *
                     </span>
                   </label>
                   <FieldError id="q-datenschutz" message={errors.datenschutz} />
                 </div>
 
-                <button type="button" onClick={goNext} style={navBtn(true)}>Weiter</button>
+                <button type="button" onClick={goNext} style={navBtn(true)}>{t('Weiter')}</button>
               </>
             )}
 
@@ -637,7 +647,7 @@ export default function Questionnaire() {
                   <Group id="zahnluecke" error={errors.zahnluecke} label="Möchten Sie vorhandene Zahnlücken mitversichern lassen? *">
                     <Pills value={form.zahnluecke} onChange={update('zahnluecke')} options={['Ja', 'Nein']} />
                     <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, margin: '10px 0 0' }}>
-                      Je nach Tarif können fehlende Zähne zu einem Risikozuschlag oder Leistungsausschluss führen. Ob und unter welchen Bedingungen Ihre Zahnlücken mitversichert werden können, prüfe ich individuell.
+                      {t('Je nach Tarif können fehlende Zähne zu einem Risikozuschlag oder Leistungsausschluss führen. Ob und unter welchen Bedingungen Ihre Zahnlücken mitversichert werden können, prüfe ich individuell.')}
                     </p>
                   </Group>
                 )}
@@ -664,8 +674,8 @@ export default function Questionnaire() {
                 </Group>
 
                 <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-                  <button type="button" onClick={goBack} style={navBtn(false)}>Zurück</button>
-                  <button type="button" onClick={goNext} style={navBtn(true)}>Weiter</button>
+                  <button type="button" onClick={goBack} style={navBtn(false)}>{t('Zurück')}</button>
+                  <button type="button" onClick={goNext} style={navBtn(true)}>{t('Weiter')}</button>
                 </div>
               </>
             )}
@@ -694,13 +704,13 @@ export default function Questionnaire() {
                 {(kind === 'gkv' || kind === 'pkv') && (
                   <div>
                     <label htmlFor="q-kasse" style={labelStyle}>
-                      {kind === 'gkv' ? 'Bei welcher gesetzlichen Krankenkasse sind Sie versichert? *' : 'Bei welchem privaten Krankenversicherer sind Sie versichert? *'}
+                      {t(kind === 'gkv' ? 'Bei welcher gesetzlichen Krankenkasse sind Sie versichert? *' : 'Bei welchem privaten Krankenversicherer sind Sie versichert? *')}
                     </label>
                     <InsurerSelect
                       id="q-kasse" items={kind === 'gkv' ? GKV : PKV}
                       value={form.kasse} isOther={form.kasseIstAndere}
-                      placeholder={kind === 'gkv' ? 'Krankenkasse auswählen' : 'Krankenversicherer auswählen'}
-                      searchLabel={kind === 'gkv' ? 'Krankenkasse suchen' : 'Krankenversicherer suchen'}
+                      placeholder={t(kind === 'gkv' ? 'Krankenkasse auswählen' : 'Krankenversicherer auswählen')}
+                      searchLabel={t(kind === 'gkv' ? 'Krankenkasse suchen' : 'Krankenversicherer suchen')}
                       invalid={!!insurerError}
                       onSelect={(item) => patch({ kasse: item.name, kasseIstAndere: false, kasseFreitext: '' })}
                       onChooseOther={() => patch({ kasse: '', kasseIstAndere: true })}
@@ -708,12 +718,12 @@ export default function Questionnaire() {
                     <FieldError id="q-kasse" message={insurerError} />
                     {kind === 'gkv' && (
                       <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, margin: '8px 0 0' }}>
-                        Prozentangabe: Gesamtbeitragssatz der Krankenkasse, Stand {RATES_AS_OF}, ohne Gewähr.
+                        {t('Prozentangabe: Gesamtbeitragssatz der Krankenkasse, Stand')} {RATES_AS_OF}{t(', ohne Gewähr.')}
                       </p>
                     )}
                     {form.kasseIstAndere && (
                       <div style={{ marginTop: 12 }}>
-                        <label htmlFor="q-kasseFreitext" style={labelStyle}>{kind === 'gkv' ? 'Name Ihrer Krankenkasse *' : 'Name Ihres Krankenversicherers *'}</label>
+                        <label htmlFor="q-kasseFreitext" style={labelStyle}>{t(kind === 'gkv' ? 'Name Ihrer Krankenkasse *' : 'Name Ihres Krankenversicherers *')}</label>
                         <input {...inputProps('kasseFreitext')} type="text" autoFocus />
                         <FieldError id="q-kasseFreitext" message={errors.kasseFreitext} />
                       </div>
@@ -733,8 +743,8 @@ export default function Questionnaire() {
                 )}
 
                 <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-                  <button type="button" onClick={goBack} style={navBtn(false)}>Zurück</button>
-                  <button type="button" onClick={goNext} style={navBtn(true)}>Weiter</button>
+                  <button type="button" onClick={goBack} style={navBtn(false)}>{t('Zurück')}</button>
+                  <button type="button" onClick={goNext} style={navBtn(true)}>{t('Weiter')}</button>
                 </div>
               </>
             )}
@@ -749,28 +759,28 @@ export default function Questionnaire() {
                 />
 
                 <div>
-                  <label htmlFor="q-name" style={labelStyle}>Vor- und Nachname *</label>
-                  <input {...inputProps('name')} ref={bindRef('name')} autoComplete="name" placeholder="Max Mustermann" />
+                  <label htmlFor="q-name" style={labelStyle}>{t('Vor- und Nachname *')}</label>
+                  <input {...inputProps('name')} ref={bindRef('name')} autoComplete="name" placeholder={t('Max Mustermann')} />
                   <FieldError id="q-name" message={errors.name} />
                 </div>
 
                 <div className="q-row-plz">
                   <div>
-                    <label htmlFor="q-plz" style={labelStyle}>Postleitzahl *</label>
+                    <label htmlFor="q-plz" style={labelStyle}>{t('Postleitzahl *')}</label>
                     <input
                       {...inputProps('plz')} ref={bindRef('plz')} onChange={(e) => setPlz(e.target.value)}
                       inputMode="numeric" autoComplete="postal-code" maxLength={5} placeholder="60311"
                     />
                   </div>
                   <div>
-                    <label htmlFor="q-ort" style={labelStyle}>Ort *</label>
+                    <label htmlFor="q-ort" style={labelStyle}>{t('Ort *')}</label>
                     {orte.length > 1 ? (
                       <select {...inputProps('ort')} style={{ ...inputProps('ort').style, height: 52 }}>
-                        <option value="">Bitte wählen</option>
+                        <option value="">{t('Bitte wählen')}</option>
                         {orte.map((o) => <option key={o} value={o}>{o}</option>)}
                       </select>
                     ) : (
-                      <input {...inputProps('ort')} ref={bindRef('ort')} autoComplete="address-level2" placeholder="Wird ergänzt" />
+                      <input {...inputProps('ort')} ref={bindRef('ort')} autoComplete="address-level2" placeholder={t('Wird ergänzt')} />
                     )}
                   </div>
                 </div>
@@ -779,17 +789,17 @@ export default function Questionnaire() {
                     <FieldError id="q-plz" message={errors.plz} />
                     <FieldError id="q-ort" message={errors.ort} />
                     {plzUnknown && !errors.plz && (
-                      <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.45, margin: '7px 0 0' }}>Diese Postleitzahl ist uns nicht bekannt. Bitte prüfen Sie sie oder tragen Sie den Ort selbst ein.</p>
+                      <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.45, margin: '7px 0 0' }}>{t('Diese Postleitzahl ist uns nicht bekannt. Bitte prüfen Sie sie oder tragen Sie den Ort selbst ein.')}</p>
                     )}
                   </div>
                 )}
 
                 <div className="q-row-street">
                   <div>
-                    <label htmlFor="q-strasse" style={labelStyle}>Straße *</label>
+                    <label htmlFor="q-strasse" style={labelStyle}>{t('Straße *')}</label>
                     <StreetInput
                       id="q-strasse" plz={form.plz} ref={bindRef('strasse')} autoComplete="off"
-                      placeholder="Musterstraße"
+                      placeholder={t('Musterstraße')}
                       style={{ ...inputStyle(!!errors.strasse), scrollMarginTop: 24 }}
                       value={form.strasse} onChange={update('strasse')}
                       onPick={(label, number) => {
@@ -802,14 +812,14 @@ export default function Questionnaire() {
                     <FieldError id="q-strasse" message={errors.strasse} />
                   </div>
                   <div>
-                    <label htmlFor="q-hausnummer" style={labelStyle}>Hausnummer *</label>
+                    <label htmlFor="q-hausnummer" style={labelStyle}>{t('Hausnummer *')}</label>
                     <input {...inputProps('hausnummer')} ref={bindRef('hausnummer')} autoComplete="off" placeholder="6a" />
                     <FieldError id="q-hausnummer" message={errors.hausnummer} />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="q-geburtsdatum" style={labelStyle}>Geburtsdatum *</label>
+                  <label htmlFor="q-geburtsdatum" style={labelStyle}>{t('Geburtsdatum *')}</label>
                   <input {...inputProps('geburtsdatum')} ref={bindRef('geburtsdatum')} type="date" autoComplete="bday" />
                   <FieldError id="q-geburtsdatum" message={errors.geburtsdatum} />
                 </div>
@@ -830,22 +840,22 @@ export default function Questionnaire() {
 
                 {needsMail(form) && (
                   <div>
-                    <label htmlFor="q-email" style={labelStyle}>E-Mail-Adresse *</label>
-                    <input {...inputProps('email')} ref={bindRef('email')} type="email" autoComplete="email" placeholder="ihre@email.de" />
+                    <label htmlFor="q-email" style={labelStyle}>{t('E-Mail-Adresse *')}</label>
+                    <input {...inputProps('email')} ref={bindRef('email')} type="email" autoComplete="email" placeholder={t('ihre@email.de')} />
                     <FieldError id="q-email" message={errors.email} />
                   </div>
                 )}
 
                 {needsPhone(form) && (
                   <div>
-                    <label htmlFor="q-telefon" style={labelStyle}>{phoneLabel(form)} *</label>
+                    <label htmlFor="q-telefon" style={labelStyle}>{t(`${phoneLabel(form)} *`)}</label>
                     <input {...inputProps('telefon')} ref={bindRef('telefon')} type="tel" autoComplete="tel" placeholder="+49 ..." />
                     <FieldError id="q-telefon" message={errors.telefon} />
                   </div>
                 )}
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 8 }}>
-                  <button type="button" onClick={goBack} disabled={sending} style={{ ...navBtn(false, !sending), flex: '1 1 110px' }}>Zurück</button>
+                  <button type="button" onClick={goBack} disabled={sending} style={{ ...navBtn(false, !sending), flex: '1 1 110px' }}>{t('Zurück')}</button>
                   <button type="submit" disabled={sending} style={{ ...navBtn(true, !sending), flex: '2 1 240px' }}>
                     {sending ? (
                       <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
@@ -859,22 +869,22 @@ export default function Questionnaire() {
                             display: 'inline-block',
                           }}
                         />
-                        Wird gesendet…
+                        {t('Wird gesendet…')}
                       </span>
-                    ) : 'Unverbindliche Zahnzusatz-Anfrage senden'}
+                    ) : t('Unverbindliche Zahnzusatz-Anfrage senden')}
                   </button>
                 </div>
                 <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.5, margin: 0 }}>
-                  Damit entsteht noch kein Versicherungsvertrag.
+                  {t('Damit entsteht noch kein Versicherungsvertrag.')}
                 </p>
                 {sending && (
                   <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.5, margin: 0 }}>
-                    Bitte schließen Sie den Tab nicht, der Versand kann bis zu 20&nbsp;Sekunden dauern.
+                    {t('Bitte schließen Sie den Tab nicht, der Versand kann bis zu 20 Sekunden dauern.')}
                   </p>
                 )}
                 {sendFailed && (
                   <p role="alert" style={{ fontSize: 14, color: ERROR, textAlign: 'center', lineHeight: 1.5, margin: 0 }}>
-                    Ihre Anfrage konnte gerade nicht gesendet werden. Bitte versuchen Sie es noch einmal oder schreiben Sie an{' '}
+                    {t('Ihre Anfrage konnte gerade nicht gesendet werden. Bitte versuchen Sie es noch einmal oder schreiben Sie an')}{' '}
                     <a href="mailto:kontakt@marcoarpa.com" style={{ color: ERROR, textDecoration: 'underline' }}>kontakt@marcoarpa.com</a>.
                   </p>
                 )}

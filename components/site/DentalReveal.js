@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Questionnaire from '../Questionnaire';
 import BrandLight from './BrandLight';
 import { C, SANS } from '../../lib/brand';
+import { useLang } from '../LanguageProvider';
 
 const HEADER = 76;
 const DURATION = 1200;
@@ -39,6 +40,7 @@ const topOf = (el) => el.getBoundingClientRect().top + window.scrollY - HEADER;
 // Unfolds the questionnaire below the dental teaser instead of linking to /zahnzusatz.
 // /zahnzusatz stays as its own page (QR codes); /#fragebogen opens the form directly.
 export default function DentalReveal({ teaser }) {
+  const { t } = useLang();
   const [state, setState] = useState('closed'); // closed | opening | open | closing
   const rootRef = useRef(null);
   const formRef = useRef(null);
@@ -92,7 +94,7 @@ export default function DentalReveal({ teaser }) {
               transition: `opacity ${DURATION}ms ${EASE}`,
             }}>
               <div style={{ maxWidth: 680, margin: '0 auto', padding: '28px 24px 0', textAlign: 'right' }}>
-                <button type="button" onClick={close} className="dental-close">Fragebogen schließen ×</button>
+                <button type="button" onClick={close} className="dental-close">{t('Fragebogen schließen ×')}</button>
               </div>
               <div className="dental-form"><Questionnaire /></div>
             </BrandLight>

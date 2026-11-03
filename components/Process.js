@@ -2,6 +2,7 @@
 
 import { useInView } from './useInView';
 import { C, SERIF } from '../lib/brand';
+import { useLang } from './LanguageProvider';
 
 const STEPS = [
   { num: '01', title: 'Kurzes Gespräch', desc: '5 Minuten reichen. Wir klären Ihre Zahnsituation und was Ihnen wichtig ist. Telefonisch, per WhatsApp oder vor Ort.' },
@@ -13,6 +14,7 @@ const STEPS = [
 // Process steps on /zahnzusatz, in the layout of the start page (lib/brand.js):
 // four columns with a hairline on top, two on tablets, one on phones.
 export default function Process() {
+  const { t } = useLang();
   const [ref, inView] = useInView();
 
   return (
@@ -24,13 +26,13 @@ export default function Process() {
           fontSize: 11, letterSpacing: '0.24em', textTransform: 'uppercase',
           color: C.champagneDark, margin: 0,
         }}>
-          Ablauf
+          {t('Ablauf')}
         </p>
         <h2 id="process-title" style={{
           fontFamily: SERIF, fontWeight: 400, fontSize: 'clamp(34px, 4.2vw, 48px)',
           lineHeight: 1.12, margin: '24px 0 0', color: C.black,
         }}>
-          So läuft&apos;s ab.
+          {t("So läuft's ab.")}
         </h2>
 
         <ol className="process-grid">
@@ -42,8 +44,8 @@ export default function Process() {
               transition: `all 0.6s cubic-bezier(0.16,1,0.3,1) ${i * 0.1}s`,
             }}>
               <span style={{ display: 'block', fontFamily: SERIF, fontSize: 40, lineHeight: 1, color: C.champagneDark }}>{step.num}</span>
-              <h3 style={{ fontSize: 17, fontWeight: 700, color: C.black, margin: '20px 0 0' }}>{step.title}</h3>
-              <p style={{ fontSize: 15, lineHeight: 1.65, color: C.graphite, margin: '8px 0 0' }}>{step.desc}</p>
+              <h3 style={{ fontSize: 17, fontWeight: 700, color: C.black, margin: '20px 0 0' }}>{t(step.title)}</h3>
+              <p style={{ fontSize: 15, lineHeight: 1.65, color: C.graphite, margin: '8px 0 0' }}>{t(step.desc)}</p>
             </li>
           ))}
         </ol>
