@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
-// Visitors and the register are in Germany; the project default would be Washington.
-export const preferredRegion = 'fra1';
 
 // Address help for the questionnaire, from OpenPLZ API (German postcodes and streets, no
 // key needed):
