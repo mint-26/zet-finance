@@ -91,6 +91,7 @@ function DatenschutzContent() {
               <li>E-Mail-Adresse</li>
               <li>Telefonnummer (optional)</li>
               <li>Angaben zum Zahnzustand (Gesundheitsdaten)</li>
+              <li>Angaben zum Erwerbsstatus, bei Beamten auch zum Beihilfeanspruch</li>
               <li>Angaben zu bestehenden Versicherungen</li>
               <li>Wünsche zur Versicherungsleistung</li>
               <li>Freitextnachricht (optional)</li>

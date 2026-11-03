@@ -437,6 +437,8 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
     ['Geschlecht', s.geschlecht],
     ['Familienstand', s.familienstand],
     ['Beruf', s.beruf],
+    ['Erwerbsstatus', s.erwerbsstatus],
+    ['Beihilfe', s.beihilfe],
     ['Krankenversicherung', s.versicherungsart],
     ['Krankenkasse', s.krankenkasse],
     ['Kassenwechsel', s.wechsel],

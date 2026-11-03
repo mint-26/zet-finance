@@ -3,85 +3,381 @@
 import { useState, useRef, useEffect } from 'react';
 import { useInView } from './useInView';
 import SmoothHeight from './SmoothHeight';
+import InsurerSelect from './InsurerSelect';
+import { GKV, PKV, RATES_AS_OF } from '../lib/insurers';
+
+const TOTAL_STEPS = 4;
+const STEP_LABELS = ['Einführung', 'Zahnstatus', 'Krankenversicherung', 'Persönliche Angaben'];
+
+const EMPTY_FORM = {
+  // Step 1
+  datenschutz: false,
+  // Step 2
+  behandlung: '', heilkostenplan: '', fehlendeZaehne: '', zahnluecke: '',
+  parodontose: '', schwerpunkt: [], vorherigeVersicherung: '',
+  // Step 3. kasse: chosen list entry; kasseIstAndere: "Nicht in der Liste" with free text.
+  erwerbsstatus: '', beihilfe: '', versicherungsart: '',
+  kasse: '', kasseIstAndere: false, kasseFreitext: '', wechsel: '', bonusprogramm: '',
+  // Step 4
+  name: '', anschrift: '', geburtsdatum: '', geschlecht: '', familienstand: '',
+  kontaktweg: [], email: '', telefon: '',
+};
+
+// Health insurance answers. kind decides the follow-up: gkv/pkv show the matching
+// insurer list, none shows nothing further.
+const KV = {
+  pflicht: { value: 'gesetzlich pflichtversichert', kind: 'gkv' },
+  freiwillig: { value: 'gesetzlich freiwillig versichert', kind: 'gkv' },
+  familie: { value: 'gesetzlich familienversichert', kind: 'gkv' },
+  privat: { value: 'privat versichert', kind: 'pkv' },
+  heilfuersorge: { value: 'über freie Heilfürsorge abgesichert', kind: 'none' },
+};
+const KV_BY_VALUE = Object.fromEntries(Object.values(KV).map((k) => [k.value, k]));
+
+// Insurance types offered per employment status.
+const ERWERBSSTATUS = [
+  { value: 'Angestellt', kv: [KV.pflicht, KV.freiwillig, KV.familie, KV.privat] },
+  { value: 'Selbstständig / freiberuflich', kv: [KV.freiwillig, KV.pflicht, KV.privat] },
+  { value: 'Verbeamtet', kv: [KV.privat, KV.freiwillig, KV.heilfuersorge] },
+  { value: 'In Ausbildung / im Studium', kv: [KV.pflicht, KV.familie, KV.freiwillig, KV.privat] },
+  { value: 'Im Ruhestand', kv: [KV.pflicht, KV.freiwillig, KV.privat] },
+  { value: 'Derzeit nicht erwerbstätig', kv: [KV.pflicht, KV.freiwillig, KV.familie, KV.privat] },
+  { value: 'Sonstiges', kv: [KV.pflicht, KV.freiwillig, KV.familie, KV.privat] },
+];
+const kvOptions = (status) => ERWERBSSTATUS.find((e) => e.value === status)?.kv || [];
+const kvKind = (form) => KV_BY_VALUE[form.versicherungsart]?.kind;
+
+const WANTS_MAIL = 'Per E-Mail';
+const WANTS_PHONE = 'Telefonisch';
+const WANTS_WHATSAPP = 'Per WhatsApp';
+
+const hasMissingTeeth = (form) => form.fehlendeZaehne !== '' && form.fehlendeZaehne !== '0';
+const needsMail = (form) => form.kontaktweg.includes(WANTS_MAIL);
+const needsPhone = (form) => form.kontaktweg.includes(WANTS_PHONE) || form.kontaktweg.includes(WANTS_WHATSAPP);
+
+const phoneLabel = (form) => {
+  const phone = form.kontaktweg.includes(WANTS_PHONE);
+  const whatsapp = form.kontaktweg.includes(WANTS_WHATSAPP);
+  if (phone && whatsapp) return 'Telefon- und WhatsApp-Nummer';
+  return whatsapp ? 'WhatsApp-Nummer' : 'Telefonnummer';
+};
+
+// Validation per step. Returns { field: message } for visible required fields only,
+// in the order of the form, so the first key is the field to jump to.
+function validateStep(step, form) {
+  const e = {};
+  const required = (key, message) => { if (!form[key]) e[key] = message; };
+
+  if (step === 1) {
+    if (!form.datenschutz) e.datenschutz = 'Bitte willigen Sie ein, damit ich Ihre Anfrage bearbeiten darf.';
+  }
+  if (step === 2) {
+    required('behandlung', 'Bitte geben Sie an, ob eine Behandlung läuft oder geplant ist.');
+    required('heilkostenplan', 'Bitte geben Sie an, ob ein Heil- und Kostenplan vorliegt.');
+    required('fehlendeZaehne', 'Bitte wählen Sie die Anzahl der fehlenden Zähne, auch wenn es 0 sind.');
+    if (hasMissingTeeth(form)) required('zahnluecke', 'Bitte geben Sie an, ob die Zahnlücken mitversichert werden sollen.');
+    required('parodontose', 'Bitte beantworten Sie die Frage zur Parodontitis.');
+    if (form.schwerpunkt.length === 0) e.schwerpunkt = 'Bitte wählen Sie mindestens einen Bereich aus.';
+    required('vorherigeVersicherung', 'Bitte geben Sie an, ob eine andere Zahnersatzversicherung bestand.');
+  }
+  if (step === 3) {
+    required('erwerbsstatus', 'Bitte wählen Sie Ihre berufliche Situation aus.');
+    if (form.erwerbsstatus === 'Verbeamtet') required('beihilfe', 'Bitte geben Sie an, ob Sie Anspruch auf Beihilfe haben.');
+    required('versicherungsart', 'Bitte geben Sie an, wie Sie krankenversichert sind.');
+    const kind = kvKind(form);
+    if (kind === 'gkv' || kind === 'pkv') {
+      const missing = kind === 'gkv' ? 'Bitte wählen Sie Ihre Krankenkasse aus.' : 'Bitte wählen Sie Ihren Krankenversicherer aus.';
+      if (form.kasseIstAndere) {
+        if (!form.kasseFreitext.trim()) e.kasseFreitext = 'Bitte tragen Sie den Namen ein.';
+      } else if (!form.kasse) {
+        e.kasse = missing;
+      }
+    }
+    if (kind === 'gkv') required('wechsel', 'Bitte geben Sie an, ob ein Wechsel für Sie in Frage kommt.');
+  }
+  if (step === 4) {
+    if (form.name.trim().length < 3) e.name = 'Bitte geben Sie Ihren Vor- und Nachnamen an.';
+    if (!/\d/.test(form.anschrift) || form.anschrift.trim().length < 10) e.anschrift = 'Bitte geben Sie Ihre vollständige Anschrift mit Postleitzahl und Hausnummer an.';
+    const birth = form.geburtsdatum ? new Date(form.geburtsdatum) : null;
+    if (!birth || Number.isNaN(birth.getTime())) e.geburtsdatum = 'Bitte geben Sie Ihr Geburtsdatum an.';
+    else if (birth > new Date() || birth.getFullYear() < 1900) e.geburtsdatum = 'Bitte prüfen Sie Ihr Geburtsdatum.';
+    required('geschlecht', 'Bitte wählen Sie eine Angabe aus.');
+    required('familienstand', 'Bitte wählen Sie Ihren Familienstand aus.');
+    if (form.kontaktweg.length === 0) e.kontaktweg = 'Bitte wählen Sie mindestens einen Kontaktweg aus.';
+    if (needsMail(form) && !/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(form.email.trim())) e.email = 'Bitte geben Sie eine gültige E-Mail-Adresse an.';
+    if (needsPhone(form) && form.telefon.replace(/\D/g, '').length < 6) e.telefon = `Bitte geben Sie Ihre ${phoneLabel(form)} an.`;
+  }
+  return e;
+}
+
+// What the CRM receives: only answers that are still visible, with the insurer as one
+// readable text. Statutory funds carry the total contribution rate.
+function buildPayload(form) {
+  const kind = kvKind(form);
+  let krankenkasse = '';
+  if (form.kasseIstAndere) {
+    krankenkasse = `${form.kasseFreitext.trim()} (nicht in der Liste)`;
+  } else if (kind === 'gkv') {
+    const entry = GKV.find((k) => k.name === form.kasse);
+    krankenkasse = entry?.rate ? `${entry.name} (${entry.rate} %)` : form.kasse;
+  } else if (kind === 'pkv') {
+    krankenkasse = form.kasse;
+  }
+  return {
+    datenschutz: form.datenschutz,
+    behandlung: form.behandlung,
+    heilkostenplan: form.heilkostenplan,
+    fehlendeZaehne: form.fehlendeZaehne,
+    zahnluecke: hasMissingTeeth(form) ? form.zahnluecke : '',
+    parodontose: form.parodontose,
+    schwerpunkt: form.schwerpunkt,
+    vorherigeVersicherung: form.vorherigeVersicherung,
+    erwerbsstatus: form.erwerbsstatus,
+    beihilfe: form.erwerbsstatus === 'Verbeamtet' ? form.beihilfe : '',
+    versicherungsart: form.versicherungsart,
+    krankenkasse,
+    wechsel: kind === 'gkv' ? form.wechsel : '',
+    bonusprogramm: kind === 'gkv' ? form.bonusprogramm : '',
+    name: form.name.trim(),
+    anschrift: form.anschrift.trim(),
+    geburtsdatum: form.geburtsdatum,
+    geschlecht: form.geschlecht,
+    familienstand: form.familienstand,
+    kontaktweg: form.kontaktweg,
+    email: needsMail(form) ? form.email.trim() : '',
+    telefon: needsPhone(form) ? form.telefon.trim() : '',
+  };
+}
+
+// ─── Shared styles ───
+const ERROR = '#A33A2A';
+
+const inputStyle = (invalid) => ({
+  width: '100%', padding: '14px 18px',
+  background: 'var(--input-bg)',
+  border: `1px solid ${invalid ? ERROR : 'var(--border)'}`, borderRadius: 10,
+  color: 'var(--text-body)', fontSize: 16,
+  fontFamily: 'inherit',
+  outline: 'none', transition: 'border-color 0.3s',
+  boxSizing: 'border-box',
+});
+
+const labelStyle = {
+  fontSize: 14, color: 'var(--text-muted)',
+  display: 'block', marginBottom: 6, lineHeight: 1.5,
+};
+
+const pillBtn = (active) => ({
+  flex: 1, padding: '12px 8px', minHeight: 44,
+  background: active ? 'var(--accent)' : 'var(--input-bg)',
+  border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+  borderRadius: 10,
+  color: active ? 'var(--bg-primary)' : 'var(--text-body)',
+  fontWeight: active ? 700 : 500,
+  fontSize: 14, cursor: 'pointer',
+  fontFamily: 'inherit',
+  transition: 'all 0.3s',
+  minWidth: 0,
+});
+
+const optionBox = (active) => ({
+  display: 'flex', alignItems: 'center', gap: 12,
+  padding: '12px 16px',
+  background: active ? 'var(--accent-dim)' : 'var(--input-bg)',
+  border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+  borderRadius: 10, cursor: 'pointer', transition: 'all 0.3s',
+});
+
+const marker = (active, round) => ({
+  width: 20, height: 20, borderRadius: round ? '50%' : 4, flexShrink: 0,
+  border: `2px solid ${active ? 'var(--accent)' : 'var(--border-strong)'}`,
+  background: active ? 'var(--accent)' : 'transparent',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  transition: 'all 0.3s',
+});
+
+const optionText = (active) => ({
+  fontSize: 14,
+  color: active ? 'var(--accent)' : 'var(--text-body)',
+  fontWeight: active ? 600 : 400,
+  lineHeight: 1.5,
+});
+
+const navBtn = (isPrimary, enabled = true) => ({
+  flex: isPrimary ? 2 : 1, padding: '16px', minHeight: 54,
+  background: isPrimary ? 'var(--accent)' : 'transparent',
+  border: isPrimary ? 'none' : '1px solid var(--border-strong)',
+  borderRadius: 10,
+  color: isPrimary ? 'var(--bg-primary)' : 'var(--text-body)',
+  fontWeight: isPrimary ? 700 : 500, fontSize: 16,
+  cursor: enabled ? 'pointer' : 'wait',
+  opacity: enabled ? 1 : 0.7,
+  fontFamily: 'inherit',
+  transition: 'all 0.3s',
+  boxShadow: isPrimary ? '0 4px 30px var(--shadow-accent)' : 'none',
+});
+
+// ─── Form parts ───
+const hiddenInput = { position: 'absolute', opacity: 0, width: 1, height: 1, margin: 0 };
+
+function FieldError({ id, message }) {
+  if (!message) return null;
+  return <p id={`${id}-error`} role="alert" style={{ fontSize: 13, color: ERROR, lineHeight: 1.45, margin: '7px 0 0' }}>{message}</p>;
+}
+
+// Fieldset-style wrapper for a question with several answers.
+function Group({ id, label, error, children }) {
+  return (
+    <div id={`q-${id}`} role="group" aria-labelledby={`q-${id}-label`} tabIndex={-1} style={{ scrollMarginTop: 24, outline: 'none' }}>
+      <div id={`q-${id}-label`} style={labelStyle}>{label}</div>
+      {children}
+      <FieldError id={`q-${id}`} message={error} />
+    </div>
+  );
+}
+
+function RadioGroup({ name, value, options, onChange }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {options.map((opt) => {
+        const val = typeof opt === 'string' ? opt : opt.value;
+        const label = typeof opt === 'string' ? opt : (opt.label || opt.value);
+        const active = value === val;
+        return (
+          <label key={val} className="q-opt" style={{ ...optionBox(active), position: 'relative' }}>
+            <input type="radio" name={name} value={val} checked={active} onChange={() => onChange(val)} style={hiddenInput} />
+            <span style={marker(active, true)}>
+              {active && <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--bg-primary)' }} />}
+            </span>
+            <span style={optionText(active)}>{label}</span>
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+function CheckboxGroup({ name, values, options, onToggle }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {options.map((val) => {
+        const active = values.includes(val);
+        return (
+          <label key={val} className="q-opt" style={{ ...optionBox(active), position: 'relative' }}>
+            <input type="checkbox" name={name} value={val} checked={active} onChange={() => onToggle(val)} style={hiddenInput} />
+            <span style={marker(active, false)}>
+              {active && <span style={{ color: 'var(--bg-primary)', fontSize: 12, fontWeight: 700 }}>{'✓'}</span>}
+            </span>
+            <span style={optionText(active)}>{val}</span>
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+function Pills({ value, options, onChange, wrap }) {
+  return (
+    <div style={{ display: 'flex', gap: wrap ? 8 : 10, flexWrap: wrap ? 'wrap' : 'nowrap' }}>
+      {options.map((o) => (
+        <button
+          key={o} type="button" aria-pressed={value === o} onClick={() => onChange(o)}
+          style={{ ...pillBtn(value === o), ...(wrap ? { minWidth: 48, flex: '0 0 auto' } : {}) }}
+        >{o}</button>
+      ))}
+    </div>
+  );
+}
+
+const headingStyle = { fontSize: 18, fontWeight: 700, color: 'var(--accent)', margin: 0, outline: 'none', lineHeight: 1.3, scrollMarginTop: 24 };
+const headerBox = {
+  background: 'var(--accent-dim)', border: '1px solid var(--accent)',
+  borderRadius: 12, padding: '16px 20px', marginBottom: 4,
+};
+
+function StepHeading({ headingRef, title, subtitle }) {
+  return (
+    <div style={headerBox}>
+      <h3 ref={headingRef} tabIndex={-1} style={headingStyle}>{title}</h3>
+      {subtitle && <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '8px 0 0', lineHeight: 1.5 }}>{subtitle}</p>}
+    </div>
+  );
+}
 
 export default function Questionnaire() {
   const [ref, inView] = useInView(0.05);
   const [step, setStep] = useState(1);
-  const totalSteps = 5;
-  const cardRef = useRef(null);
-  const firstStep = useRef(true);
-  // Refs for step-2 inputs so we can read autofilled values the browser
-  // populated without triggering React's onChange handler.
-  const step2Refs = useRef({});
-  const bindRef = (key) => (el) => { if (el) step2Refs.current[key] = el; };
-  // Reads any DOM values into React state — returns the merged form snapshot
-  // so callers can validate immediately without waiting for re-render.
-  const syncStep2FromDOM = () => {
-    const patch = {};
-    for (const key of ['name', 'anschrift', 'geburtsdatum', 'telefon', 'email', 'beruf']) {
-      const el = step2Refs.current[key];
-      if (el && el.value !== form[key]) patch[key] = el.value;
-    }
-    if (Object.keys(patch).length) {
-      setForm((prev) => ({ ...prev, ...patch }));
-    }
-    return { ...form, ...patch };
-  };
-  const [form, setForm] = useState({
-    // Step 1 - Persönliche Angaben
-    name: '', anschrift: '', geburtsdatum: '', geschlecht: '', familienstand: '',
-    telefon: '', email: '', beruf: '',
-    // Step 2 - Krankenversicherung
-    versicherungsart: '', krankenkasse: '', wechsel: '', bonusprogramm: '',
-    // Step 3 - Zahnstatus
-    behandlung: '', heilkostenplan: '', fehlendeZaehne: '',
-    zahnluecke: '', parodontose: '', schwerpunkt: [],
-    vorherigeVersicherung: '',
-    // Step 4 - Beratung & Kontakt
-    kontaktweg: [], zusatzversicherung: [], beratungstermin: [],
-    // Datenschutz
-    datenschutz: false,
-  });
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
+  const [sendFailed, setSendFailed] = useState(false);
+  const headingRef = useRef(null);
+  const firstStep = useRef(true);
+  // Inputs of step 4, so we can read values the browser autofilled without
+  // triggering React's onChange handler.
+  const personalRefs = useRef({});
+  const bindRef = (key) => (el) => { if (el) personalRefs.current[key] = el; };
 
-  const update = (key, val) => setForm((prev) => ({ ...prev, [key]: val }));
+  // Applies a change and clears the error of the touched field.
+  const patch = (changes) => {
+    setForm((prev) => ({ ...prev, ...changes }));
+    setErrors((prev) => {
+      const next = { ...prev };
+      Object.keys(changes).forEach((k) => delete next[k]);
+      return next;
+    });
+  };
+  const update = (key) => (val) => patch({ [key]: val });
 
-  const toggleArray = (key, val) => {
-    setForm((prev) => ({
-      ...prev,
-      [key]: prev[key].includes(val)
-        ? prev[key].filter((v) => v !== val)
-        : [...prev[key], val],
-    }));
+  const toggleIn = (key) => (val) => {
+    const list = form[key];
+    patch({ [key]: list.includes(val) ? list.filter((v) => v !== val) : [...list, val] });
   };
 
-  const step1Valid = form.name && form.anschrift && form.geburtsdatum && form.geschlecht && form.familienstand && form.telefon && form.email;
-  const step2Valid = form.versicherungsart && form.krankenkasse && form.wechsel;
-  const step3Valid = form.behandlung && form.heilkostenplan && form.fehlendeZaehne && form.zahnluecke && form.parodontose && form.schwerpunkt.length > 0 && form.vorherigeVersicherung;
-  const step4Valid = form.kontaktweg.length > 0 && form.zusatzversicherung.length > 0 && form.beratungstermin.length > 0 && form.datenschutz;
-
-  const canNext = () => {
-    if (step === 1) return true; // Intro, always valid
-    if (step === 2) return step1Valid;
-    if (step === 3) return step2Valid;
-    if (step === 4) return step3Valid;
-    return false;
+  // ─── Dependent answers: hidden questions lose their previous answer ───
+  const setFehlendeZaehne = (val) => {
+    patch(val === '0' ? { fehlendeZaehne: val, zahnluecke: '' } : { fehlendeZaehne: val });
   };
 
-  // On a step change, bring the card top back into view if it scrolled away
-  // (a long step was filled in), so the next step starts at its beginning.
+  const resetInsurer = { kasse: '', kasseIstAndere: false, kasseFreitext: '', wechsel: '', bonusprogramm: '' };
+
+  const setErwerbsstatus = (val) => {
+    const changes = { erwerbsstatus: val };
+    if (val !== 'Verbeamtet') changes.beihilfe = '';
+    if (form.versicherungsart && !kvOptions(val).some((k) => k.value === form.versicherungsart)) {
+      Object.assign(changes, { versicherungsart: '' }, resetInsurer);
+    }
+    patch(changes);
+  };
+
+  const setVersicherungsart = (val) => {
+    const sameKind = KV_BY_VALUE[val]?.kind === kvKind(form);
+    patch(sameKind ? { versicherungsart: val } : { versicherungsart: val, ...resetInsurer });
+  };
+
+  const toggleKontaktweg = (val) => {
+    const next = form.kontaktweg.includes(val) ? form.kontaktweg.filter((v) => v !== val) : [...form.kontaktweg, val];
+    const changes = { kontaktweg: next };
+    if (!next.includes(WANTS_MAIL)) changes.email = '';
+    if (!next.includes(WANTS_PHONE) && !next.includes(WANTS_WHATSAPP)) changes.telefon = '';
+    patch(changes);
+  };
+
+  // After every step change jump to the new heading, for keyboard and screen reader too.
   useEffect(() => {
     if (firstStep.current) { firstStep.current = false; return; }
-    const card = cardRef.current;
-    if (card && card.getBoundingClientRect().top < 80) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const heading = headingRef.current;
+    if (!heading) return;
+    heading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    heading.focus({ preventScroll: true });
   }, [step]);
 
   // Warn user if they try to close the tab while a submission is in flight.
   // The browser shows a generic confirmation; the lead is already being saved
   // server-side but the mail notification needs the request to complete.
   useEffect(() => {
-    if (!sending) return;
+    if (!sending) return undefined;
     const handler = (e) => {
       e.preventDefault();
       e.returnValue = '';
@@ -91,161 +387,82 @@ export default function Questionnaire() {
     return () => window.removeEventListener('beforeunload', handler);
   }, [sending]);
 
+  const syncAutofill = () => {
+    const merged = { ...form };
+    const changes = {};
+    Object.entries(personalRefs.current).forEach(([key, el]) => {
+      if (el.isConnected && el.value !== form[key]) { changes[key] = el.value; merged[key] = el.value; }
+    });
+    if (Object.keys(changes).length) setForm((prev) => ({ ...prev, ...changes }));
+    return merged;
+  };
+
+  // Validates the step; on errors shows them at the fields and jumps to the first one.
+  const checkStep = (current) => {
+    const found = validateStep(step, current);
+    setErrors(found);
+    const firstKey = Object.keys(found)[0];
+    if (firstKey) {
+      setTimeout(() => {
+        const el = document.getElementById(`q-${firstKey}`);
+        if (el) { el.focus({ preventScroll: true }); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      }, 50);
+      return false;
+    }
+    return true;
+  };
+
+  const goNext = () => {
+    if (checkStep(form)) setStep((s) => s + 1);
+  };
+
+  const goBack = () => {
+    syncAutofill();
+    setErrors({});
+    setStep((s) => s - 1);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!step4Valid || sending) return;
+    if (sending) return;
+    // Enter in a text field of an earlier step must not send the form.
+    if (step < TOTAL_STEPS) { goNext(); return; }
+    const current = syncAutofill();
+    if (!checkStep(current)) return;
     setSending(true);
+    setSendFailed(false);
     try {
       // Single server-side call. The API route persists to Supabase and then
-      // triggers the FormSubmit notification with retry/backoff. If the mail
-      // pipeline fails after retries, the lead is still saved and Marco's
-      // admin shows it as "Mail noch nicht versandt" with a manual resend.
-      await fetch('/api/submissions', {
+      // triggers the mail notification with retry/backoff. If the mail pipeline
+      // fails after retries, the lead is still saved and Marco's admin shows it
+      // as "Mail noch nicht versandt" with a manual resend.
+      const res = await fetch('/api/submissions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(buildPayload(current)),
       });
-    } finally {
-      setSending(false);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setSubmitted(true);
       setTimeout(() => document.getElementById('fragebogen')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+    } catch {
+      setSendFailed(true);
+    } finally {
+      setSending(false);
     }
   };
 
-  // ─── Shared styles ───
-  const inputStyle = {
-    width: '100%', padding: '14px 18px',
-    background: 'var(--input-bg)',
-    border: '1px solid var(--border)', borderRadius: 10,
-    color: 'var(--text-body)', fontSize: 15,
-    fontFamily: "'DM Sans', sans-serif",
-    outline: 'none', transition: 'border-color 0.3s',
-    boxSizing: 'border-box',
-  };
-
-  const labelStyle = {
-    fontSize: 14, color: 'var(--text-muted)',
-    display: 'block', marginBottom: 6, lineHeight: 1.5,
-  };
-
-  const pillBtn = (active) => ({
-    flex: 1, padding: '12px 8px',
-    background: active
-      ? 'linear-gradient(135deg, var(--accent), var(--accent-light))'
-      : 'var(--input-bg)',
-    border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-    borderRadius: 10,
-    color: active ? 'var(--bg-primary)' : 'var(--text-body)',
-    fontWeight: active ? 700 : 500,
-    fontSize: 13, cursor: 'pointer',
-    fontFamily: "'DM Sans', sans-serif",
-    transition: 'all 0.3s',
-    minWidth: 0,
+  // Keeps a text input's error wired to the field.
+  const inputProps = (key, invalidKey = key) => ({
+    id: `q-${key}`,
+    style: { ...inputStyle(!!errors[invalidKey]), scrollMarginTop: 24 },
+    value: form[key],
+    'aria-invalid': errors[invalidKey] ? true : undefined,
+    'aria-describedby': errors[invalidKey] ? `q-${key}-error` : undefined,
+    onChange: (e) => update(key)(e.target.value),
   });
-
-  const radioOption = (active) => ({
-    display: 'flex', alignItems: 'center', gap: 12,
-    padding: '12px 16px',
-    background: active ? 'var(--accent-dim)' : 'var(--input-bg)',
-    border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-    borderRadius: 10, cursor: 'pointer', transition: 'all 0.3s',
-  });
-
-  const radioDot = (active) => ({
-    width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-    border: `2px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-    background: active
-      ? 'linear-gradient(135deg, var(--accent), var(--accent-light))'
-      : 'transparent',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    transition: 'all 0.3s',
-  });
-
-  const checkBox = (active) => ({
-    width: 20, height: 20, borderRadius: 4, flexShrink: 0,
-    border: `2px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-    background: active
-      ? 'linear-gradient(135deg, var(--accent), var(--accent-light))'
-      : 'transparent',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    transition: 'all 0.3s',
-  });
-
-  const optionText = (active) => ({
-    fontSize: 14,
-    color: active ? 'var(--accent)' : 'var(--text-body)',
-    fontWeight: active ? 600 : 400,
-    lineHeight: 1.5,
-  });
-
-  const navBtn = (active, isPrimary) => ({
-    flex: isPrimary ? 2 : 1, padding: '16px',
-    background: active
-      ? (isPrimary ? 'linear-gradient(135deg, var(--accent), var(--accent-light))' : 'transparent')
-      : 'var(--text-dim)',
-    border: isPrimary ? 'none' : '1px solid var(--border)',
-    borderRadius: 10,
-    color: active
-      ? (isPrimary ? 'var(--bg-primary)' : 'var(--text-body)')
-      : 'var(--text-muted)',
-    fontWeight: isPrimary ? 700 : 500, fontSize: 16,
-    cursor: active ? 'pointer' : 'not-allowed',
-    fontFamily: "'DM Sans', sans-serif",
-    transition: 'all 0.3s',
-    boxShadow: active && isPrimary ? '0 4px 30px var(--shadow-accent)' : 'none',
-  });
-
-  // ─── Radio group helper ───
-  const RadioGroup = ({ field, options }) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {options.map((opt) => {
-        const val = typeof opt === 'string' ? opt : opt.value;
-        const label = typeof opt === 'string' ? opt : opt.label;
-        const active = form[field] === val;
-        return (
-          <label key={val} onClick={() => update(field, val)} style={radioOption(active)}>
-            <div style={radioDot(active)}>
-              {active && <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--bg-primary)' }} />}
-            </div>
-            <span style={optionText(active)}>{label}</span>
-          </label>
-        );
-      })}
-    </div>
-  );
-
-  // ─── Checkbox group helper ───
-  const CheckboxGroup = ({ field, options }) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {options.map((opt) => {
-        const val = typeof opt === 'string' ? opt : opt.value;
-        const label = typeof opt === 'string' ? opt : opt.label;
-        const active = form[field].includes(val);
-        return (
-          <label key={val} onClick={() => toggleArray(field, val)} style={radioOption(active)}>
-            <div style={checkBox(active)}>
-              {active && <span style={{ color: 'var(--bg-primary)', fontSize: 12, fontWeight: 700 }}>{'\u2713'}</span>}
-            </div>
-            <span style={optionText(active)}>{label}</span>
-          </label>
-        );
-      })}
-    </div>
-  );
-
-  // ─── Section header helper ───
-  const SectionHeader = ({ title, subtitle }) => (
-    <div style={{
-      background: 'var(--accent-dim)', border: '1px solid var(--accent)',
-      borderRadius: 12, padding: '16px 20px', marginBottom: 4,
-    }}>
-      <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--accent)', margin: 0 }}>{title}</h3>
-      {subtitle && <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '8px 0 0', lineHeight: 1.5 }}>{subtitle}</p>}
-    </div>
-  );
 
   if (submitted) {
-    const vorname = form.name.split(' ')[0];
+    const vorname = form.name.trim().split(' ')[0];
     return (
       <section id="fragebogen" style={{
         padding: '100px 24px', background: 'var(--bg-secondary)', textAlign: 'center',
@@ -256,7 +473,7 @@ export default function Questionnaire() {
             background: 'var(--accent-dim)', border: '2px solid var(--accent)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 32, color: 'var(--accent)',
-          }}>{'\u2713'}</div>
+          }}>{'✓'}</div>
           <h2 style={{
             fontFamily: "'Playfair Display', serif",
             fontSize: 32, color: 'var(--text-primary)', marginBottom: 12,
@@ -269,11 +486,12 @@ export default function Questionnaire() {
     );
   }
 
-  const stepLabels = ['Einführung', 'Persönliche Angaben', 'Krankenversicherung', 'Zahnstatus', 'Beratung & Kontakt'];
+  const kind = kvKind(form);
+  const insurerError = errors.kasse;
 
   return (
-    <section id="fragebogen" ref={ref} style={{
-      padding: '100px 24px', background: 'var(--bg-secondary)', transition: 'background 0.5s ease',
+    <section id="fragebogen" ref={ref} className="q-section" style={{
+      background: 'var(--bg-secondary)', transition: 'background 0.5s ease',
     }}>
       <div style={{
         maxWidth: 680, margin: '0 auto',
@@ -294,324 +512,261 @@ export default function Questionnaire() {
           }}>Ihr persönliches Angebot</h2>
         </div>
 
-        <div ref={cardRef} style={{
-          background: 'var(--bg-card)', border: '1px solid var(--border)',
-          borderRadius: 20, padding: 36, scrollMarginTop: 96,
+        <div className="q-card" style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 20,
         }}>
           {/* Progress Bar */}
           <div style={{ marginBottom: 28 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 10 }}>
               <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 500 }}>
-                Schritt {step} von {totalSteps}
+                Schritt {step} von {TOTAL_STEPS}
               </span>
-              <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>
-                {stepLabels[step - 1]}
+              <span style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'right' }}>
+                {STEP_LABELS[step - 1]}
               </span>
             </div>
-            <div style={{ height: 4, borderRadius: 2, background: 'var(--border)', overflow: 'hidden' }}>
+            <div
+              role="progressbar" aria-valuemin={1} aria-valuemax={TOTAL_STEPS} aria-valuenow={step}
+              aria-label="Fortschritt des Fragebogens"
+              style={{ height: 4, borderRadius: 2, background: 'var(--border)', overflow: 'hidden' }}
+            >
               <div style={{
-                height: '100%', borderRadius: 2,
-                background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
-                width: `${(step / totalSteps) * 100}%`,
-                transition: 'width 0.4s ease',
+                height: '100%', background: 'var(--accent)',
+                transform: `scaleX(${step / TOTAL_STEPS})`, transformOrigin: 'left',
+                transition: 'transform 0.4s ease',
               }} />
             </div>
           </div>
 
           {/* Height glides between steps and follow-up questions; each step fades in. */}
           <SmoothHeight>
-          <form key={step} className="q-step" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <form key={step} className="q-step" noValidate onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-            {/* ═══ STEP 1: Einführung ═══ */}
+            {/* ═══ STEP 1: Einführung und Einwilligung ═══ */}
             {step === 1 && (
               <>
-                <SectionHeader title="Einführung" />
-                <div style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.8, display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <p><strong style={{ color: 'var(--text-primary)' }}>1. Personalisierte Beratung:</strong> Ich biete eine individuelle und auf Ihre Bedürfnisse zugeschnittene Beratung, die Ihnen hilft, die bestmöglichen Entscheidungen für Ihre finanzielle Zukunft zu treffen.</p>
-                  <p><strong style={{ color: 'var(--text-primary)' }}>2. Effiziente Lösungen:</strong> Unsere Produkte und Dienstleistungen sind darauf ausgerichtet, Ihre finanziellen Ziele effektiv und kosteneffizient zu erreichen, wodurch Sie Zeit und Geld sparen.</p>
-                  <p><strong style={{ color: 'var(--text-primary)' }}>3. Langfristige Partnerschaft:</strong> Ich strebe nach langfristigen Beziehungen zu meinen Kunden, indem ich kontinuierliche Unterstützung und Beratung biete, um sicherzustellen, dass Ihre finanziellen Bedürfnisse auch in Zukunft erfüllt werden.</p>
+                <StepHeading headingRef={headingRef} title="Ihr Weg zur passenden Zahnzusatzversicherung" />
+                <div style={{ fontSize: 15, color: 'var(--text-muted)', lineHeight: 1.75, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <p>Welche Absicherung passt zu Ihren Zähnen und Ihren Wünschen? Mit wenigen Angaben helfen Sie mir, passende Möglichkeiten für Sie zu prüfen. Ich schaue mir Ihre Anfrage persönlich an und melde mich über Ihren gewünschten Kontaktweg.</p>
+                  <p>Eine Behandlung wurde bereits empfohlen, ist geplant oder läuft schon? Bitte geben Sie das im Fragebogen an, auch bei einer mündlichen Empfehlung. Ich prüfe, welche Möglichkeiten bestehen. Eine Kostenübernahme für diese Behandlung lässt sich vorab nicht zusagen.</p>
+                  <p style={{ color: 'var(--text-primary)' }}>Ihre Anfrage ist kostenlos und unverbindlich. Sie schließen hier noch keine Versicherung ab.</p>
                 </div>
-                <button type="button" onClick={() => setStep(2)}
-                  style={navBtn(true, true)}>
-                  Weiter
-                </button>
+
+                <div>
+                  <label className="q-opt" style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer', padding: '8px 0', position: 'relative' }}>
+                    <input
+                      id="q-datenschutz" type="checkbox" checked={form.datenschutz}
+                      aria-invalid={errors.datenschutz ? true : undefined}
+                      aria-describedby={errors.datenschutz ? 'q-datenschutz-error' : undefined}
+                      onChange={(e) => update('datenschutz')(e.target.checked)}
+                      style={hiddenInput}
+                    />
+                    <span style={{ ...marker(form.datenschutz, false), marginTop: 2, ...(errors.datenschutz ? { borderColor: ERROR } : {}) }}>
+                      {form.datenschutz && <span style={{ color: 'var(--bg-primary)', fontSize: 12, fontWeight: 700 }}>{'✓'}</span>}
+                    </span>
+                    <span style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.55 }}>
+                      Ich willige in die Verarbeitung meiner personenbezogenen Daten einschließlich meiner Gesundheitsdaten (Angaben zum Zahnzustand) zur Erstellung eines Versicherungsangebots ein. Details finden Sie in der{' '}
+                      <a href="/datenschutz" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
+                        Datenschutzerklärung
+                      </a>. *
+                    </span>
+                  </label>
+                  <FieldError id="q-datenschutz" message={errors.datenschutz} />
+                </div>
+
+                <button type="button" onClick={goNext} style={navBtn(true)}>Weiter</button>
               </>
             )}
 
-            {/* ═══ STEP 2: Persönliche Angaben ═══ */}
+            {/* ═══ STEP 2: Zahnstatus ═══ */}
             {step === 2 && (
               <>
-                <SectionHeader
-                  title="Persönliche Angaben"
-                  subtitle="Bitte füllen Sie die folgenden Angaben sorgfältig aus. Ihre Daten werden ausschließlich zur Erstellung eines individuellen Angebots verwendet."
-                />
+                <StepHeading headingRef={headingRef} title="Zahnstatus" />
 
-                <div>
-                  <label style={labelStyle}>Vor- und Nachname *</label>
-                  <input style={inputStyle} value={form.name}
-                    ref={bindRef('name')}
-                    onChange={(e) => update('name', e.target.value)}
-                    onBlur={syncStep2FromDOM}
-                    placeholder="Max Mustermann" />
-                </div>
-
-                <div>
-                  <label style={labelStyle}>Vollständige Anschrift *<br />
-                    <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Postleitzahl → Ort → Straße → Hausnummer</span>
-                  </label>
-                  <input style={inputStyle} value={form.anschrift}
-                    ref={bindRef('anschrift')}
-                    onChange={(e) => update('anschrift', e.target.value)}
-                    onBlur={syncStep2FromDOM}
-                    placeholder="60311 Frankfurt am Main, Musterstraße 1" />
-                </div>
-
-                <div>
-                  <label style={labelStyle}>Geburtsdatum *</label>
-                  <input style={inputStyle} type="date" value={form.geburtsdatum}
-                    ref={bindRef('geburtsdatum')}
-                    onChange={(e) => update('geburtsdatum', e.target.value)}
-                    onBlur={syncStep2FromDOM} />
-                </div>
-
-                <div>
-                  <label style={labelStyle}>Geschlecht *</label>
-                  <RadioGroup field="geschlecht" options={[
-                    'Männlich', 'Weiblich', 'Divers',
-                  ]} />
-                </div>
-
-                <div>
-                  <label style={labelStyle}>Familienstand *</label>
-                  <RadioGroup field="familienstand" options={[
-                    'Ledig', 'Verheiratet', 'Verpartnert (in einem Haushalt lebend)', 'Geschieden', 'Verwitwet',
-                  ]} />
-                </div>
-
-                <div>
-                  <label style={labelStyle}>Rückrufnummer *</label>
-                  <input style={inputStyle} type="tel" value={form.telefon}
-                    ref={bindRef('telefon')}
-                    onChange={(e) => update('telefon', e.target.value)}
-                    onBlur={syncStep2FromDOM}
-                    placeholder="+49 ..." />
-                </div>
-
-                <div>
-                  <label style={labelStyle}>E-Mail-Adresse *</label>
-                  <input style={inputStyle} type="email" value={form.email}
-                    ref={bindRef('email')}
-                    onChange={(e) => update('email', e.target.value)}
-                    onBlur={syncStep2FromDOM}
-                    placeholder="ihre@email.de" />
-                </div>
-
-                <div>
-                  <label style={labelStyle}>Beruf (optional)</label>
-                  <input style={inputStyle} value={form.beruf}
-                    ref={bindRef('beruf')}
-                    onChange={(e) => update('beruf', e.target.value)}
-                    onBlur={syncStep2FromDOM}
-                    placeholder="z.B. Angestellter" />
-                </div>
-
-                <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-                  <button type="button" onClick={() => setStep(1)} style={navBtn(true, false)}>Zurück</button>
-                  <button type="button"
-                    onClick={() => {
-                      // Force-sync any autofilled values, then validate
-                      const synced = syncStep2FromDOM();
-                      const valid = synced.name && synced.anschrift && synced.geburtsdatum
-                        && synced.geschlecht && synced.familienstand && synced.telefon && synced.email;
-                      if (valid) setStep(3);
-                    }}
-                    style={navBtn(step1Valid, true)}>Weiter</button>
-                </div>
-              </>
-            )}
-
-            {/* ═══ STEP 3: Krankenversicherung ═══ */}
-            {step === 3 && (
-              <>
-                <SectionHeader title="Krankenversicherung" />
-
-                <div>
-                  <label style={labelStyle}>Wie sind Sie krankenversichert? *</label>
-                  <RadioGroup field="versicherungsart" options={[
-                    'gesetzlich pflichtversichert',
-                    'gesetzlich freiwilligversichert',
-                    'gesetzlich familienversichert',
-                    'privatversichert',
-                  ]} />
-                </div>
-
-                <div>
-                  <label style={labelStyle}>Ihre Krankenkasse *</label>
-                  <input style={inputStyle} value={form.krankenkasse}
-                    onChange={(e) => update('krankenkasse', e.target.value)}
-                    placeholder="z.B. AOK, TK, Barmer..." />
-                </div>
-
-                <div>
-                  <label style={labelStyle}>Kommt ein Wechsel der Krankenkasse in Frage, wenn sich Preis und/oder Leistung dadurch verbessern? *</label>
-                  <RadioGroup field="wechsel" options={[
-                    { value: 'Ja, ich hätte gerne ein Vergleichsangebot', label: 'Ja, ich hätte gerne ein Vergleichsangebot' },
-                    { value: 'Nein', label: 'Nein' },
-                  ]} />
-                </div>
-
-                <div>
-                  <label style={labelStyle}>Nehmen Sie aktuell an einem Bonusprogramm Ihrer Krankenkasse teil?</label>
-                  <RadioGroup field="bonusprogramm" options={['Ja', 'Nein']} />
-                </div>
-
-                <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-                  <button type="button" onClick={() => setStep(2)} style={navBtn(true, false)}>Zurück</button>
-                  <button type="button" disabled={!step2Valid}
-                    onClick={() => step2Valid && setStep(4)} style={navBtn(step2Valid, true)}>Weiter</button>
-                </div>
-              </>
-            )}
-
-            {/* ═══ STEP 4: Zahnstatus ═══ */}
-            {step === 4 && (
-              <>
-                <SectionHeader title="Zahnstatus" />
-
-                <div>
-                  <label style={labelStyle}>Erfolgt zur Zeit eine zahnärztliche oder kieferorthopädische Behandlung oder ist sie angeraten oder beabsichtigt? *</label>
-                  <RadioGroup field="behandlung" options={[
+                <Group id="behandlung" error={errors.behandlung} label="Erfolgt zur Zeit eine zahnärztliche oder kieferorthopädische Behandlung oder ist sie angeraten oder beabsichtigt? *">
+                  <RadioGroup name="behandlung" value={form.behandlung} onChange={update('behandlung')} options={[
                     { value: 'Ja, bereits dokumentiert', label: 'Ja, wurde bereits in der Krankenakte oder Heil- und Kostenplan dokumentiert' },
                     { value: 'Ja, nur kommuniziert', label: 'Ja, wurde bislang nur kommuniziert und noch nicht dokumentiert' },
                     { value: 'Nein', label: 'Nein' },
                   ]} />
-                </div>
+                </Group>
 
-                <div>
-                  <label style={labelStyle}>Liegt ein aktueller Heil- und Kostenplan Ihres Zahnarztes vor? *</label>
-                  <RadioGroup field="heilkostenplan" options={['Ja', 'Nein']} />
-                </div>
+                <Group id="heilkostenplan" error={errors.heilkostenplan} label="Liegt ein aktueller Heil- und Kostenplan Ihres Zahnarztes vor? *">
+                  <RadioGroup name="heilkostenplan" value={form.heilkostenplan} onChange={update('heilkostenplan')} options={['Ja', 'Nein']} />
+                </Group>
 
-                <div>
-                  <label style={labelStyle}>Fehlen Zähne — außer Weisheitszähne — die nicht ersetzt sind? *</label>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {['0', '1', '2', '3', '4', '4+'].map((n) => (
-                      <button key={n} type="button" onClick={() => update('fehlendeZaehne', n)}
-                        style={{ ...pillBtn(form.fehlendeZaehne === n), minWidth: 48, flex: '0 0 auto' }}>{n}</button>
-                    ))}
-                  </div>
-                </div>
+                <Group id="fehlendeZaehne" error={errors.fehlendeZaehne} label="Fehlen Zähne, außer Weisheitszähne, die nicht ersetzt sind? *">
+                  <Pills wrap value={form.fehlendeZaehne} onChange={setFehlendeZaehne} options={['0', '1', '2', '3', '4', '4+']} />
+                </Group>
 
-                <div>
-                  <label style={labelStyle}>Möchten Sie die Zahnlücke mitversichern? *</label>
-                  <div style={{ display: 'flex', gap: 10 }}>
-                    {['Ja', 'Nein'].map((o) => (
-                      <button key={o} type="button" onClick={() => update('zahnluecke', o)}
-                        style={pillBtn(form.zahnluecke === o)}>{o}</button>
-                    ))}
-                  </div>
-                </div>
+                {hasMissingTeeth(form) && (
+                  <Group id="zahnluecke" error={errors.zahnluecke} label="Möchten Sie vorhandene Zahnlücken mitversichern lassen? *">
+                    <Pills value={form.zahnluecke} onChange={update('zahnluecke')} options={['Ja', 'Nein']} />
+                    <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, margin: '10px 0 0' }}>
+                      Je nach Tarif können fehlende Zähne zu einem Risikozuschlag oder Leistungsausschluss führen. Ob und unter welchen Bedingungen Ihre Zahnlücken mitversichert werden können, prüfe ich individuell.
+                    </p>
+                  </Group>
+                )}
 
-                <div>
-                  <label style={labelStyle}>Wird derzeit oder wurde innerhalb der letzten drei Jahre eine parodontale Erkrankung festgestellt und/oder behandelt? (Parodontitis) *</label>
-                  <RadioGroup field="parodontose" options={[
+                <Group id="parodontose" error={errors.parodontose} label="Wird derzeit oder wurde innerhalb der letzten drei Jahre eine parodontale Erkrankung festgestellt und/oder behandelt? (Parodontitis) *">
+                  <RadioGroup name="parodontose" value={form.parodontose} onChange={update('parodontose')} options={[
                     { value: 'Ja, aktuell in Behandlung', label: 'Ja, ist aktuell noch in Behandlung oder wurde vor Vertragsbeginn festgestellt' },
                     { value: 'Ja, ausgeheilt', label: 'Ja, ist bereits vollständig ausgeheilt und behandelt worden' },
                     { value: 'Nein', label: 'Nein' },
                   ]} />
-                </div>
+                </Group>
 
-                <div>
-                  <label style={labelStyle}>Welcher Bereich ist Ihnen am wichtigsten? * (Mehrfachauswahl)</label>
-                  <CheckboxGroup field="schwerpunkt" options={[
+                <Group id="schwerpunkt" error={errors.schwerpunkt} label="Welcher Bereich ist Ihnen am wichtigsten? * (Mehrfachauswahl)">
+                  <CheckboxGroup name="schwerpunkt" values={form.schwerpunkt} onToggle={toggleIn('schwerpunkt')} options={[
                     'Zahnersatz',
                     'Zahnbehandlung',
                     'Kieferorthopädie',
                     'Kosmetische Eingriffe (Zahnreinigung, Bleaching etc.)',
                   ]} />
-                </div>
+                </Group>
 
-                <div>
-                  <label style={labelStyle}>Bestand innerhalb der letzten 6 Monate bereits eine anderweitige Zahnersatzversicherung? *</label>
-                  <div style={{ display: 'flex', gap: 10 }}>
-                    {['Ja', 'Nein'].map((o) => (
-                      <button key={o} type="button" onClick={() => update('vorherigeVersicherung', o)}
-                        style={pillBtn(form.vorherigeVersicherung === o)}>{o}</button>
-                    ))}
-                  </div>
-                </div>
+                <Group id="vorherigeVersicherung" error={errors.vorherigeVersicherung} label="Bestand innerhalb der letzten 6 Monate bereits eine anderweitige Zahnersatzversicherung? *">
+                  <Pills value={form.vorherigeVersicherung} onChange={update('vorherigeVersicherung')} options={['Ja', 'Nein']} />
+                </Group>
 
                 <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-                  <button type="button" onClick={() => setStep(3)} style={navBtn(true, false)}>Zurück</button>
-                  <button type="button" disabled={!step3Valid}
-                    onClick={() => step3Valid && setStep(5)} style={navBtn(step3Valid, true)}>Weiter</button>
+                  <button type="button" onClick={goBack} style={navBtn(false)}>Zurück</button>
+                  <button type="button" onClick={goNext} style={navBtn(true)}>Weiter</button>
                 </div>
               </>
             )}
 
-            {/* ═══ STEP 5: Beratung & Kontakt ═══ */}
-            {step === 5 && (
+            {/* ═══ STEP 3: Erwerbsstatus und Krankenversicherung ═══ */}
+            {step === 3 && (
               <>
-                <SectionHeader title="Beratung & Kontakt" />
+                <StepHeading headingRef={headingRef} title="Erwerbsstatus und Krankenversicherung" />
 
-                <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                  Möchten Sie zusätzlich eine persönliche Beratung zu weiteren Produktfeldern?
-                </p>
+                <Group id="erwerbsstatus" error={errors.erwerbsstatus} label="Wie sind Sie aktuell beruflich tätig? *">
+                  <RadioGroup name="erwerbsstatus" value={form.erwerbsstatus} onChange={setErwerbsstatus} options={ERWERBSSTATUS.map((s) => s.value)} />
+                </Group>
 
-                <div>
-                  <label style={labelStyle}>Wie darf ich Sie kontaktieren? * (Mehrfachauswahl)</label>
-                  <CheckboxGroup field="kontaktweg" options={[
-                    'per E-Mail', 'Telefonisch', 'WhatsApp',
-                  ]} />
-                </div>
+                {form.erwerbsstatus === 'Verbeamtet' && (
+                  <Group id="beihilfe" error={errors.beihilfe} label="Haben Sie Anspruch auf Beihilfe? *">
+                    <RadioGroup name="beihilfe" value={form.beihilfe} onChange={update('beihilfe')} options={['Ja', 'Nein', 'Weiß ich nicht']} />
+                  </Group>
+                )}
 
-                <div>
-                  <label style={labelStyle}>Besteht das Interesse für weitere Zusatzabsicherungen? * (Mehrfachauswahl)</label>
-                  <CheckboxGroup field="zusatzversicherung" options={[
-                    'ambulante Zusatzabsicherung (Heilpraktiker, Sehhilfen, Präventive Gesundheitsmaßnahmen)',
-                    'stationäre Zusatzabsicherung (Chefarztbehandlung, 1-2 Bett Zimmer, Behandlung als Privatpatient)',
-                    'Sehhilfen (Kostenübernahme für Brillen und Kontaktlinsen, Lasix Operation)',
-                    'private Unfallabsicherung (steuerfreie Auszahlung bei einem privaten Unfall, Kinder mitversichern)',
-                    'keinen Bedarf (Bestandsprodukt vorhanden oder kein Interesse)',
-                  ]} />
-                </div>
+                {form.erwerbsstatus && (
+                  <Group id="versicherungsart" error={errors.versicherungsart} label="Wie sind Sie aktuell krankenversichert? *">
+                    <RadioGroup name="versicherungsart" value={form.versicherungsart} onChange={setVersicherungsart} options={kvOptions(form.erwerbsstatus).map((k) => k.value)} />
+                  </Group>
+                )}
 
-                <div>
-                  <label style={labelStyle}>Wünschen Sie einen Termin zur digitalen Vollberatung? * (Mehrfachauswahl)</label>
-                  <CheckboxGroup field="beratungstermin" options={[
-                    'Analyse der allgemeinen finanziellen Situation (Masterplan für die Zukunft)',
-                    'Analyse und Optimierung Ihrer Vorsorge (Alters-, Kinder-, und sonstige Vorsorge)',
-                    'Arbeitskraftabsicherung (schwere Krankheit, Unfall, Lohnfortzahlung)',
-                    'Der Weg zum Betongold (eigene Immobilie und Kapitalanlage)',
-                    'Finanzierungen (über 500 Banken im Vergleich)',
-                    'Vermögensaufbau und Geldanlage',
-                    'keine weitere Beratung gewünscht',
-                  ]} />
-                </div>
-
-                {/* Datenschutz */}
-                <label onClick={() => update('datenschutz', !form.datenschutz)} style={{
-                  display: 'flex', alignItems: 'flex-start', gap: 12,
-                  cursor: 'pointer', padding: '8px 0',
-                }}>
-                  <div style={{ ...checkBox(form.datenschutz), marginTop: 2 }}>
-                    {form.datenschutz && (
-                      <span style={{ color: 'var(--bg-primary)', fontSize: 12, fontWeight: 700 }}>{'\u2713'}</span>
+                {(kind === 'gkv' || kind === 'pkv') && (
+                  <div>
+                    <label htmlFor="q-kasse" style={labelStyle}>
+                      {kind === 'gkv' ? 'Bei welcher gesetzlichen Krankenkasse sind Sie versichert? *' : 'Bei welchem privaten Krankenversicherer sind Sie versichert? *'}
+                    </label>
+                    <InsurerSelect
+                      id="q-kasse" items={kind === 'gkv' ? GKV : PKV}
+                      value={form.kasse} isOther={form.kasseIstAndere}
+                      placeholder={kind === 'gkv' ? 'Krankenkasse auswählen' : 'Krankenversicherer auswählen'}
+                      searchLabel={kind === 'gkv' ? 'Krankenkasse suchen' : 'Krankenversicherer suchen'}
+                      invalid={!!insurerError}
+                      onSelect={(item) => patch({ kasse: item.name, kasseIstAndere: false, kasseFreitext: '' })}
+                      onChooseOther={() => patch({ kasse: '', kasseIstAndere: true })}
+                    />
+                    <FieldError id="q-kasse" message={insurerError} />
+                    {kind === 'gkv' && (
+                      <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, margin: '8px 0 0' }}>
+                        Prozentangabe: Gesamtbeitragssatz der Krankenkasse, Stand {RATES_AS_OF}, ohne Gewähr.
+                      </p>
+                    )}
+                    {form.kasseIstAndere && (
+                      <div style={{ marginTop: 12 }}>
+                        <label htmlFor="q-kasseFreitext" style={labelStyle}>{kind === 'gkv' ? 'Name Ihrer Krankenkasse *' : 'Name Ihres Krankenversicherers *'}</label>
+                        <input {...inputProps('kasseFreitext')} type="text" autoFocus />
+                        <FieldError id="q-kasseFreitext" message={errors.kasseFreitext} />
+                      </div>
                     )}
                   </div>
-                  <span style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                    Ich willige in die Verarbeitung meiner personenbezogenen Daten einschließlich meiner Gesundheitsdaten (Angaben zum Zahnzustand) zur Erstellung eines Versicherungsangebots ein. Details finden Sie in der{' '}
-                    <a href="/datenschutz" onClick={(e) => e.stopPropagation()}
-                      style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
-                      Datenschutzerklärung
-                    </a>. *
-                  </span>
-                </label>
+                )}
+
+                {kind === 'gkv' && (
+                  <>
+                    <Group id="wechsel" error={errors.wechsel} label="Kommt ein Wechsel der Krankenkasse in Frage, wenn sich Preis und/oder Leistung dadurch verbessern? *">
+                      <RadioGroup name="wechsel" value={form.wechsel} onChange={update('wechsel')} options={['Ja, ich hätte gerne ein Vergleichsangebot', 'Nein']} />
+                    </Group>
+                    <Group id="bonusprogramm" label="Nehmen Sie aktuell an einem Bonusprogramm Ihrer Krankenkasse teil?">
+                      <RadioGroup name="bonusprogramm" value={form.bonusprogramm} onChange={update('bonusprogramm')} options={['Ja', 'Nein']} />
+                    </Group>
+                  </>
+                )}
 
                 <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-                  <button type="button" onClick={() => setStep(4)} disabled={sending} style={navBtn(!sending, false)}>Zurück</button>
-                  <button type="submit" disabled={!step4Valid || sending}
-                    style={navBtn(step4Valid && !sending, true)}>
+                  <button type="button" onClick={goBack} style={navBtn(false)}>Zurück</button>
+                  <button type="button" onClick={goNext} style={navBtn(true)}>Weiter</button>
+                </div>
+              </>
+            )}
+
+            {/* ═══ STEP 4: Persönliche Angaben und Kontakt ═══ */}
+            {step === 4 && (
+              <>
+                <StepHeading
+                  headingRef={headingRef}
+                  title="Persönliche Angaben und Kontakt"
+                  subtitle="Ihre Daten werden ausschließlich zur Bearbeitung Ihrer Anfrage verwendet."
+                />
+
+                <div>
+                  <label htmlFor="q-name" style={labelStyle}>Vor- und Nachname *</label>
+                  <input {...inputProps('name')} ref={bindRef('name')} autoComplete="name" placeholder="Max Mustermann" />
+                  <FieldError id="q-name" message={errors.name} />
+                </div>
+
+                <div>
+                  <label htmlFor="q-anschrift" style={labelStyle}>Vollständige Anschrift *<br />
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Postleitzahl, Ort, Straße, Hausnummer</span>
+                  </label>
+                  <input {...inputProps('anschrift')} ref={bindRef('anschrift')} autoComplete="street-address" placeholder="60311 Frankfurt am Main, Musterstraße 1" />
+                  <FieldError id="q-anschrift" message={errors.anschrift} />
+                </div>
+
+                <div>
+                  <label htmlFor="q-geburtsdatum" style={labelStyle}>Geburtsdatum *</label>
+                  <input {...inputProps('geburtsdatum')} ref={bindRef('geburtsdatum')} type="date" autoComplete="bday" />
+                  <FieldError id="q-geburtsdatum" message={errors.geburtsdatum} />
+                </div>
+
+                <Group id="geschlecht" error={errors.geschlecht} label="Geschlecht *">
+                  <RadioGroup name="geschlecht" value={form.geschlecht} onChange={update('geschlecht')} options={['Männlich', 'Weiblich', 'Divers']} />
+                </Group>
+
+                <Group id="familienstand" error={errors.familienstand} label="Familienstand *">
+                  <RadioGroup name="familienstand" value={form.familienstand} onChange={update('familienstand')} options={[
+                    'Ledig', 'Verheiratet', 'Verpartnert (in einem Haushalt lebend)', 'Geschieden', 'Verwitwet',
+                  ]} />
+                </Group>
+
+                <Group id="kontaktweg" error={errors.kontaktweg} label="Wie darf ich Sie kontaktieren? * (Mehrfachauswahl)">
+                  <CheckboxGroup name="kontaktweg" values={form.kontaktweg} onToggle={toggleKontaktweg} options={[WANTS_MAIL, WANTS_PHONE, WANTS_WHATSAPP]} />
+                </Group>
+
+                {needsMail(form) && (
+                  <div>
+                    <label htmlFor="q-email" style={labelStyle}>E-Mail-Adresse *</label>
+                    <input {...inputProps('email')} ref={bindRef('email')} type="email" autoComplete="email" placeholder="ihre@email.de" />
+                    <FieldError id="q-email" message={errors.email} />
+                  </div>
+                )}
+
+                {needsPhone(form) && (
+                  <div>
+                    <label htmlFor="q-telefon" style={labelStyle}>{phoneLabel(form)} *</label>
+                    <input {...inputProps('telefon')} ref={bindRef('telefon')} type="tel" autoComplete="tel" placeholder="+49 ..." />
+                    <FieldError id="q-telefon" message={errors.telefon} />
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 8 }}>
+                  <button type="button" onClick={goBack} disabled={sending} style={{ ...navBtn(false, !sending), flex: '1 1 110px' }}>Zurück</button>
+                  <button type="submit" disabled={sending} style={{ ...navBtn(true, !sending), flex: '2 1 240px' }}>
                     {sending ? (
                       <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
                         <span
@@ -626,15 +781,21 @@ export default function Questionnaire() {
                         />
                         Wird gesendet…
                       </span>
-                    ) : 'Angebot anfordern'}
+                    ) : 'Unverbindliche Zahnzusatz-Anfrage senden'}
                   </button>
                 </div>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.5, margin: 0 }}>
+                  Damit entsteht noch kein Versicherungsvertrag.
+                </p>
                 {sending && (
-                  <p style={{
-                    fontSize: 13, color: 'var(--text-muted)', textAlign: 'center',
-                    marginTop: 4, lineHeight: 1.5,
-                  }}>
-                    Bitte schließen Sie den Tab nicht — der Versand kann bis zu 20&nbsp;Sekunden dauern.
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.5, margin: 0 }}>
+                    Bitte schließen Sie den Tab nicht, der Versand kann bis zu 20&nbsp;Sekunden dauern.
+                  </p>
+                )}
+                {sendFailed && (
+                  <p role="alert" style={{ fontSize: 14, color: ERROR, textAlign: 'center', lineHeight: 1.5, margin: 0 }}>
+                    Ihre Anfrage konnte gerade nicht gesendet werden. Bitte versuchen Sie es noch einmal oder schreiben Sie an{' '}
+                    <a href="mailto:kontakt@marcoarpa.com" style={{ color: ERROR, textDecoration: 'underline' }}>kontakt@marcoarpa.com</a>.
                   </p>
                 )}
                 <style jsx>{`

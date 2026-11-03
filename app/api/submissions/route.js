@@ -20,6 +20,11 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
+  // Health data may only be stored with the explicit consent from step 1.
+  if (body.datenschutz !== true) {
+    return NextResponse.json({ error: 'Consent required' }, { status: 400 });
+  }
+
   let data;
   try {
     data = await insertSubmission(formToRow(body));

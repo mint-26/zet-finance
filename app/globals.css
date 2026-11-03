@@ -108,6 +108,16 @@ textarea::placeholder {
   .q-step { animation: none; }
 }
 
+/* Questionnaire: spacing, and a visible keyboard focus on the visually hidden inputs. */
+.q-section { padding: 100px 24px; }
+.q-card { padding: 36px; }
+.q-opt:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (max-width: 600px) {
+  .q-section { padding: 64px 16px; }
+  .q-card { padding: 22px 16px; }
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
