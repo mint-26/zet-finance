@@ -2,8 +2,10 @@
 
 import { useState, useRef, useEffect, forwardRef } from 'react';
 
-const MIN_CHARS = 4;
-const DEBOUNCE_MS = 250;
+const DEBOUNCE_MS = 200;
+
+// Worth asking the service only once there are letters: a bare postcode finds nothing useful.
+const isSearchable = (q) => /[a-zäöüß]{3}/i.test(q);
 
 // Text field with address suggestions from /api/adresse. Free typing always works, so a
 // missing address or a failing service never blocks the form. The list opens in the page
@@ -12,31 +14,55 @@ const AddressInput = forwardRef(function AddressInput({ id, value, onChange, sty
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
+  const [loading, setLoading] = useState(false);
   const [missingNumber, setMissingNumber] = useState(false);
   // Also true on mount: a value restored by "Zurück" should not trigger a new search.
   const skipSearch = useRef(true);
+  // The service answers in 1 to 3 seconds, far slower than typing. So a running request is
+  // never cancelled: its answer is shown, then the newest text is searched. Only one request
+  // runs at a time, which also keeps the load on the free service low.
+  const wanted = useRef('');
+  const running = useRef(false);
+
+  const search = async () => {
+    if (running.current) return;
+    running.current = true;
+    setLoading(true);
+    const q = wanted.current;
+    try {
+      const res = await fetch(`/api/adresse?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (wanted.current) {
+        const found = data.results || [];
+        setResults(found);
+        setActive(-1);
+        setOpen(found.length > 0 && document.activeElement?.id === id);
+      }
+    } catch {
+      // Offline or service down: typing by hand still works.
+    }
+    running.current = false;
+    if (wanted.current && wanted.current !== q) search();
+    else setLoading(false);
+  };
 
   useEffect(() => {
     if (skipSearch.current) { skipSearch.current = false; return undefined; }
     const q = value.trim();
-    if (q.length < MIN_CHARS) { setResults([]); setOpen(false); return undefined; }
-    const ctrl = new AbortController();
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/adresse?q=${encodeURIComponent(q)}`, { signal: ctrl.signal });
-        const data = await res.json();
-        setResults(data.results || []);
-        setActive(-1);
-        setOpen((data.results || []).length > 0 && document.activeElement?.id === id);
-      } catch {
-        // Aborted or offline: keep typing by hand.
-      }
-    }, DEBOUNCE_MS);
-    return () => { clearTimeout(timer); ctrl.abort(); };
-  }, [value, id]);
+    if (!isSearchable(q)) {
+      wanted.current = '';
+      setResults([]);
+      setOpen(false);
+      return undefined;
+    }
+    const timer = setTimeout(() => { wanted.current = q; search(); }, DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
 
   const choose = (item) => {
     skipSearch.current = true;
+    wanted.current = '';
     // A street without number: leave the cursor behind it, so the number can be typed right away.
     onChange(item.complete ? item.label : `${item.label} `);
     setMissingNumber(!item.complete);
@@ -62,6 +88,9 @@ const AddressInput = forwardRef(function AddressInput({ id, value, onChange, sty
         onBlur={() => setOpen(false)}
         onFocus={() => { if (results.length && !missingNumber) setOpen(true); }}
       />
+      {loading && !open && !missingNumber && (
+        <p aria-live="polite" style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.45, margin: '7px 0 0' }}>Adressen werden gesucht …</p>
+      )}
       {missingNumber && (
         <p style={{ fontSize: 13, color: 'var(--accent)', lineHeight: 1.45, margin: '7px 0 0' }}>Bitte ergänzen Sie noch Ihre Hausnummer.</p>
       )}

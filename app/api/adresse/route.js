@@ -36,7 +36,7 @@ export async function GET(request) {
   url.searchParams.append('layer', 'street');
 
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(3000), cache: 'no-store' });
+    const res = await fetch(url, { signal: AbortSignal.timeout(6000), cache: 'no-store' });
     if (!res.ok) return empty();
     const { features = [] } = await res.json();
     // The box also touches neighbouring countries. The same address can occur several times.

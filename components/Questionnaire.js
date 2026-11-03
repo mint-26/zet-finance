@@ -723,10 +723,10 @@ export default function Questionnaire() {
 
                 <div>
                   <label htmlFor="q-anschrift" style={labelStyle}>Vollständige Anschrift *<br />
-                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Postleitzahl, Ort, Straße, Hausnummer</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Einfach lostippen, z. B. Straße und Ort. Passende Adressen erscheinen direkt darunter.</span>
                   </label>
                   <AddressInput
-                    id="q-anschrift" ref={bindRef('anschrift')} autoComplete="street-address"
+                    id="q-anschrift" ref={bindRef('anschrift')} autoComplete="off"
                     placeholder="60311 Frankfurt am Main, Musterstraße 1"
                     style={{ ...inputStyle(!!errors.anschrift), scrollMarginTop: 24 }}
                     value={form.anschrift} onChange={update('anschrift')}
