@@ -15,13 +15,17 @@ const StreetInput = forwardRef(function StreetInput({ id, plz, value, onChange, 
   const typedNumber = useRef('');
   // Also true on mount: a value restored by "Zurück" should not trigger a new search.
   const skipSearch = useRef(true);
+  // Answers may overtake each other. One is shown unless a newer one is already on screen,
+  // so the list keeps updating while typing instead of waiting for a pause.
   const latest = useRef(0);
+  const shown = useRef(0);
 
   useEffect(() => {
     if (skipSearch.current) { skipSearch.current = false; return undefined; }
     const ticket = ++latest.current;
     const q = value.trim();
     if (!/^\d{5}$/.test(plz) || (q.match(/\p{L}/gu) || []).length < 2) {
+      shown.current = ticket;
       setResults([]);
       setNoMatch(false);
       setOpen(false);
@@ -31,7 +35,8 @@ const StreetInput = forwardRef(function StreetInput({ id, plz, value, onChange, 
       try {
         const res = await fetch(`/api/adresse?plz=${plz}&q=${encodeURIComponent(q)}`);
         const data = await res.json();
-        if (ticket !== latest.current) return; // A newer search has started.
+        if (ticket <= shown.current) return;
+        shown.current = ticket;
         const found = data.results || [];
         typedNumber.current = data.number || '';
         setResults(found);
@@ -47,7 +52,8 @@ const StreetInput = forwardRef(function StreetInput({ id, plz, value, onChange, 
 
   const choose = (item) => {
     skipSearch.current = true;
-    latest.current += 1;
+    shown.current = latest.current + 1; // Answers still under way no longer count.
+    latest.current = shown.current;
     setNoMatch(false);
     setOpen(false);
     onPick(item.label, typedNumber.current);
