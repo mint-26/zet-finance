@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useInView } from './useInView';
 import SmoothHeight from './SmoothHeight';
 import InsurerSelect from './InsurerSelect';
+import AddressInput from './AddressInput';
 import { GKV, PKV, RATES_AS_OF } from '../lib/insurers';
 
 const TOTAL_STEPS = 4;
@@ -724,7 +725,14 @@ export default function Questionnaire() {
                   <label htmlFor="q-anschrift" style={labelStyle}>Vollständige Anschrift *<br />
                     <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Postleitzahl, Ort, Straße, Hausnummer</span>
                   </label>
-                  <input {...inputProps('anschrift')} ref={bindRef('anschrift')} autoComplete="street-address" placeholder="60311 Frankfurt am Main, Musterstraße 1" />
+                  <AddressInput
+                    id="q-anschrift" ref={bindRef('anschrift')} autoComplete="street-address"
+                    placeholder="60311 Frankfurt am Main, Musterstraße 1"
+                    style={{ ...inputStyle(!!errors.anschrift), scrollMarginTop: 24 }}
+                    value={form.anschrift} onChange={update('anschrift')}
+                    aria-invalid={errors.anschrift ? true : undefined}
+                    aria-describedby={errors.anschrift ? 'q-anschrift-error' : undefined}
+                  />
                   <FieldError id="q-anschrift" message={errors.anschrift} />
                 </div>
 
