@@ -7,17 +7,9 @@ import InsurerSelect from '../../components/InsurerSelect';
 import Auswertung from '../../components/admin/Auswertung';
 import Dokumente from '../../components/admin/Dokumente';
 import Backup from '../../components/admin/Backup';
-import { selectLook } from '../../components/admin/ui';
+import { selectLook, STATUS_OPTIONS } from '../../components/admin/ui';
 import { PeriodTabs, MonthTabs, MonthPanel, inPeriod, periodLabel, yearsOf, groupByMonth, leadDate, monthKeyOf } from '../../components/admin/Periods';
 import { GESELLSCHAFTEN } from '../../lib/gesellschaften';
-
-const STATUS_OPTIONS = [
-  { value: 'offen', label: 'Offen', color: '#9ca3af' },
-  { value: 'angebot_verschickt', label: 'Angebot verschickt', color: '#c9a24a' },
-  { value: 'abgelehnt', label: 'Abgelehnt', color: '#dc3c3c' },
-  { value: 'versichert', label: 'Versichert', color: '#4a9e6a' },
-  { value: 'kein_interesse', label: 'Kein Interesse', color: '#64748b' },
-];
 
 // Where a lead came from (column `quelle`). WhatsApp tests come from the bot preview.
 const QUELLE_LABELS = { web: 'Website', whatsapp: 'WhatsApp', whatsapp_test: 'WhatsApp (Test)' };

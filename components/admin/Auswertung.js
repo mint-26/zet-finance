@@ -5,7 +5,7 @@ import { useTheme } from '../ThemeProvider';
 import SmoothHeight from '../SmoothHeight';
 import { InsurerLogo } from '../InsurerSelect';
 import { Chevron } from './Periods';
-import { selectLook } from './ui';
+import { selectLook, STATUS_OPTIONS } from './ui';
 import { GESELLSCHAFTEN, gesellschaftByName } from '../../lib/gesellschaften';
 
 // Marco's rule (04.11.2026): the Gesellschaft is chosen as soon as a customer gets an offer,
@@ -24,6 +24,16 @@ const PALETTE = {
 const NEUTRAL = { light: { rest: '#a9a9a3', none: '#d4d4cf' }, dark: { rest: '#8d8d88', none: '#6c6c68' } };
 const REST = '__sonstige';
 const NO_TARIF = '__ohne';
+
+// Status view: fixed order, always the same colour per status, checked with the dataviz validator
+// as a ring. Not the colours of the status labels: those are too grey to tell apart as segments.
+const STATUS_CHART = [
+  { value: 'versichert', light: '#1baf7a', dark: '#199e70' },
+  { value: 'angebot_verschickt', light: '#eda100', dark: '#c98500' },
+  { value: 'kein_interesse', light: '#e87ba4', dark: '#d55181' },
+  { value: 'offen', light: '#2a78d6', dark: '#3987e5' },
+  { value: 'abgelehnt', light: '#eb6834', dark: '#d95926' },
+];
 
 const percent = (count, total) => `${(total ? (count / total) * 100 : 0).toLocaleString('de-DE', { maximumFractionDigits: 1 })} %`;
 
@@ -102,19 +112,29 @@ export default function Auswertung({ rows, allRows, periodText }) {
   const mode = theme === 'dark' ? 'dark' : 'light';
   const antraege = rows.filter(isAntrag);
   const ohneGesellschaft = rows.filter((r) => ANTRAG_STATUS.includes(r.status) && !r.gesellschaft && r.quelle !== 'whatsapp_test').length;
-  const items = buildItems(antraege, view, scope);
+  const leads = rows.filter((r) => r.quelle !== 'whatsapp_test');
+  const statusView = view === 'status';
+  const items = statusView
+    ? STATUS_CHART.map((chart) => ({
+      key: chart.value,
+      label: STATUS_OPTIONS.find((o) => o.value === chart.value).label,
+      color: chart[mode],
+      count: leads.filter((r) => r.status === chart.value).length,
+    }))
+    : buildItems(antraege, view, scope);
   const total = items.reduce((sum, i) => sum + i.count, 0);
 
   const colorKeys = buildItems(allRows.filter(isAntrag), view, scope).filter((i) => i.key !== NO_TARIF).slice(0, PALETTE.light.length).map((i) => i.key);
   const colorOf = (key) => {
+    if (statusView) return items.find((i) => i.key === key)?.color;
     if (key === NO_TARIF) return NEUTRAL[mode].none;
     const slot = colorKeys.indexOf(key);
     return slot === -1 ? NEUTRAL[mode].rest : PALETTE[mode][slot];
   };
-  const segmentOf = (item) => (item.key === NO_TARIF || colorKeys.includes(item.key) ? item.key : REST);
+  const segmentOf = (item) => (statusView || item.key === NO_TARIF || colorKeys.includes(item.key) ? item.key : REST);
 
   const segments = [];
-  items.forEach((item) => {
+  items.filter((item) => item.count > 0).forEach((item) => {
     const key = segmentOf(item);
     const existing = segments.find((s) => s.key === key);
     if (existing) existing.count += item.count;
@@ -126,7 +146,9 @@ export default function Auswertung({ rows, allRows, periodText }) {
   const active = segments.find((s) => s.key === hover);
   const center = active
     ? { value: percent(active.count, total), label: `${active.label}, ${active.count}` }
-    : { value: total, label: total === 1 ? 'Antrag' : 'Anträge' };
+    : statusView
+      ? { value: percent(items[0].count, total), label: 'Abschlüsse' }
+      : { value: total, label: total === 1 ? 'Antrag' : 'Anträge' };
 
   const summaryItems = buildItems(antraege, 'gesellschaften', '');
   const summaryTotal = antraege.length;
@@ -161,6 +183,7 @@ export default function Auswertung({ rows, allRows, periodText }) {
               <div role="group" aria-label="Ansicht" style={{ display: 'inline-flex', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
                 <button type="button" aria-pressed={view === 'gesellschaften'} onClick={() => { setView('gesellschaften'); setHover(null); }} style={switchBtn(view === 'gesellschaften')}>Gesellschaften</button>
                 <button type="button" aria-pressed={view === 'tarife'} onClick={() => { setView('tarife'); setHover(null); }} style={switchBtn(view === 'tarife')}>Tarife</button>
+                <button type="button" aria-pressed={statusView} onClick={() => { setView('status'); setHover(null); }} style={switchBtn(statusView)}>Status</button>
               </div>
               {view === 'tarife' && (
                 <select
@@ -178,7 +201,7 @@ export default function Auswertung({ rows, allRows, periodText }) {
 
             {total === 0 ? (
               <p style={{ margin: 0, padding: '24px 0', fontSize: 14, color: 'var(--text-muted)', textAlign: 'center' }}>
-                In diesem Zeitraum sind keine Anträge erfasst.
+                {statusView ? 'In diesem Zeitraum gibt es keine Leads.' : 'In diesem Zeitraum sind keine Anträge erfasst.'}
               </p>
             ) : (
               <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: '24px 48px' }}>
@@ -189,7 +212,7 @@ export default function Auswertung({ rows, allRows, periodText }) {
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, color: 'var(--text-body)' }}>
                     <thead>
                       <tr>
-                        <th scope="col" style={{ ...th, textAlign: 'left' }}>{view === 'tarife' ? 'Tarif' : 'Gesellschaft'}</th>
+                        <th scope="col" style={{ ...th, textAlign: 'left' }}>{{ tarife: 'Tarif', status: 'Status' }[view] || 'Gesellschaft'}</th>
                         <th scope="col" style={{ ...th, ...num }}>Anzahl</th>
                         <th scope="col" style={{ ...th, ...num }}>Anteil</th>
                       </tr>
@@ -226,8 +249,12 @@ export default function Auswertung({ rows, allRows, periodText }) {
             )}
 
             <p style={{ margin: '20px 0 0', fontSize: 12, lineHeight: 1.5, color: 'var(--text-dim)' }}>
-              Gezählt werden Kunden mit Status „Versichert“ und gewählter Gesellschaft, im Monat ihres Abschlusses. Ältere Kunden ohne Abschlussdatum zählen im Monat ihrer Anfrage.
-              {ohneGesellschaft > 0 && ` ${ohneGesellschaft} ${ohneGesellschaft === 1 ? 'versicherter Kunde hat' : 'versicherte Kunden haben'} in diesem Zeitraum noch keine Gesellschaft und ${ohneGesellschaft === 1 ? 'fehlt' : 'fehlen'} hier.`}
+              {statusView ? `Grundlage: ${total} ${total === 1 ? 'Lead' : 'Leads'} in diesem Zeitraum, mit ihrem aktuellen Status. Abgeschlossene und wieder aktive Kunden zählen in dem Monat, in dem sie auch in der Liste stehen.` : (
+                <>
+                  Gezählt werden Kunden mit Status „Versichert“ und gewählter Gesellschaft, im Monat ihres Abschlusses. Ältere Kunden ohne Abschlussdatum zählen im Monat ihrer Anfrage.
+                  {ohneGesellschaft > 0 && ` ${ohneGesellschaft} ${ohneGesellschaft === 1 ? 'versicherter Kunde hat' : 'versicherte Kunden haben'} in diesem Zeitraum noch keine Gesellschaft und ${ohneGesellschaft === 1 ? 'fehlt' : 'fehlen'} hier.`}
+                </>
+              )}
             </p>
           </div>
         )}
