@@ -32,7 +32,9 @@ export function yearsOf(rows) {
   return Array.from({ length: now - first + 1 }, (_, i) => String(first + i));
 }
 
-// Rows (newest first) as month blocks, newest month first; months without leads are left out.
+const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+
+// Rows (newest first) grouped by month, newest month first; months without leads are left out.
 export function groupByMonth(rows) {
   const groups = new Map();
   rows.forEach((row) => {
@@ -42,6 +44,7 @@ export function groupByMonth(rows) {
       groups.set(key, {
         key,
         label: date ? date.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' }) : 'Ohne Datum',
+        short: date ? `${MONTHS[date.getMonth()]} ${date.getFullYear()}` : 'Ohne Datum',
         rows: [],
       });
     }
@@ -113,34 +116,47 @@ export function Chevron({ open }) {
   );
 }
 
-// Closed: month, year and number of leads. Open leads stay visible as a label, so a new
-// enquiry cannot disappear unnoticed inside a closed month.
-export function MonthBlock({ label, count, openCount, open, onToggle, children }) {
+// Months side by side as switches, newest first. Each shows month, year and number of leads;
+// open leads stay visible as a label, so a new enquiry cannot go unnoticed in another month.
+// They wrap instead of scrolling, so no month is hidden.
+export function MonthTabs({ months, activeKey, onToggle }) {
   return (
-    <section style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12 }}>
-      <button
-        type="button" aria-expanded={open} onClick={onToggle}
-        style={{
-          width: '100%', minHeight: 60, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 12,
-          background: 'transparent', border: 0, cursor: 'pointer', textAlign: 'left',
-          fontFamily: "'DM Sans', sans-serif", color: 'var(--text-primary)',
-        }}
-      >
-        <Chevron open={open} />
-        <span style={{ flex: 1, minWidth: 0, fontSize: 17, fontWeight: 600 }}>{label}</span>
-        {openCount > 0 && (
-          <span style={{
-            flexShrink: 0, padding: '3px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600,
-            background: 'var(--accent-dim)', color: 'var(--text-primary)', border: '1px solid var(--accent)',
-          }}>{openCount} offen</span>
-        )}
-        <span style={{ flexShrink: 0, fontSize: 14, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
-          {count} {count === 1 ? 'Lead' : 'Leads'}
-        </span>
-      </button>
-      <SmoothHeight duration={350}>
-        {open && <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '4px 12px 12px' }}>{children}</div>}
-      </SmoothHeight>
-    </section>
+    <div role="group" aria-label="Monat" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 8 }}>
+      {months.map((month) => {
+        const active = month.key === activeKey;
+        const count = month.rows.length;
+        const offen = month.rows.filter((r) => r.status === 'offen').length;
+        return (
+          <button
+            key={month.key} type="button" aria-pressed={active} onClick={() => onToggle(month.key)}
+            style={{
+              minHeight: 76, padding: '10px 12px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+              display: 'flex', flexDirection: 'column', gap: 2, fontFamily: "'DM Sans', sans-serif",
+              background: active ? 'var(--accent)' : 'var(--bg-card)',
+              border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+              color: active ? 'var(--bg-primary)' : 'var(--text-primary)',
+              transition: 'background 0.2s ease, color 0.2s ease, border-color 0.2s ease',
+            }}
+          >
+            <span style={{ fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{month.short}</span>
+            <span style={{ fontSize: 13, opacity: active ? 0.85 : 0.65, whiteSpace: 'nowrap' }}>{count} {count === 1 ? 'Lead' : 'Leads'}</span>
+            {offen > 0 && <span style={{ fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{offen} offen</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// The leads of the chosen month open downwards below the switches.
+export function MonthPanel({ monthKey, children }) {
+  return (
+    <SmoothHeight duration={350}>
+      {monthKey && (
+        <div key={monthKey} className="crm-month" style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 12 }}>
+          {children}
+        </div>
+      )}
+    </SmoothHeight>
   );
 }

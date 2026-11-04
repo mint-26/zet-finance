@@ -8,7 +8,7 @@ import Auswertung from '../../components/admin/Auswertung';
 import Dokumente from '../../components/admin/Dokumente';
 import Backup from '../../components/admin/Backup';
 import { selectLook } from '../../components/admin/ui';
-import { PeriodTabs, MonthBlock, inPeriod, periodLabel, yearsOf, groupByMonth } from '../../components/admin/Periods';
+import { PeriodTabs, MonthTabs, MonthPanel, inPeriod, periodLabel, yearsOf, groupByMonth } from '../../components/admin/Periods';
 import { GESELLSCHAFTEN } from '../../lib/gesellschaften';
 
 const STATUS_OPTIONS = [
@@ -50,8 +50,8 @@ function AdminContent() {
   const [quelleFilter, setQuelleFilter] = useState('alle');
   const [expandedId, setExpandedId] = useState(null);
   const [period, setPeriod] = useState({ period: String(new Date().getFullYear()), von: '', bis: '' });
-  // null: nothing chosen yet, the newest month of the period is open.
-  const [openMonths, setOpenMonths] = useState(null);
+  // undefined: nothing chosen yet, the newest month is shown. null: closed by the user.
+  const [selectedMonth, setSelectedMonth] = useState(undefined);
   const [documentChanges, setDocumentChanges] = useState(0);
 
   const load = useCallback(async () => {
@@ -159,7 +159,7 @@ function AdminContent() {
 
   const changePeriod = (next) => {
     setPeriod(next);
-    setOpenMonths(null);
+    setSelectedMonth(undefined);
   };
 
   // ─── Filter ───
@@ -181,13 +181,24 @@ function AdminContent() {
   const pendingNotifications = submissions.filter((s) => !s.notification_sent_at).length;
 
   const months = groupByMonth(filtered);
-  const isMonthOpen = (key) => searching || (openMonths ? openMonths.has(key) : key === months[0]?.key);
-  const toggleMonth = (key) => {
-    const next = new Set(openMonths || (months[0] ? [months[0].key] : []));
-    if (next.has(key)) next.delete(key);
-    else next.add(key);
-    setOpenMonths(next);
-  };
+  // A month the current filters no longer contain falls back to the newest one.
+  const activeMonth = selectedMonth === null ? null : (months.find((m) => m.key === selectedMonth) || months[0] || null);
+  const toggleMonth = (key) => setSelectedMonth(activeMonth?.key === key ? null : key);
+
+  const leadCards = (rows) => rows.map((s) => (
+    <SubmissionCard
+      key={s.id}
+      submission={s}
+      tarifOptions={tarifOptions}
+      onDocumentsChanged={() => setDocumentChanges((n) => n + 1)}
+      expanded={expandedId === s.id}
+      onToggle={() => setExpandedId(expandedId === s.id ? null : s.id)}
+      onUpdate={(field, value) => updateField(s.id, field, value)}
+      onUpdateMany={(patch) => updateFields(s.id, patch)}
+      onDelete={() => deleteSubmission(s.id)}
+      onResendNotification={() => resendNotification(s.id)}
+    />
+  ));
 
   // Tariffs already entered per insurer, offered as suggestions next to Marco's list.
   const tarifOptions = useMemo(() => {
@@ -448,37 +459,29 @@ function AdminContent() {
             {submissions.length === 0 ? 'Noch keine Einsendungen.' : 'Keine Einträge mit diesen Filtern.'}
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {months.map((month) => (
-              <MonthBlock
-                key={month.key}
-                label={month.label}
-                count={month.rows.length}
-                openCount={month.rows.filter((s) => s.status === 'offen').length}
-                open={isMonthOpen(month.key)}
-                onToggle={() => toggleMonth(month.key)}
-              >
-                {month.rows.map((s) => (
-                  <SubmissionCard
-                    key={s.id}
-                    submission={s}
-                    tarifOptions={tarifOptions}
-                    onDocumentsChanged={() => setDocumentChanges((n) => n + 1)}
-                    expanded={expandedId === s.id}
-                    onToggle={() => setExpandedId(expandedId === s.id ? null : s.id)}
-                    onUpdate={(field, value) => updateField(s.id, field, value)}
-                    onUpdateMany={(patch) => updateFields(s.id, patch)}
-                    onDelete={() => deleteSubmission(s.id)}
-                    onResendNotification={() => resendNotification(s.id)}
-                  />
-                ))}
-              </MonthBlock>
-            ))}
-          </div>
+          searching ? (
+            // A search shows every hit at once, sorted under its month.
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {months.map((month) => (
+                <section key={month.key} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <h2 style={{ margin: '8px 0 0', fontSize: 15, fontWeight: 600, color: 'var(--text-muted)' }}>{month.label}</h2>
+                  {leadCards(month.rows)}
+                </section>
+              ))}
+            </div>
+          ) : (
+            <>
+              <MonthTabs months={months} activeKey={activeMonth?.key} onToggle={toggleMonth} />
+              <MonthPanel monthKey={activeMonth?.key}>{activeMonth && leadCards(activeMonth.rows)}</MonthPanel>
+            </>
+          )
         )}
       </main>
 
       <style jsx global>{`
+        .crm-month { animation: crmMonthIn 0.3s ease; }
+        @keyframes crmMonthIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .crm-month { animation: none; } }
         .crm-controls { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px 12px; margin-bottom: 20px; }
         .crm-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px 24px; align-items: start; }
         main select:focus, main input:focus, main textarea:focus, main button[aria-haspopup]:focus {
