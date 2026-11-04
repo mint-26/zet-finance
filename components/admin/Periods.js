@@ -4,9 +4,10 @@ import SmoothHeight from '../SmoothHeight';
 
 const localDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-// The date that places a lead: closing a customer moves them to that month, at the top. Leads
-// closed before this existed have no such date and stay with the date of their enquiry.
-export const leadDate = (row) => row.abgeschlossen_am || row.created_at;
+// The date that places a lead: closing a customer moves them to that month, at the top, and so
+// does getting back in touch ("In aktuellen Monat holen"). Otherwise a lead stays with the date
+// of its enquiry, as do customers closed before the closing date existed.
+export const leadDate = (row) => row.abgeschlossen_am || row.wieder_aktiv_am || row.created_at;
 
 export const monthKeyOf = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 

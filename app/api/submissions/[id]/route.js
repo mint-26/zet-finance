@@ -60,6 +60,9 @@ export async function PATCH(request, { params }) {
     }
   }
 
+  // "In aktuellen Monat holen" and its undo. The server sets the time.
+  if ('wieder_aktiv' in body) update.wieder_aktiv_am = body.wieder_aktiv === true ? new Date().toISOString() : null;
+
   if (update.status && !ALLOWED_STATUS.includes(update.status)) {
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
   }
@@ -93,7 +96,8 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: 'Failed to update submission' }, { status: 500 });
   }
 
-  return NextResponse.json('abgeschlossen_am' in update ? { ok: true, abgeschlossen_am: update.abgeschlossen_am } : { ok: true });
+  const dates = Object.fromEntries(['abgeschlossen_am', 'wieder_aktiv_am'].filter((k) => k in update).map((k) => [k, update[k]]));
+  return NextResponse.json({ ok: true, ...dates });
 }
 
 export async function DELETE(request, { params }) {

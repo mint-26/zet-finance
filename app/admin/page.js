@@ -126,18 +126,27 @@ function AdminContent() {
     setAuthState('login');
   };
 
+  const followLead = (lead) => {
+    const date = new Date(leadDate(lead));
+    if (!inPeriod(lead, period)) setPeriod({ ...period, period: String(date.getFullYear()) });
+    setSelectedMonth(monthKeyOf(date));
+    setFollowId(lead.id);
+  };
+
   const updateFields = async (id, patch) => {
     // Optimistic update — patch one or multiple fields at once.
     const changes = { ...patch };
     const current = submissions.find((s) => s.id === id);
-    // Closing a customer, or undoing it, moves the lead to another month: the view goes along.
+    // Closing a customer or bringing them back, or undoing it, moves the lead to another month:
+    // the view goes along.
     if (current && 'status' in patch && (current.status === 'versichert') !== (patch.status === 'versichert')) {
       changes.abgeschlossen_am = patch.status === 'versichert' ? new Date().toISOString() : null;
-      const moved = { ...current, ...changes };
-      const date = new Date(leadDate(moved));
-      if (!inPeriod(moved, period)) setPeriod({ ...period, period: String(date.getFullYear()) });
-      setSelectedMonth(monthKeyOf(date));
-      setFollowId(id);
+      followLead({ ...current, ...changes });
+    }
+    if (current && 'wieder_aktiv' in patch) {
+      delete changes.wieder_aktiv;
+      changes.wieder_aktiv_am = patch.wieder_aktiv ? new Date().toISOString() : null;
+      followLead({ ...current, ...changes });
     }
     setSubmissions((prev) => prev.map((s) => s.id === id ? { ...s, ...changes } : s));
     try {
@@ -147,10 +156,10 @@ function AdminContent() {
         body: JSON.stringify(patch),
       });
       if (!res.ok) { load(); return; }
-      // The server's date counts.
-      const data = await res.json().catch(() => ({}));
-      if ('abgeschlossen_am' in data) {
-        setSubmissions((prev) => prev.map((s) => s.id === id ? { ...s, abgeschlossen_am: data.abgeschlossen_am } : s));
+      // The server's dates count.
+      const { ok, ...dates } = await res.json().catch(() => ({}));
+      if (Object.keys(dates).length) {
+        setSubmissions((prev) => prev.map((s) => s.id === id ? { ...s, ...dates } : s));
       }
     } catch {
       // On error, reload to sync state
@@ -545,6 +554,10 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
   const statusOpt = STATUS_OPTIONS.find((o) => o.value === s.status) || STATUS_OPTIONS[0];
   const createdAt = s.created_at ? new Date(s.created_at) : null;
   const closedAt = s.abgeschlossen_am ? new Date(s.abgeschlossen_am) : null;
+  const backAt = s.wieder_aktiv_am ? new Date(s.wieder_aktiv_am) : null;
+  // Customers set to "Versichert" move by themselves, and so does the ring chart with them.
+  const canBringBack = s.status !== 'versichert' && monthKeyOf(new Date(leadDate(s))) !== monthKeyOf(new Date());
+  const canUndoBack = s.status !== 'versichert' && !!backAt;
   const shortDate = (d) => d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
   const notificationSentAt = s.notification_sent_at ? new Date(s.notification_sent_at) : null;
   const mailDelivered = !!s.notification_sent_at;
@@ -671,8 +684,8 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
           </div>
         </div>
         <div style={{ fontSize: 12, color: 'var(--text-dim)', textAlign: 'right', whiteSpace: 'nowrap' }}>
-          {closedAt ? (
-            <>Abschluss {shortDate(closedAt)}<br />{createdAt ? `Anfrage ${shortDate(createdAt)}` : ''}</>
+          {closedAt || backAt ? (
+            <>{closedAt ? `Abschluss ${shortDate(closedAt)}` : `Wieder aktiv ${shortDate(backAt)}`}<br />{createdAt ? `Anfrage ${shortDate(createdAt)}` : ''}</>
           ) : (
             <>
               {createdAt ? shortDate(createdAt) : ''}<br />
@@ -696,7 +709,7 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
         <div style={{ borderTop: '1px solid var(--border)', padding: 20 }}>
           {/* Editable fields, all the same height, as narrow as their content allows */}
           <div className="crm-controls">
-            <EditableField label="Status" min={160} max={190}>
+            <EditableField label="Status" min={185} max={200}>
               <select
                 value={s.status}
                 onChange={(e) => {
@@ -730,7 +743,7 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
               </EditableField>
             )}
             {/* Not a <label>: a click inside the list would also reach the button again. */}
-            <div className="crm-field" style={fieldBox(220, 290)}>
+            <div className="crm-field" style={fieldBox(250, 300)}>
               <span style={fieldLabel}>Gesellschaft</span>
               <InsurerSelect
                 id={`gesellschaft-${s.id}`}
@@ -760,6 +773,15 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
                 {[...(tarifOptions[s.gesellschaft] || [])].map((o) => <option key={o} value={o} />)}
               </datalist>
             </EditableField>
+            {(canBringBack || canUndoBack) && (
+              <div className="crm-field" style={fieldBox(190, 420)}>
+                <span style={fieldLabel}>Kunde meldet sich wieder</span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {canBringBack && <button type="button" onClick={() => onUpdateMany({ wieder_aktiv: true })} style={monthBtn}>In aktuellen Monat holen</button>}
+                  {canUndoBack && <button type="button" onClick={() => onUpdateMany({ wieder_aktiv: false })} style={monthBtn}>Zurück zum Anfragemonat</button>}
+                </div>
+              </div>
+            )}
             <EditableField label="Vertrag gekündigt" min={150} max={170}>
               <BoolSelect
                 value={s.alt_vertrag_gekuendigt}
@@ -978,6 +1000,10 @@ const inputStyle = {
 // One height for all fields of a lead, the same as the insurer dropdown.
 const fieldStyle = { ...inputStyle, height: 44, padding: '0 12px' };
 const selectStyle = { ...fieldStyle, ...selectLook };
+const monthBtn = {
+  ...fieldStyle, width: 'auto', background: 'transparent', border: '1px solid var(--accent)',
+  color: 'var(--text-primary)', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+};
 
 export default function AdminPage() {
   return (
