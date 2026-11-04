@@ -162,12 +162,13 @@ function DatenschutzContent() {
 
           <section>
             <h2 style={h2Style}><span style={numStyle}>7.</span> Speicherdauer</h2>
-            <p>Personenbezogene Daten werden gelöscht, sobald der Zweck der Speicherung entfällt. Für Daten aus dem Fragebogen gilt: Kommt kein Vertrag zustande, werden Ihre Daten spätestens 6 Monate nach dem letzten Kontakt gelöscht. Für Vertragsdaten gelten die gesetzlichen Aufbewahrungsfristen von bis zu 10 Jahren gemäß HGB und AO.</p>
+            <p>Personenbezogene Daten werden gelöscht, sobald der Zweck der Speicherung entfällt. Für Daten aus dem Fragebogen gilt: Kommt kein Vertrag zustande, werden Ihre Daten spätestens 6 Monate nach dem letzten Kontakt gelöscht. Für Vertragsdaten gelten die gesetzlichen Aufbewahrungsfristen von bis zu 10 Jahren gemäß HGB und AO. Das gilt auch für Unterlagen, die wir zu Ihrer Anfrage hinterlegen, etwa Angebote, Anträge und Verträge.</p>
           </section>
 
           <section>
             <h2 style={h2Style}><span style={numStyle}>8.</span> Hosting</h2>
             <p>Diese Website wird bei Vercel Inc. (440 N Barranca Ave #4133, Covina, CA 91723, USA) gehostet. Die Datenübertragung in die USA erfolgt auf Grundlage der EU-Standardvertragsklauseln gemäß Art. 46 Abs. 2 lit. c DSGVO.</p>
+            <p style={{ marginTop: 12 }}>Ihre Anfragen und die zugehörigen Unterlagen, etwa Angebote, Anträge und Verträge, speichern wir in unserer Kundenverwaltung bei Supabase (Supabase Inc., Server in der EU). Die Dateien sind nicht öffentlich zugänglich.</p>
           </section>
 
           <section>

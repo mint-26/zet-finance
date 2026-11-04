@@ -12,11 +12,11 @@ const normalize = (s) => s.toLowerCase()
 const initials = (name) => name.replace(/[^\p{L}\p{N} ]/gu, ' ').trim().split(/\s+/)
   .slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
-function Logo({ item }) {
+export function InsurerLogo({ item, compact }) {
   const box = {
-    flexShrink: 0, width: 64, height: 34, borderRadius: 6, background: '#FFFFFF',
+    flexShrink: 0, width: compact ? 46 : 64, height: compact ? 26 : 34, borderRadius: compact ? 5 : 6, background: '#FFFFFF',
     border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    overflow: 'hidden', boxSizing: 'border-box', padding: 3,
+    overflow: 'hidden', boxSizing: 'border-box', padding: compact ? 2 : 3,
   };
   if (item.logo) {
     return (
@@ -26,7 +26,7 @@ function Logo({ item }) {
     );
   }
   return (
-    <span aria-hidden="true" style={{ ...box, fontSize: 12, fontWeight: 700, letterSpacing: 1, color: 'var(--text-muted)' }}>
+    <span aria-hidden="true" style={{ ...box, fontSize: compact ? 10 : 12, fontWeight: 700, letterSpacing: 1, color: 'var(--text-muted)' }}>
       {initials(item.name)}
     </span>
   );
@@ -39,7 +39,9 @@ const Rate = ({ value }) => (value ? (
 // Searchable dropdown with logos. The list opens in the page flow instead of floating,
 // because the questionnaire card clips overflowing content (SmoothHeight, DentalReveal).
 // value: name of the chosen item, or '' ; isOther: "Nicht in der Liste" was chosen.
-export default function InsurerSelect({ id, items, value, isOther, onSelect, onChooseOther, placeholder, searchLabel, invalid }) {
+// otherLabel renames that last entry, e.g. the CRM uses it to clear the choice.
+// compact: the CRM's slim version, same height as its other fields, with a thin chevron.
+export default function InsurerSelect({ id, items, value, isOther, onSelect, onChooseOther, placeholder, searchLabel, invalid, otherLabel = 'Nicht in der Liste', compact }) {
   const { t } = useLang();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -51,7 +53,7 @@ export default function InsurerSelect({ id, items, value, isOther, onSelect, onC
 
   const q = normalize(query);
   const matches = q ? items.filter((i) => normalize(i.name).includes(q)) : items;
-  const options = [...matches, { name: t('Nicht in der Liste'), key: OTHER }];
+  const options = [...matches, { name: t(otherLabel), key: OTHER }];
   const selected = items.find((i) => i.name === value);
 
   useEffect(() => {
@@ -97,16 +99,25 @@ export default function InsurerSelect({ id, items, value, isOther, onSelect, onC
         aria-invalid={invalid || undefined} aria-describedby={invalid ? `${id}-error` : undefined}
         onClick={() => setOpen((o) => !o)}
         style={{
-          ...shell, display: 'flex', alignItems: 'center', gap: 12, minHeight: 56, padding: '10px 14px',
-          cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', fontSize: 16, color: 'var(--text-body)',
+          ...shell, display: 'flex', alignItems: 'center', gap: compact ? 10 : 12, minHeight: compact ? 44 : 56, padding: compact ? '0 12px 0 8px' : '10px 14px',
+          cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', fontSize: compact ? 14 : 16, color: 'var(--text-body)',
         }}
       >
-        {selected && <Logo item={selected} />}
-        <span style={{ flex: 1, minWidth: 0, color: selected || isOther ? 'var(--text-body)' : 'var(--text-muted)', lineHeight: 1.35 }}>
-          {selected ? selected.name : (isOther ? t('Nicht in der Liste') : placeholder)}
+        {selected && <InsurerLogo item={selected} compact={compact} />}
+        <span style={{
+          flex: 1, minWidth: 0, color: selected || isOther ? 'var(--text-body)' : 'var(--text-muted)', lineHeight: 1.35,
+          ...(compact ? { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingLeft: selected ? 0 : 4 } : {}),
+        }}>
+          {selected ? selected.name : (isOther ? t(otherLabel) : placeholder)}
         </span>
         {selected && <Rate value={selected.rate} />}
-        <span aria-hidden="true" style={{ flexShrink: 0, fontSize: 11, color: 'var(--text-muted)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+        {compact ? (
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8a8a85" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        ) : (
+          <span aria-hidden="true" style={{ flexShrink: 0, fontSize: 11, color: 'var(--text-muted)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+        )}
       </button>
 
       {open && (
@@ -117,9 +128,9 @@ export default function InsurerSelect({ id, items, value, isOther, onSelect, onC
             value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={onKey}
             placeholder={t('Namen eingeben ...')} autoComplete="off"
             style={{
-              width: '100%', boxSizing: 'border-box', padding: '13px 16px', border: 0, outline: 'none',
+              width: '100%', boxSizing: 'border-box', padding: compact ? '10px 12px' : '13px 16px', border: 0, outline: 'none',
               borderBottom: '1px solid var(--border)', background: 'transparent',
-              fontFamily: 'inherit', fontSize: 16, color: 'var(--text-body)',
+              fontFamily: 'inherit', fontSize: compact ? 14 : 16, color: 'var(--text-body)',
             }}
           />
           <ul ref={listRef} id={`${id}-list`} role="listbox" aria-label={searchLabel} style={{ listStyle: 'none', margin: 0, padding: 4, maxHeight: 300, overflowY: 'auto', overscrollBehavior: 'contain' }}>
@@ -128,13 +139,13 @@ export default function InsurerSelect({ id, items, value, isOther, onSelect, onC
                 key={opt.key || opt.name} id={`${id}-opt-${i}`} role="option" aria-selected={opt.name === value}
                 onMouseDown={(e) => e.preventDefault()} onClick={() => choose(opt)} onMouseEnter={() => setActive(i)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 12, minHeight: 48, padding: '7px 10px', borderRadius: 8, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: compact ? 10 : 12, minHeight: compact ? 40 : 48, padding: compact ? '5px 8px' : '7px 10px', borderRadius: 8, cursor: 'pointer',
                   background: active === i ? 'var(--accent-dim)' : 'transparent',
                   borderTop: opt.key === OTHER ? '1px solid var(--border)' : 0,
                   fontSize: 14, lineHeight: 1.35, color: 'var(--text-body)',
                 }}
               >
-                {opt.key !== OTHER && <Logo item={opt} />}
+                {opt.key !== OTHER && <InsurerLogo item={opt} compact={compact} />}
                 <span style={{ flex: 1, minWidth: 0, fontWeight: opt.key === OTHER ? 600 : 400 }}>{opt.name}</span>
                 <Rate value={opt.rate} />
               </li>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '../../../../lib/supabase';
 import { isAuthenticated } from '../../../../lib/auth';
+import { DOKUMENTE_BUCKET } from '../../../../lib/dokumente';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,6 +9,7 @@ const ALLOWED_FIELDS = [
   'status',
   'ablehnungsgrund',
   'gesellschaft',
+  'tarif',
   'abgerechnet',
   'notizen',
   'alt_vertrag_gekuendigt',
@@ -95,6 +97,18 @@ export async function DELETE(request, { params }) {
   }
 
   const supabase = getSupabaseAdmin();
+
+  // Files first: table rows follow the lead automatically, files in the storage do not. If this
+  // fails, the lead stays, so no customer documents remain behind without a lead.
+  const { data: dokumente, error: listError } = await supabase.from('lead_dokumente').select('pfad').eq('submission_id', id);
+  const { error: storageError } = dokumente?.length
+    ? await supabase.storage.from(DOKUMENTE_BUCKET).remove(dokumente.map((d) => d.pfad))
+    : { error: null };
+  if (listError || storageError) {
+    console.error('Dokumente des Leads löschen:', listError || storageError);
+    return NextResponse.json({ error: 'Failed to delete documents' }, { status: 500 });
+  }
+
   const { error } = await supabase
     .from('zahnzusatz_submissions')
     .delete()

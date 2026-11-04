@@ -1,8 +1,15 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ThemeProvider, useTheme } from '../../components/ThemeProvider';
 import { formatBirthdate } from '../../lib/format';
+import InsurerSelect from '../../components/InsurerSelect';
+import Auswertung from '../../components/admin/Auswertung';
+import Dokumente from '../../components/admin/Dokumente';
+import Backup from '../../components/admin/Backup';
+import { selectLook } from '../../components/admin/ui';
+import { PeriodTabs, MonthBlock, inPeriod, periodLabel, yearsOf, groupByMonth } from '../../components/admin/Periods';
+import { GESELLSCHAFTEN } from '../../lib/gesellschaften';
 
 const STATUS_OPTIONS = [
   { value: 'offen', label: 'Offen', color: '#9ca3af' },
@@ -17,13 +24,17 @@ const QUELLE_LABELS = { web: 'Website', whatsapp: 'WhatsApp', whatsapp_test: 'Wh
 
 const ABLEHNUNGSGRUND_OPTIONS = ['mehr als 4 fehlende Zähne', 'Bonität'];
 
-const GESELLSCHAFT_OPTIONS = [
-  'Münchener Verein',
-  'Allianz',
-  'Axa',
-  'Deutsche Familienversicherung',
-  'Württembergische',
-];
+const headerBtn = {
+  padding: '12px 24px',
+  borderRadius: 10,
+  fontWeight: 700,
+  fontSize: 14,
+  cursor: 'pointer',
+  fontFamily: "'DM Sans', sans-serif",
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+};
 
 function AdminContent() {
   const { theme, toggle } = useTheme();
@@ -38,6 +49,10 @@ function AdminContent() {
   const [statusFilter, setStatusFilter] = useState('alle');
   const [quelleFilter, setQuelleFilter] = useState('alle');
   const [expandedId, setExpandedId] = useState(null);
+  const [period, setPeriod] = useState({ period: String(new Date().getFullYear()), von: '', bis: '' });
+  // null: nothing chosen yet, the newest month of the period is open.
+  const [openMonths, setOpenMonths] = useState(null);
+  const [documentChanges, setDocumentChanges] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -105,9 +120,14 @@ function AdminContent() {
   const updateField = (id, field, value) => updateFields(id, { [field]: value });
 
   const deleteSubmission = async (id) => {
-    if (!confirm('Diesen Eintrag wirklich löschen?')) return;
+    if (!confirm('Diesen Eintrag und alle seine Dokumente wirklich löschen?')) return;
+    const res = await fetch(`/api/submissions/${id}`, { method: 'DELETE' }).catch(() => null);
+    if (!res?.ok) {
+      alert('Der Eintrag konnte nicht gelöscht werden. Bitte noch einmal versuchen.');
+      return;
+    }
     setSubmissions((prev) => prev.filter((s) => s.id !== id));
-    await fetch(`/api/submissions/${id}`, { method: 'DELETE' });
+    setDocumentChanges((n) => n + 1);
   };
 
   // Re-runs the notification pipeline server-side. Updates the row from
@@ -137,8 +157,16 @@ function AdminContent() {
     window.location.href = '/api/submissions/export';
   };
 
+  const changePeriod = (next) => {
+    setPeriod(next);
+    setOpenMonths(null);
+  };
+
   // ─── Filter ───
-  const filtered = submissions.filter((s) => {
+  // A search looks through all years, so nobody gets lost in the wrong period.
+  const searching = search.trim() !== '';
+  const inSelectedPeriod = submissions.filter((s) => inPeriod(s, period));
+  const filtered = (searching ? submissions : inSelectedPeriod).filter((s) => {
     if (statusFilter !== 'alle' && s.status !== statusFilter) return false;
     if (quelleFilter === 'web' && s.quelle && s.quelle !== 'web') return false;
     if (quelleFilter === 'whatsapp' && !(s.quelle || '').startsWith('whatsapp')) return false;
@@ -151,6 +179,26 @@ function AdminContent() {
   });
 
   const pendingNotifications = submissions.filter((s) => !s.notification_sent_at).length;
+
+  const months = groupByMonth(filtered);
+  const isMonthOpen = (key) => searching || (openMonths ? openMonths.has(key) : key === months[0]?.key);
+  const toggleMonth = (key) => {
+    const next = new Set(openMonths || (months[0] ? [months[0].key] : []));
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    setOpenMonths(next);
+  };
+
+  // Tariffs already entered per insurer, offered as suggestions next to Marco's list.
+  const tarifOptions = useMemo(() => {
+    const options = {};
+    GESELLSCHAFTEN.forEach((g) => { options[g.name] = new Set(g.tarife); });
+    submissions.forEach((s) => {
+      const tarif = (s.tarif || '').trim();
+      if (s.gesellschaft && tarif) (options[s.gesellschaft] ||= new Set()).add(tarif);
+    });
+    return options;
+  }, [submissions]);
 
   // ─── Render: Checking ───
   if (authState === 'checking') {
@@ -279,8 +327,8 @@ function AdminContent() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 32 }}>
           <div>
             <h1 style={{
-              fontFamily: "'Playfair Display', serif",
-              fontSize: 'clamp(24px, 3vw, 36px)',
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: 'clamp(24px, 3vw, 34px)',
               fontWeight: 700,
               color: 'var(--text-primary)',
               margin: 0,
@@ -288,6 +336,7 @@ function AdminContent() {
             <p style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 4 }}>
               {filtered.length} {filtered.length === 1 ? 'Eintrag' : 'Einträge'}
               {filtered.length !== submissions.length && ` (von ${submissions.length})`}
+              {searching && ', Suche über alle Jahre'}
             </p>
             {pendingNotifications > 0 && (
               <div style={{
@@ -308,24 +357,27 @@ function AdminContent() {
               </div>
             )}
           </div>
-          <button onClick={handleExport} style={{
-            padding: '12px 24px',
-            background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
-            border: 'none',
-            borderRadius: 10,
-            color: 'var(--bg-primary)',
-            fontWeight: 700,
-            fontSize: 14,
-            cursor: 'pointer',
-            fontFamily: "'DM Sans', sans-serif",
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 12 }}>
+            <Backup
+              submissions={submissions}
+              refreshKey={documentChanges}
+              buttonStyle={{ ...headerBtn, background: 'transparent', border: '1px solid var(--accent)', color: 'var(--text-primary)' }}
+            />
+            <button onClick={handleExport} style={{
+              ...headerBtn,
+              background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
+              border: '1px solid transparent',
+              color: 'var(--bg-primary)',
+            }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Excel Export
-          </button>
+            </button>
+          </div>
         </div>
+
+        <PeriodTabs years={yearsOf(submissions)} value={period} onChange={changePeriod} />
+
+        <Auswertung rows={inSelectedPeriod} allRows={submissions} periodText={periodLabel(period)} />
 
         {/* Filters */}
         <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
@@ -357,7 +409,7 @@ function AdminContent() {
             fontSize: 14,
             fontFamily: "'DM Sans', sans-serif",
             outline: 'none',
-            cursor: 'pointer',
+            ...selectLook,
           }}>
             <option value="alle">Alle Status</option>
             {STATUS_OPTIONS.map((o) => (
@@ -373,7 +425,7 @@ function AdminContent() {
             fontSize: 14,
             fontFamily: "'DM Sans', sans-serif",
             outline: 'none',
-            cursor: 'pointer',
+            ...selectLook,
           }}>
             <option value="alle">Alle Quellen</option>
             <option value="web">Website</option>
@@ -397,26 +449,54 @@ function AdminContent() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {filtered.map((s) => (
-              <SubmissionCard
-                key={s.id}
-                submission={s}
-                expanded={expandedId === s.id}
-                onToggle={() => setExpandedId(expandedId === s.id ? null : s.id)}
-                onUpdate={(field, value) => updateField(s.id, field, value)}
-                onUpdateMany={(patch) => updateFields(s.id, patch)}
-                onDelete={() => deleteSubmission(s.id)}
-                onResendNotification={() => resendNotification(s.id)}
-              />
+            {months.map((month) => (
+              <MonthBlock
+                key={month.key}
+                label={month.label}
+                count={month.rows.length}
+                openCount={month.rows.filter((s) => s.status === 'offen').length}
+                open={isMonthOpen(month.key)}
+                onToggle={() => toggleMonth(month.key)}
+              >
+                {month.rows.map((s) => (
+                  <SubmissionCard
+                    key={s.id}
+                    submission={s}
+                    tarifOptions={tarifOptions}
+                    onDocumentsChanged={() => setDocumentChanges((n) => n + 1)}
+                    expanded={expandedId === s.id}
+                    onToggle={() => setExpandedId(expandedId === s.id ? null : s.id)}
+                    onUpdate={(field, value) => updateField(s.id, field, value)}
+                    onUpdateMany={(patch) => updateFields(s.id, patch)}
+                    onDelete={() => deleteSubmission(s.id)}
+                    onResendNotification={() => resendNotification(s.id)}
+                  />
+                ))}
+              </MonthBlock>
             ))}
           </div>
         )}
       </main>
+
+      <style jsx global>{`
+        .crm-controls { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px 12px; margin-bottom: 20px; }
+        .crm-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px 24px; align-items: start; }
+        main select:focus, main input:focus, main textarea:focus, main button[aria-haspopup]:focus {
+          outline: none; border-color: var(--accent) !important; box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+        main input[list]::-webkit-calendar-picker-indicator { display: none !important; }
+        @media (max-width: 860px) {
+          .crm-two { grid-template-columns: minmax(0, 1fr); }
+        }
+        @media (max-width: 600px) {
+          .crm-field { flex-basis: 100% !important; max-width: none !important; }
+        }
+      `}</style>
     </div>
   );
 }
 
-function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateMany, onDelete, onResendNotification }) {
+function SubmissionCard({ submission: s, tarifOptions, onDocumentsChanged, expanded, onToggle, onUpdate, onUpdateMany, onDelete, onResendNotification }) {
   const statusOpt = STATUS_OPTIONS.find((o) => o.value === s.status) || STATUS_OPTIONS[0];
   const createdAt = s.created_at ? new Date(s.created_at) : null;
   const notificationSentAt = s.notification_sent_at ? new Date(s.notification_sent_at) : null;
@@ -465,8 +545,8 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
       {/* Summary row */}
       <div style={{
         padding: '16px 20px',
-        display: 'grid',
-        gridTemplateColumns: 'auto auto 1fr auto auto auto',
+        display: 'flex',
+        flexWrap: 'wrap',
         gap: 16,
         alignItems: 'center',
       }}>
@@ -503,7 +583,7 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
             ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
         </span>
-        <div style={{ minWidth: 0 }}>
+        <div style={{ flex: '1 1 160px', minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
             <span style={{ fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {s.name || '(Kein Name)'}
@@ -524,7 +604,7 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
               value={s.abgerechnet ? 'true' : 'false'}
               onChange={(e) => onUpdate('abgerechnet', e.target.value === 'true')}
               aria-label="Abgerechnet"
-              style={{ ...inputStyle, width: 'auto', padding: '6px 10px', cursor: 'pointer' }}
+              style={{ ...inputStyle, ...selectLook, width: 'auto', height: 36, padding: '0 32px 0 10px', backgroundPosition: 'right 10px center' }}
             >
               <option value="false">Nein</option>
               <option value="true">Ja</option>
@@ -549,9 +629,9 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
 
       {expanded && (
         <div style={{ borderTop: '1px solid var(--border)', padding: 20 }}>
-          {/* Editable fields — core row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 16 }}>
-            <EditableField label="Status">
+          {/* Editable fields, all the same height, as narrow as their content allows */}
+          <div className="crm-controls">
+            <EditableField label="Status" min={160} max={190}>
               <select
                 value={s.status}
                 onChange={(e) => {
@@ -563,7 +643,7 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
                     onUpdate('status', status);
                   }
                 }}
-                style={inputStyle}
+                style={selectStyle}
               >
                 {STATUS_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -571,11 +651,11 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
               </select>
             </EditableField>
             {s.status === 'abgelehnt' && (
-              <EditableField label="Ablehnungsgrund">
+              <EditableField label="Ablehnungsgrund" min={180} max={220}>
                 <select
                   value={s.ablehnungsgrund ?? ''}
                   onChange={(e) => onUpdate('ablehnungsgrund', e.target.value === '' ? null : e.target.value)}
-                  style={inputStyle}
+                  style={selectStyle}
                 >
                   <option value="">—</option>
                   {ABLEHNUNGSGRUND_OPTIONS.map((o) => (
@@ -584,32 +664,44 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
                 </select>
               </EditableField>
             )}
-            <EditableField label="Gesellschaft">
-              <select
+            {/* Not a <label>: a click inside the list would also reach the button again. */}
+            <div className="crm-field" style={fieldBox(220, 290)}>
+              <span style={fieldLabel}>Gesellschaft</span>
+              <InsurerSelect
+                id={`gesellschaft-${s.id}`}
+                items={s.gesellschaft && !GESELLSCHAFTEN.some((g) => g.name === s.gesellschaft) ? [{ name: s.gesellschaft }, ...GESELLSCHAFTEN] : GESELLSCHAFTEN}
                 value={s.gesellschaft ?? ''}
-                onChange={(e) => onUpdate('gesellschaft', e.target.value === '' ? null : e.target.value)}
-                style={inputStyle}
-              >
-                <option value="">—</option>
-                {(s.gesellschaft && !GESELLSCHAFT_OPTIONS.includes(s.gesellschaft)
-                  ? [s.gesellschaft, ...GESELLSCHAFT_OPTIONS]
-                  : GESELLSCHAFT_OPTIONS
-                ).map((o) => (
-                  <option key={o} value={o}>{o}</option>
-                ))}
-              </select>
+                placeholder="Gesellschaft wählen"
+                searchLabel="Gesellschaft suchen"
+                otherLabel="Keine Auswahl"
+                compact
+                onSelect={(item) => { if (item.name !== s.gesellschaft) onUpdateMany({ gesellschaft: item.name, tarif: null }); }}
+                onChooseOther={() => onUpdateMany({ gesellschaft: null, tarif: null })}
+              />
+            </div>
+            <EditableField label="Tarif" min={160} max={210}>
+              {/* The key resets the field when the insurer, and with it the tariff, changes. */}
+              <input
+                key={s.gesellschaft ?? ''}
+                type="text"
+                list={`tarife-${s.id}`}
+                defaultValue={s.tarif ?? ''}
+                disabled={!s.gesellschaft}
+                placeholder={s.gesellschaft ? 'Tarif eintragen' : 'Erst Gesellschaft wählen'}
+                onBlur={(e) => { if (e.target.value.trim() !== (s.tarif ?? '')) onUpdate('tarif', e.target.value.trim()); }}
+                style={fieldStyle}
+              />
+              <datalist id={`tarife-${s.id}`}>
+                {[...(tarifOptions[s.gesellschaft] || [])].map((o) => <option key={o} value={o} />)}
+              </datalist>
             </EditableField>
-          </div>
-
-          {/* Editable fields — Vertragsstatus-Flags */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
-            <EditableField label="Vertrag gekündigt">
+            <EditableField label="Vertrag gekündigt" min={150} max={170}>
               <BoolSelect
                 value={s.alt_vertrag_gekuendigt}
                 onChange={(v) => onUpdate('alt_vertrag_gekuendigt', v)}
               />
             </EditableField>
-            <EditableField label="Kündigungsbestätigung erhalten">
+            <EditableField label="Kündigungsbestätigung" min={170} max={190}>
               <BoolSelect
                 value={s.kuendigungsbestaetigung_erhalten}
                 onChange={(v) => onUpdate('kuendigungsbestaetigung_erhalten', v)}
@@ -617,18 +709,22 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
             </EditableField>
           </div>
 
-          <EditableField label="Beratungsdokumentation">
-            <textarea
-              defaultValue={s.notizen ?? ''}
-              onBlur={(e) => onUpdate('notizen', e.target.value)}
-              rows={3}
-              style={{ ...inputStyle, resize: 'vertical', minHeight: 70 }}
-            />
-          </EditableField>
+          <div className="crm-two">
+            <EditableField label="Beratungsdokumentation">
+              <textarea
+                defaultValue={s.notizen ?? ''}
+                onBlur={(e) => onUpdate('notizen', e.target.value)}
+                rows={5}
+                style={{ ...inputStyle, resize: 'vertical', minHeight: 120 }}
+              />
+            </EditableField>
+            <Dokumente submissionId={s.id} onChanged={onDocumentsChanged} />
+          </div>
 
           {/* Read-only fields */}
-          <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
-            {fields.map(([label, value, multi]) => {
+          <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '14px 16px' }}>
+            {/* Empty answers are left out: older leads have many fields that no longer exist. */}
+            {fields.filter(([, value]) => value).map(([label, value, multi]) => {
               const items = multi && typeof value === 'string' ? splitMulti(value) : null;
               const isList = items && items.length > 1;
               return (
@@ -636,7 +732,7 @@ function SubmissionCard({ submission: s, expanded, onToggle, onUpdate, onUpdateM
                   display: 'flex',
                   flexDirection: 'column',
                   gap: isList ? 6 : 2,
-                  ...(multi ? { gridColumn: '1 / -1' } : {}),
+                  ...(isList ? { gridColumn: '1 / -1' } : {}),
                 }}>
                   <span style={{ fontSize: 11, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</span>
                   {isList ? (
@@ -758,7 +854,7 @@ function BoolSelect({ value, onChange }) {
         const v = e.target.value;
         onChange(v === '' ? null : v === 'true');
       }}
-      style={inputStyle}
+      style={selectStyle}
     >
       <option value="">—</option>
       <option value="true">Ja</option>
@@ -767,10 +863,15 @@ function BoolSelect({ value, onChange }) {
   );
 }
 
-function EditableField({ label, children }) {
+const fieldLabel = { fontSize: 11, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.5, whiteSpace: 'nowrap' };
+
+// Fields grow up to max and then stop, so they stay short on wide screens.
+const fieldBox = (min, max) => ({ display: 'flex', flexDirection: 'column', gap: 6, flex: `1 1 ${min}px`, maxWidth: max, minWidth: 0 });
+
+function EditableField({ label, min, max, children }) {
   return (
-    <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <span style={{ fontSize: 11, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</span>
+    <label className={min ? 'crm-field' : undefined} style={min ? fieldBox(min, max) : { display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <span style={fieldLabel}>{label}</span>
       {children}
     </label>
   );
@@ -808,6 +909,10 @@ const inputStyle = {
   outline: 'none',
   boxSizing: 'border-box',
 };
+
+// One height for all fields of a lead, the same as the insurer dropdown.
+const fieldStyle = { ...inputStyle, height: 44, padding: '0 12px' };
+const selectStyle = { ...fieldStyle, ...selectLook };
 
 export default function AdminPage() {
   return (

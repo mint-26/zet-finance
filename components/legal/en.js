@@ -181,11 +181,12 @@ export function DatenschutzEn({ h2Style, numStyle, linkStyle }) {
       </section>
       <section>
         <h2 style={h2Style}><span style={numStyle}>7.</span> Storage period</h2>
-        <p>Personal data is deleted as soon as the purpose of storage no longer applies. For data from the questionnaire: if no contract is concluded, your data is deleted no later than 6 months after the last contact. For contract data, the statutory retention periods of up to 10 years under the German Commercial Code (HGB) and Fiscal Code (AO) apply.</p>
+        <p>Personal data is deleted as soon as the purpose of storage no longer applies. For data from the questionnaire: if no contract is concluded, your data is deleted no later than 6 months after the last contact. For contract data, the statutory retention periods of up to 10 years under the German Commercial Code (HGB) and Fiscal Code (AO) apply. This also applies to documents we keep with your enquiry, such as offers, applications and contracts.</p>
       </section>
       <section>
         <h2 style={h2Style}><span style={numStyle}>8.</span> Hosting</h2>
         <p>This website is hosted by Vercel Inc. (440 N Barranca Ave #4133, Covina, CA 91723, USA). Data is transferred to the USA on the basis of the EU Standard Contractual Clauses pursuant to Art. 46 (2) (c) GDPR.</p>
+        <p style={{ marginTop: 12 }}>We store your enquiries and related documents, such as offers, applications and contracts, in our client management system at Supabase (Supabase Inc., servers in the EU). The files are not publicly accessible.</p>
       </section>
       <section>
         <h2 style={h2Style}><span style={numStyle}>9.</span> Cookies</h2>
