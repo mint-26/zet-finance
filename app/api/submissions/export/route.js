@@ -52,6 +52,7 @@ export async function GET() {
     { header: 'Monatsbeitrag', key: 'monatsbeitrag', width: 14 },
     { header: 'Gesellschaft', key: 'gesellschaft', width: 18 },
     { header: 'Tarif', key: 'tarif', width: 18 },
+    { header: 'Abgeschlossen am', key: 'abgeschlossen_am', width: 16 },
     { header: 'Vertrag gekündigt', key: 'alt_vertrag_gekuendigt', width: 20 },
     { header: 'Kündigungsbestätigung erhalten', key: 'kuendigungsbestaetigung_erhalten', width: 28 },
     { header: 'Neue Vertragsunterlagen erhalten', key: 'neue_vertragsunterlagen_erhalten', width: 30 },
@@ -103,6 +104,7 @@ export async function GET() {
       monatsbeitrag: row.monatsbeitrag,
       gesellschaft: row.gesellschaft,
       tarif: row.tarif,
+      abgeschlossen_am: row.abgeschlossen_am ? new Date(row.abgeschlossen_am) : null,
       alt_vertrag_gekuendigt: boolLabel(row.alt_vertrag_gekuendigt),
       kuendigungsbestaetigung_erhalten: boolLabel(row.kuendigungsbestaetigung_erhalten),
       neue_vertragsunterlagen_erhalten: boolLabel(row.neue_vertragsunterlagen_erhalten),
@@ -140,6 +142,7 @@ export async function GET() {
   }
 
   sheet.getColumn('zeitstempel').numFmt = 'dd.mm.yyyy hh:mm';
+  sheet.getColumn('abgeschlossen_am').numFmt = 'dd.mm.yyyy';
 
   const buffer = await workbook.xlsx.writeBuffer();
   const date = new Date().toISOString().slice(0, 10);

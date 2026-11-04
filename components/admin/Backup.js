@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { createZip } from '../../lib/zip';
 import { SPEICHER_KONTINGENT, formatGroesse } from '../../lib/dokumente';
 
@@ -32,19 +32,9 @@ function saveFile(blob, name) {
 // Backup button and storage display next to the Excel export. The ZIP is put together in the
 // browser, because Vercel functions cannot answer with more than 4.5 MB: Excel list of all
 // leads, plus one folder per lead with its documents. A missing file is named in the archive.
-export default function Backup({ submissions, refreshKey, buttonStyle }) {
-  const [usage, setUsage] = useState(null);
+export default function Backup({ submissions, usage, buttonStyle }) {
   const [progress, setProgress] = useState(null);
   const running = progress !== null;
-
-  useEffect(() => {
-    let stale = false;
-    fetch('/api/dokumente')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => { if (!stale && data) setUsage(data); })
-      .catch(() => {});
-    return () => { stale = true; };
-  }, [refreshKey]);
 
   const runBackup = async () => {
     setProgress({ done: 0, total: 0 });

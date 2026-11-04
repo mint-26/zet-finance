@@ -8,7 +8,7 @@ import Auswertung from '../../components/admin/Auswertung';
 import Dokumente from '../../components/admin/Dokumente';
 import Backup from '../../components/admin/Backup';
 import { selectLook } from '../../components/admin/ui';
-import { PeriodTabs, MonthTabs, MonthPanel, inPeriod, periodLabel, yearsOf, groupByMonth } from '../../components/admin/Periods';
+import { PeriodTabs, MonthTabs, MonthPanel, inPeriod, periodLabel, yearsOf, groupByMonth, leadDate, monthKeyOf } from '../../components/admin/Periods';
 import { GESELLSCHAFTEN } from '../../lib/gesellschaften';
 
 const STATUS_OPTIONS = [
@@ -53,6 +53,8 @@ function AdminContent() {
   // undefined: nothing chosen yet, the newest month is shown. null: closed by the user.
   const [selectedMonth, setSelectedMonth] = useState(undefined);
   const [documentChanges, setDocumentChanges] = useState(0);
+  const [documentUsage, setDocumentUsage] = useState(null);
+  const [followId, setFollowId] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -73,6 +75,28 @@ function AdminContent() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Storage in use and number of documents per lead.
+  useEffect(() => {
+    if (authState !== 'authed') return undefined;
+    let stale = false;
+    fetch('/api/dokumente')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (!stale && data) setDocumentUsage(data); })
+      .catch(() => {});
+    return () => { stale = true; };
+  }, [authState, documentChanges]);
+
+  // A lead that just moved to another month: bring it into view once its month is open.
+  useEffect(() => {
+    if (!followId) return undefined;
+    const timer = setTimeout(() => {
+      const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      document.getElementById(`lead-${followId}`)?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+      setFollowId(null);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [followId]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -104,13 +128,30 @@ function AdminContent() {
 
   const updateFields = async (id, patch) => {
     // Optimistic update — patch one or multiple fields at once.
-    setSubmissions((prev) => prev.map((s) => s.id === id ? { ...s, ...patch } : s));
+    const changes = { ...patch };
+    const current = submissions.find((s) => s.id === id);
+    // Closing a customer, or undoing it, moves the lead to another month: the view goes along.
+    if (current && 'status' in patch && (current.status === 'versichert') !== (patch.status === 'versichert')) {
+      changes.abgeschlossen_am = patch.status === 'versichert' ? new Date().toISOString() : null;
+      const moved = { ...current, ...changes };
+      const date = new Date(leadDate(moved));
+      if (!inPeriod(moved, period)) setPeriod({ ...period, period: String(date.getFullYear()) });
+      setSelectedMonth(monthKeyOf(date));
+      setFollowId(id);
+    }
+    setSubmissions((prev) => prev.map((s) => s.id === id ? { ...s, ...changes } : s));
     try {
-      await fetch(`/api/submissions/${id}`, {
+      const res = await fetch(`/api/submissions/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
       });
+      if (!res.ok) { load(); return; }
+      // The server's date counts.
+      const data = await res.json().catch(() => ({}));
+      if ('abgeschlossen_am' in data) {
+        setSubmissions((prev) => prev.map((s) => s.id === id ? { ...s, abgeschlossen_am: data.abgeschlossen_am } : s));
+      }
     } catch {
       // On error, reload to sync state
       load();
@@ -190,6 +231,7 @@ function AdminContent() {
       key={s.id}
       submission={s}
       tarifOptions={tarifOptions}
+      documentCount={documentUsage?.proLead?.[s.id] || 0}
       onDocumentsChanged={() => setDocumentChanges((n) => n + 1)}
       expanded={expandedId === s.id}
       onToggle={() => setExpandedId(expandedId === s.id ? null : s.id)}
@@ -371,7 +413,7 @@ function AdminContent() {
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 12 }}>
             <Backup
               submissions={submissions}
-              refreshKey={documentChanges}
+              usage={documentUsage}
               buttonStyle={{ ...headerBtn, background: 'transparent', border: '1px solid var(--accent)', color: 'var(--text-primary)' }}
             />
             <button onClick={handleExport} style={{
@@ -499,9 +541,11 @@ function AdminContent() {
   );
 }
 
-function SubmissionCard({ submission: s, tarifOptions, onDocumentsChanged, expanded, onToggle, onUpdate, onUpdateMany, onDelete, onResendNotification }) {
+function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocumentsChanged, expanded, onToggle, onUpdate, onUpdateMany, onDelete, onResendNotification }) {
   const statusOpt = STATUS_OPTIONS.find((o) => o.value === s.status) || STATUS_OPTIONS[0];
   const createdAt = s.created_at ? new Date(s.created_at) : null;
+  const closedAt = s.abgeschlossen_am ? new Date(s.abgeschlossen_am) : null;
+  const shortDate = (d) => d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
   const notificationSentAt = s.notification_sent_at ? new Date(s.notification_sent_at) : null;
   const mailDelivered = !!s.notification_sent_at;
 
@@ -539,11 +583,12 @@ function SubmissionCard({ submission: s, tarifOptions, onDocumentsChanged, expan
   ];
 
   return (
-    <div style={{
+    <div id={`lead-${s.id}`} style={{
       background: 'var(--bg-card)',
       border: '1px solid var(--border)',
       borderRadius: 12,
       overflow: 'hidden',
+      scrollMarginTop: 16,
     }}>
       {/* Summary row */}
       <div style={{
@@ -593,6 +638,17 @@ function SubmissionCard({ submission: s, tarifOptions, onDocumentsChanged, expan
             </span>
             {viaWhatsApp && <Tag color="#25a35a">{QUELLE_LABELS[s.quelle]}</Tag>}
             {isGespraech && <Tag color="#7D6D49">Gespräch</Tag>}
+            {documentCount > 0 && (
+              <span
+                role="img"
+                title={`${documentCount} ${documentCount === 1 ? 'Dokument' : 'Dokumente'} hinterlegt`}
+                aria-label={`${documentCount} ${documentCount === 1 ? 'Dokument' : 'Dokumente'} hinterlegt`}
+                style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}
+              >
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
+                {documentCount}
+              </span>
+            )}
           </div>
         </div>
         {/* Abgerechnet */}
@@ -615,8 +671,14 @@ function SubmissionCard({ submission: s, tarifOptions, onDocumentsChanged, expan
           </div>
         </div>
         <div style={{ fontSize: 12, color: 'var(--text-dim)', textAlign: 'right', whiteSpace: 'nowrap' }}>
-          {createdAt ? createdAt.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''}<br />
-          {createdAt ? createdAt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : ''}
+          {closedAt ? (
+            <>Abschluss {shortDate(closedAt)}<br />{createdAt ? `Anfrage ${shortDate(createdAt)}` : ''}</>
+          ) : (
+            <>
+              {createdAt ? shortDate(createdAt) : ''}<br />
+              {createdAt ? createdAt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : ''}
+            </>
+          )}
         </div>
         <button onClick={onToggle} style={{
           background: 'transparent',

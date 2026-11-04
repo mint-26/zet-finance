@@ -4,11 +4,17 @@ import SmoothHeight from '../SmoothHeight';
 
 const localDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
+// The date that places a lead: closing a customer moves them to that month, at the top. Leads
+// closed before this existed have no such date and stay with the date of their enquiry.
+export const leadDate = (row) => row.abgeschlossen_am || row.created_at;
+
+export const monthKeyOf = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
 // period: 'individuell' (uses von/bis, both optional), 'gesamt', or a year as string.
 export function inPeriod(row, { period, von, bis }) {
   if (period === 'gesamt') return true;
-  if (!row.created_at) return false;
-  const date = new Date(row.created_at);
+  if (!leadDate(row)) return false;
+  const date = new Date(leadDate(row));
   if (period === 'individuell') {
     const day = localDate(date);
     return (!von || day >= von) && (!bis || day <= bis);
@@ -34,12 +40,12 @@ export function yearsOf(rows) {
 
 const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
 
-// Rows (newest first) grouped by month, newest month first; months without leads are left out.
+// Rows grouped by month, newest month and newest lead first; months without leads are left out.
 export function groupByMonth(rows) {
   const groups = new Map();
   rows.forEach((row) => {
-    const date = row.created_at ? new Date(row.created_at) : null;
-    const key = date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}` : 'ohne-datum';
+    const date = leadDate(row) ? new Date(leadDate(row)) : null;
+    const key = date ? monthKeyOf(date) : 'ohne-datum';
     if (!groups.has(key)) {
       groups.set(key, {
         key,
@@ -50,6 +56,7 @@ export function groupByMonth(rows) {
     }
     groups.get(key).rows.push(row);
   });
+  groups.forEach((group) => group.rows.sort((a, b) => new Date(leadDate(b)) - new Date(leadDate(a))));
   return [...groups.values()].sort((a, b) => b.key.localeCompare(a.key));
 }
 

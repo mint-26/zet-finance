@@ -226,7 +226,7 @@ export default function Auswertung({ rows, allRows, periodText }) {
             )}
 
             <p style={{ margin: '20px 0 0', fontSize: 12, lineHeight: 1.5, color: 'var(--text-dim)' }}>
-              Gezählt werden Kunden mit Status „Versichert“ und gewählter Gesellschaft, nach Datum der Anfrage.
+              Gezählt werden Kunden mit Status „Versichert“ und gewählter Gesellschaft, im Monat ihres Abschlusses. Ältere Kunden ohne Abschlussdatum zählen im Monat ihrer Anfrage.
               {ohneGesellschaft > 0 && ` ${ohneGesellschaft} ${ohneGesellschaft === 1 ? 'versicherter Kunde hat' : 'versicherte Kunden haben'} in diesem Zeitraum noch keine Gesellschaft und ${ohneGesellschaft === 1 ? 'fehlt' : 'fehlen'} hier.`}
             </p>
           </div>

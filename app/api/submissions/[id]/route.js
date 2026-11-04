@@ -73,6 +73,16 @@ export async function PATCH(request, { params }) {
   }
 
   const supabase = getSupabaseAdmin();
+
+  // The closing date follows the status: it moves the lead to the top of that month in the CRM.
+  if (update.status) {
+    const { data: current } = await supabase.from('zahnzusatz_submissions').select('status').eq('id', id).maybeSingle();
+    const wasClosed = current?.status === 'versichert';
+    const isClosed = update.status === 'versichert';
+    if (isClosed && !wasClosed) update.abgeschlossen_am = new Date().toISOString();
+    if (!isClosed && wasClosed) update.abgeschlossen_am = null;
+  }
+
   const { error } = await supabase
     .from('zahnzusatz_submissions')
     .update(update)
@@ -83,7 +93,7 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: 'Failed to update submission' }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json('abgeschlossen_am' in update ? { ok: true, abgeschlossen_am: update.abgeschlossen_am } : { ok: true });
 }
 
 export async function DELETE(request, { params }) {

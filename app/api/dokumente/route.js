@@ -11,7 +11,7 @@ const PAGE = 1000;
 
 const fail = (error) => NextResponse.json({ error }, { status: 500 });
 
-// GET: storage in use. ?backup=1 adds all documents with download links for the backup.
+// GET: storage in use and number of documents per lead. ?backup=1 adds all documents with download links for the backup.
 export async function GET(request) {
   if (!isAuthenticated()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -31,9 +31,11 @@ export async function GET(request) {
     if (data.length < PAGE) break;
   }
   const belegt = rows.reduce((sum, r) => sum + Number(r.groesse || 0), 0);
+  const proLead = {};
+  rows.forEach((r) => { proLead[r.submission_id] = (proLead[r.submission_id] || 0) + 1; });
 
   if (new URL(request.url).searchParams.get('backup') !== '1') {
-    return NextResponse.json({ belegt, anzahl: rows.length });
+    return NextResponse.json({ belegt, anzahl: rows.length, proLead });
   }
 
   if (rows.length === 0) return NextResponse.json({ belegt, anzahl: 0, dokumente: [] });
