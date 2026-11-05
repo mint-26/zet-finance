@@ -524,7 +524,7 @@ function AdminContent() {
       <style jsx global>{`
         .crm-month { animation: crmMonthIn 0.3s ease; }
         @keyframes crmMonthIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-        @media (prefers-reduced-motion: reduce) { .crm-month { animation: none; } }
+        @media (prefers-reduced-motion: reduce) { .crm-month { animation: none; } .crm-tile, .crm-tile * { transition: none !important; } }
         .crm-controls { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px 12px; margin-bottom: 20px; }
         .crm-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px 24px; align-items: start; }
         main select:focus, main input:focus, main textarea:focus, main button[aria-haspopup]:focus {
