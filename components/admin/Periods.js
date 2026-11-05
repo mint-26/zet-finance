@@ -1,6 +1,7 @@
 'use client';
 
 import SmoothHeight from '../SmoothHeight';
+import { STATUS_OPTIONS } from './ui';
 
 const localDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
@@ -124,21 +125,21 @@ export function Chevron({ open }) {
   );
 }
 
-// Months side by side as switches, newest first. Each shows month, year and number of leads;
-// open leads stay visible as a label, so a new enquiry cannot go unnoticed in another month.
-// They wrap instead of scrolling, so no month is hidden.
+// Months side by side as switches, newest first. Each shows month, year and number of leads,
+// then every status with its count, so a month can be read without opening it. Open leads stay
+// bold, so a new enquiry cannot go unnoticed in another month. Tiles wrap instead of scrolling,
+// so no month is hidden, and they share the height of the tallest one in their row.
 export function MonthTabs({ months, activeKey, onToggle }) {
   return (
-    <div role="group" aria-label="Monat" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 8 }}>
+    <div role="group" aria-label="Monat" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(158px, 1fr))', gap: 8 }}>
       {months.map((month) => {
         const active = month.key === activeKey;
         const count = month.rows.length;
-        const offen = month.rows.filter((r) => r.status === 'offen').length;
         return (
           <button
             key={month.key} type="button" aria-pressed={active} onClick={() => onToggle(month.key)}
             style={{
-              minHeight: 76, padding: '10px 12px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+              padding: '12px 12px 10px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
               display: 'flex', flexDirection: 'column', gap: 2, fontFamily: "'DM Sans', sans-serif",
               background: active ? 'var(--accent)' : 'var(--bg-card)',
               border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
@@ -148,7 +149,28 @@ export function MonthTabs({ months, activeKey, onToggle }) {
           >
             <span style={{ fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{month.short}</span>
             <span style={{ fontSize: 13, opacity: active ? 0.85 : 0.65, whiteSpace: 'nowrap' }}>{count} {count === 1 ? 'Lead' : 'Leads'}</span>
-            {offen > 0 && <span style={{ fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{offen} offen</span>}
+            <span style={{
+              display: 'flex', flexDirection: 'column', gap: 3, marginTop: 8, paddingTop: 8,
+              borderTop: `1px solid ${active ? 'currentColor' : 'var(--border)'}`,
+            }}>
+              {STATUS_OPTIONS.map((option) => {
+                const amount = month.rows.filter((r) => (r.status || 'offen') === option.value).length;
+                const strong = option.value === 'offen' && amount > 0;
+                return (
+                  <span key={option.value} style={{
+                    display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, lineHeight: 1.35,
+                    fontWeight: strong ? 700 : 400, opacity: amount > 0 ? 1 : (active ? 0.78 : 0.45),
+                  }}>
+                    <span aria-hidden="true" style={{
+                      width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: option.color,
+                      boxShadow: active ? '0 0 0 1px var(--bg-primary)' : 'none',
+                    }} />
+                    <span style={{ flex: 1, minWidth: 0, whiteSpace: 'nowrap' }}>{option.label}</span>
+                    <span style={{ fontVariantNumeric: 'tabular-nums' }}>{amount}</span>
+                  </span>
+                );
+              })}
+            </span>
           </button>
         );
       })}
