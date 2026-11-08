@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '../../../../lib/supabase';
 import { isAuthenticated } from '../../../../lib/auth';
 import { DOKUMENTE_BUCKET } from '../../../../lib/dokumente';
+import { ANTWORT_FELDER, splitMulti } from '../../../../lib/fragebogen';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +24,8 @@ const ALLOWED_FIELDS = [
   'beruf',
   'krankenkasse',
   'anliegen',
+  // Questionnaire answers, only with the options of the form (lib/fragebogen.js).
+  ...Object.keys(ANTWORT_FELDER),
 ];
 const TEXT_LIMITS = { name: 200, email: 200, telefon: 60, anschrift: 300, geburtsdatum: 20, beruf: 200, krankenkasse: 200, anliegen: 2000 };
 const ALLOWED_STATUS = ['offen', 'angebot_verschickt', 'abgelehnt', 'versichert', 'kein_interesse'];
@@ -80,6 +83,28 @@ export async function PATCH(request, { params }) {
   }
   if ('name' in update && !update.name) {
     return NextResponse.json({ error: 'Name must not be empty' }, { status: 400 });
+  }
+
+  // Answers: one of the form's options. In a list of several, an older answer that is no
+  // longer offered may stay, but only if the lead already had it.
+  const answers = Object.keys(ANTWORT_FELDER).filter((key) => key in update && update[key] !== null);
+  if (answers.length) {
+    const multiKeys = answers.filter((key) => ANTWORT_FELDER[key].multi);
+    let stored = {};
+    if (multiKeys.length) {
+      const { data } = await getSupabaseAdmin().from('zahnzusatz_submissions').select(multiKeys.join(',')).eq('id', id).maybeSingle();
+      stored = data || {};
+    }
+    for (const key of answers) {
+      const { options, multi } = ANTWORT_FELDER[key];
+      if (typeof update[key] !== 'string') return NextResponse.json({ error: `Invalid value for ${key}` }, { status: 400 });
+      const parts = multi ? splitMulti(update[key]) : [update[key]];
+      const before = multi ? splitMulti(stored[key]) : [];
+      if (!parts.length || parts.some((part) => !options.includes(part) && !before.includes(part))) {
+        return NextResponse.json({ error: `Invalid value for ${key}` }, { status: 400 });
+      }
+      update[key] = multi ? parts.join(', ') : update[key];
+    }
   }
 
   if (update.status && !ALLOWED_STATUS.includes(update.status)) {

@@ -3,11 +3,16 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ThemeProvider, useTheme } from '../../components/ThemeProvider';
 import { formatBirthdate } from '../../lib/format';
+import { GKV, PKV } from '../../lib/insurers';
+import {
+  KV, KV_BY_VALUE, ERWERBSSTATUS, KONTAKTWEG, JA_NEIN, BEHANDLUNG, FEHLENDE_ZAEHNE, PARODONTOSE, SCHWERPUNKT,
+  BEIHILFE, WECHSEL, GESCHLECHT, FAMILIENSTAND, splitMulti, krankenkasseText, NICHT_IN_LISTE,
+} from '../../lib/fragebogen';
 import InsurerSelect from '../../components/InsurerSelect';
 import Auswertung from '../../components/admin/Auswertung';
 import Dokumente from '../../components/admin/Dokumente';
 import Backup from '../../components/admin/Backup';
-import { selectLook, STATUS_OPTIONS } from '../../components/admin/ui';
+import { selectLook, STATUS_OPTIONS, pillColors } from '../../components/admin/ui';
 import { PeriodTabs, MonthTabs, MonthPanel, inPeriod, periodLabel, yearsOf, groupByMonth, leadDate, monthKeyOf, Chevron } from '../../components/admin/Periods';
 import { GESELLSCHAFTEN } from '../../lib/gesellschaften';
 
@@ -626,8 +631,7 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
           display: 'inline-block',
           padding: '4px 10px',
           borderRadius: 999,
-          background: statusOpt.color + '22',
-          color: statusOpt.color,
+          ...pillColors(statusOpt.value),
           fontSize: 12,
           fontWeight: 600,
           whiteSpace: 'nowrap',
@@ -685,7 +689,7 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
         <span style={{ position: 'relative', display: 'inline-flex', flexShrink: 0, width: 168 }}>
           <span aria-hidden="true" style={{
             position: 'absolute', left: 11, top: '50%', marginTop: -4, width: 8, height: 8, borderRadius: '50%',
-            background: s.abgerechnet ? '#4a9e6a' : '#dc3c3c', pointerEvents: 'none',
+            background: pillColors(s.abgerechnet ? 'versichert' : 'abgelehnt').color, pointerEvents: 'none',
           }} />
           <select
             value={s.abgerechnet ? 'true' : 'false'}
@@ -694,9 +698,9 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
             style={{
               ...selectLook, width: '100%', height: 30, padding: '0 28px 0 26px', borderRadius: 999,
               backgroundPosition: 'right 10px center', backgroundSize: '12px', boxSizing: 'border-box',
-              border: `1px solid ${s.abgerechnet ? 'rgba(74,158,106,0.35)' : 'rgba(220,60,60,0.3)'}`,
-              backgroundColor: s.abgerechnet ? 'rgba(74,158,106,0.1)' : 'rgba(220,60,60,0.07)',
-              color: s.abgerechnet ? '#3d8a5a' : '#c23838',
+              border: pillColors(s.abgerechnet ? 'versichert' : 'abgelehnt').border,
+              backgroundColor: pillColors(s.abgerechnet ? 'versichert' : 'abgelehnt').background,
+              color: pillColors(s.abgerechnet ? 'versichert' : 'abgelehnt').color,
               fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", outline: 'none',
             }}
           >
@@ -944,36 +948,92 @@ const fieldLabel = { fontSize: 11, color: 'var(--text-dim)', textTransform: 'upp
 // Fields grow up to max and then stop, so they stay short on wide screens.
 const fieldBox = (min, max) => ({ display: 'flex', flexDirection: 'column', gap: 6, flex: `1 1 ${min}px`, maxWidth: max, minWidth: 0 });
 
-// What Marco can correct by hand, e.g. a misspelt name. Answers to the questionnaire stay as
-// the customer gave them; only the contact details and free-text answers can be changed.
-const EDIT_FIELDS = [
-  { key: 'name', label: 'Name' },
-  { key: 'email', label: 'E-Mail', type: 'email' },
-  { key: 'telefon', label: 'Telefon', type: 'tel' },
-  { key: 'anschrift', label: 'Anschrift', wide: true },
-  { key: 'geburtsdatum', label: 'Geburtsdatum', type: 'date' },
-  { key: 'beruf', label: 'Beruf' },
-  { key: 'krankenkasse', label: 'Krankenkasse' },
+// What Marco can correct by hand, e.g. a misspelt name or a wrong answer. Answers use the same
+// options as the questionnaire (lib/fragebogen.js); the server only accepts those.
+const opts = (list) => list.map((o) => (typeof o === 'string' ? o : o.value));
+const EDIT_GROUPS = [
+  { title: 'Persönliches', fields: [
+    { key: 'name', label: 'Name' },
+    { key: 'anschrift', label: 'Anschrift', wide: true },
+    { key: 'geburtsdatum', label: 'Geburtsdatum', type: 'date' },
+    { key: 'geschlecht', label: 'Geschlecht', options: GESCHLECHT },
+    { key: 'familienstand', label: 'Familienstand', options: FAMILIENSTAND },
+    { key: 'kontaktweg', label: 'Kontaktweg', options: KONTAKTWEG, multi: true },
+    { key: 'email', label: 'E-Mail', type: 'email' },
+    { key: 'telefon', label: 'Telefon', type: 'tel' },
+    { key: 'beruf', label: 'Beruf', onlyIfSet: true },
+  ] },
+  { title: 'Erwerbsstatus und Krankenversicherung', fields: [
+    { key: 'erwerbsstatus', label: 'Erwerbsstatus', options: opts(ERWERBSSTATUS) },
+    { key: 'beihilfe', label: 'Beihilfe', options: BEIHILFE },
+    { key: 'versicherungsart', label: 'Krankenversicherung', options: Object.values(KV).map((k) => k.value) },
+    { key: 'krankenkasse', label: 'Krankenkasse', type: 'kasse' },
+    { key: 'wechsel', label: 'Kassenwechsel', options: WECHSEL },
+    { key: 'bonusprogramm', label: 'Bonusprogramm', options: JA_NEIN },
+  ] },
+  { title: 'Zahnstatus', fields: [
+    { key: 'behandlung', label: 'Behandlung', options: opts(BEHANDLUNG) },
+    { key: 'heilkostenplan', label: 'Heil- und Kostenplan', options: JA_NEIN },
+    { key: 'fehlende_zaehne', label: 'Fehlende Zähne', options: FEHLENDE_ZAEHNE },
+    { key: 'zahnluecke', label: 'Zahnlücke mitversichern', options: JA_NEIN },
+    { key: 'parodontose', label: 'Parodontose', options: opts(PARODONTOSE) },
+    { key: 'schwerpunkt', label: 'Wichtiger Bereich', options: SCHWERPUNKT, multi: true },
+    { key: 'vorherige_versicherung', label: 'Vorherige Zahnversicherung', options: JA_NEIN },
+  ] },
 ];
-const EDIT_FIELDS_GESPRAECH = [
-  { key: 'name', label: 'Name' },
-  { key: 'telefon', label: 'Telefon / WhatsApp', type: 'tel' },
-  { key: 'anliegen', label: 'Anliegen', wide: true, multiline: true },
+const EDIT_GROUPS_GESPRAECH = [
+  { title: '', fields: [
+    { key: 'name', label: 'Name' },
+    { key: 'telefon', label: 'Telefon / WhatsApp', type: 'tel' },
+    { key: 'anliegen', label: 'Anliegen', wide: true, textarea: true },
+  ] },
 ];
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
+// Stored insurer text → what the insurer dropdown shows: a list entry, or a name typed by hand.
+function kasseFromText(text, kind) {
+  const value = String(text || '').trim();
+  if (!value) return { kasse: '', istAndere: false, freitext: '' };
+  if (value.endsWith(NICHT_IN_LISTE)) return { kasse: '', istAndere: true, freitext: value.slice(0, -NICHT_IN_LISTE.length) };
+  const items = kind === 'gkv' ? GKV : kind === 'pkv' ? PKV : [];
+  const entry = items.find((i) => value === i.name || value.startsWith(`${i.name} (`));
+  return entry ? { kasse: entry.name, istAndere: false, freitext: '' } : { kasse: '', istAndere: true, freitext: value };
+}
+
 function KundenAngaben({ s, fields, isGespraech, onSave }) {
-  const editable = isGespraech ? EDIT_FIELDS_GESPRAECH : EDIT_FIELDS;
+  const groups = (isGespraech ? EDIT_GROUPS_GESPRAECH : EDIT_GROUPS).map((g) => ({
+    ...g, fields: g.fields.filter((f) => !f.onlyIfSet || s[f.key]),
+  }));
+  const editable = groups.flatMap((g) => g.fields);
   const [draft, setDraft] = useState(null);
+  const [kasse, setKasse] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const editing = draft !== null;
   const editedLabels = new Set(editable.map((f) => f.label).concat('Telefon / WhatsApp', 'Telefon'));
+  const kind = editing ? KV_BY_VALUE[draft.versicherungsart]?.kind : null;
 
   const start = () => {
     setDraft(Object.fromEntries(editable.map((f) => [f.key, s[f.key] ?? ''])));
+    setKasse(null);
     setError('');
   };
+  const cancel = () => { setDraft(null); setKasse(null); setError(''); };
+  const set = (key, value) => setDraft((d) => ({ ...d, [key]: value }));
+  // The insurer dropdown only rewrites the stored text once it was used.
+  const kasseState = kasse || kasseFromText(draft?.krankenkasse, kind);
+  const changeKasse = (next) => {
+    const merged = { ...kasseState, ...next };
+    setKasse(merged);
+    set('krankenkasse', krankenkasseText({ kind, ...merged }));
+  };
+  const toggleMulti = (f, option) => {
+    const parts = splitMulti(draft[f.key]);
+    const next = parts.includes(option) ? parts.filter((p) => p !== option) : [...parts, option];
+    const ordered = [...f.options.filter((o) => next.includes(o)), ...next.filter((p) => !f.options.includes(p))];
+    set(f.key, ordered.join(', '));
+  };
+
   const save = async () => {
     const changes = {};
     editable.forEach(({ key }) => {
@@ -982,12 +1042,71 @@ function KundenAngaben({ s, fields, isGespraech, onSave }) {
     });
     if ('name' in changes && !changes.name) { setError('Der Name darf nicht leer sein.'); return; }
     if (changes.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(changes.email)) { setError('Die E-Mail-Adresse sieht nicht vollständig aus.'); return; }
-    if (!Object.keys(changes).length) { setDraft(null); return; }
+    if (kasse?.istAndere && !kasse.freitext.trim()) { setError('Bitte den Namen der Krankenkasse eintragen.'); return; }
+    if (!Object.keys(changes).length) { cancel(); return; }
     setSaving(true);
     const ok = await onSave(changes);
     setSaving(false);
-    if (ok) setDraft(null);
+    if (ok) cancel();
     else setError('Speichern hat nicht geklappt, die alten Angaben sind wiederhergestellt. Bitte noch einmal versuchen.');
+  };
+  const onKey = (e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') cancel(); };
+
+  const control = (f) => {
+    const value = draft[f.key] ?? '';
+    if (f.multi) {
+      const parts = splitMulti(value);
+      const extra = parts.filter((p) => !f.options.includes(p));
+      return (
+        <span role="group" aria-label={f.label} style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {[...f.options, ...extra].map((o) => {
+            const on = parts.includes(o);
+            return (
+              <label key={o} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8, minHeight: 40, padding: '0 14px', borderRadius: 8, cursor: 'pointer',
+                border: `1px solid ${on ? 'var(--accent)' : 'var(--border)'}`, background: on ? 'var(--accent-dim)' : 'var(--input-bg)',
+                fontSize: 14, color: 'var(--text-body)',
+              }}>
+                <input type="checkbox" checked={on} onChange={() => toggleMulti(f, o)} style={{ accentColor: 'var(--accent)', margin: 0 }} />
+                {o}
+              </label>
+            );
+          })}
+        </span>
+      );
+    }
+    if (f.options) {
+      const list = value && !f.options.includes(value) ? [...f.options, value] : f.options;
+      return (
+        <select value={value} onChange={(e) => set(f.key, e.target.value)} style={selectStyle}>
+          <option value="" style={optionStyle}>—</option>
+          {list.map((o) => <option key={o} value={o} style={optionStyle}>{o}</option>)}
+        </select>
+      );
+    }
+    if (f.type === 'kasse' && (kind === 'gkv' || kind === 'pkv')) {
+      return (
+        <span style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <InsurerSelect
+            compact items={kind === 'gkv' ? GKV : PKV}
+            value={kasseState.kasse} isOther={kasseState.istAndere}
+            placeholder={kind === 'gkv' ? 'Krankenkasse auswählen' : 'Krankenversicherer auswählen'}
+            searchLabel={kind === 'gkv' ? 'Krankenkasse suchen' : 'Krankenversicherer suchen'}
+            onSelect={(item) => changeKasse({ kasse: item.name, istAndere: false, freitext: '' })}
+            onChooseOther={() => changeKasse({ kasse: '', istAndere: true })}
+          />
+          {kasseState.istAndere && (
+            <input
+              type="text" value={kasseState.freitext} aria-label="Name der Krankenkasse" placeholder="Name eintragen"
+              onChange={(e) => changeKasse({ freitext: e.target.value })} onKeyDown={onKey} style={fieldStyle}
+            />
+          )}
+        </span>
+      );
+    }
+    if (f.textarea) return <textarea value={value} onChange={(e) => set(f.key, e.target.value)} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />;
+    const type = f.type === 'date' && value && !ISO_DATE.test(value) ? 'text' : (f.type === 'kasse' ? 'text' : f.type || 'text');
+    return <input type={type} value={value} onChange={(e) => set(f.key, e.target.value)} onKeyDown={onKey} autoComplete="off" style={fieldStyle} />;
   };
 
   const shown = fields.filter(([label, value]) => value && !(editing && editedLabels.has(label)));
@@ -1001,26 +1120,24 @@ function KundenAngaben({ s, fields, isGespraech, onSave }) {
 
       {editing && (
         <div style={{ marginBottom: 20 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '14px 16px' }}>
-            {editable.map((f) => {
-              const value = draft[f.key] ?? '';
-              const type = f.type === 'date' && value && !ISO_DATE.test(value) ? 'text' : (f.type || 'text');
-              const onChange = (e) => setDraft({ ...draft, [f.key]: e.target.value });
-              return (
-                <EditableField key={f.key} label={f.label} wide={f.wide}>
-                  {f.multiline
-                    ? <textarea value={value} onChange={onChange} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
-                    : <input type={type} value={value} onChange={onChange} onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setDraft(null); }} autoComplete="off" style={fieldStyle} />}
-                </EditableField>
-              );
-            })}
-          </div>
-          {error && <p role="alert" style={{ margin: '12px 0 0', fontSize: 13, color: '#dc3c3c' }}>{error}</p>}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
+          {groups.map((g) => (
+            <div key={g.title} style={{ marginBottom: 20 }}>
+              {g.title && <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 10 }}>{g.title}</div>}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '14px 16px' }}>
+                {g.fields.map((f) => (
+                  <EditableField key={f.key} label={f.label} wide={f.wide || f.multi} as={f.multi || f.type === 'kasse' ? 'div' : 'label'}>
+                    {control(f)}
+                  </EditableField>
+                ))}
+              </div>
+            </div>
+          ))}
+          {error && <p role="alert" style={{ margin: '0 0 12px', fontSize: 13, color: '#dc3c3c' }}>{error}</p>}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
             <button type="button" onClick={save} disabled={saving} style={{ ...monthBtn, background: 'var(--accent)', color: 'var(--bg-primary)', cursor: saving ? 'wait' : 'pointer' }}>
               {saving ? 'Speichert …' : 'Speichern'}
             </button>
-            <button type="button" onClick={() => setDraft(null)} disabled={saving} style={{ ...monthBtn, border: '1px solid var(--border)', color: 'var(--text-body)' }}>Abbrechen</button>
+            <button type="button" onClick={cancel} disabled={saving} style={{ ...monthBtn, border: '1px solid var(--border)', color: 'var(--text-body)' }}>Abbrechen</button>
           </div>
         </div>
       )}
@@ -1055,33 +1172,13 @@ function KundenAngaben({ s, fields, isGespraech, onSave }) {
   );
 }
 
-function EditableField({ label, min, max, wide, children }) {
+function EditableField({ label, min, max, wide, as: Tag = 'label', children }) {
   return (
-    <label className={min ? 'crm-field' : undefined} style={min ? fieldBox(min, max) : { display: 'flex', flexDirection: 'column', gap: 6, ...(wide ? { gridColumn: '1 / -1' } : {}) }}>
+    <Tag className={min ? 'crm-field' : undefined} style={min ? fieldBox(min, max) : { display: 'flex', flexDirection: 'column', gap: 6, ...(wide ? { gridColumn: '1 / -1' } : {}) }}>
       <span style={fieldLabel}>{label}</span>
       {children}
-    </label>
+    </Tag>
   );
-}
-
-// Split a comma-joined multi-select value into individual items,
-// respecting parentheses so e.g. "foo (a, b), bar" stays two items.
-function splitMulti(value) {
-  const parts = [];
-  let depth = 0;
-  let current = '';
-  for (const ch of value) {
-    if (ch === '(') { depth++; current += ch; continue; }
-    if (ch === ')') { depth = Math.max(0, depth - 1); current += ch; continue; }
-    if (ch === ',' && depth === 0) {
-      if (current.trim()) parts.push(current.trim());
-      current = '';
-      continue;
-    }
-    current += ch;
-  }
-  if (current.trim()) parts.push(current.trim());
-  return parts;
 }
 
 const inputStyle = {
@@ -1100,6 +1197,7 @@ const inputStyle = {
 // One height for all fields of a lead, the same as the insurer dropdown.
 const fieldStyle = { ...inputStyle, height: 44, padding: '0 12px' };
 const selectStyle = { ...fieldStyle, ...selectLook };
+const optionStyle = { background: 'var(--select-option-bg)', color: 'var(--text-body)' };
 const monthBtn = {
   ...fieldStyle, width: 'auto', background: 'transparent', border: '1px solid var(--accent)',
   color: 'var(--text-primary)', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',

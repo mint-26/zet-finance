@@ -6,6 +6,11 @@ import SmoothHeight from './SmoothHeight';
 import InsurerSelect from './InsurerSelect';
 import StreetInput from './StreetInput';
 import { GKV, PKV, RATES_AS_OF } from '../lib/insurers';
+import {
+  KV_BY_VALUE, ERWERBSSTATUS, kvOptions, WANTS_MAIL, WANTS_PHONE, WANTS_WHATSAPP, KONTAKTWEG,
+  JA_NEIN, BEHANDLUNG, FEHLENDE_ZAEHNE, PARODONTOSE, SCHWERPUNKT, BEIHILFE, WECHSEL, GESCHLECHT, FAMILIENSTAND,
+  krankenkasseText,
+} from '../lib/fragebogen';
 import { useLang } from './LanguageProvider';
 
 const TOTAL_STEPS = 4;
@@ -25,33 +30,8 @@ const EMPTY_FORM = {
   kontaktweg: [], email: '', telefon: '',
 };
 
-// Health insurance answers. kind decides the follow-up: gkv/pkv show the matching
-// insurer list, none shows nothing further.
-const KV = {
-  pflicht: { value: 'gesetzlich pflichtversichert', kind: 'gkv' },
-  freiwillig: { value: 'gesetzlich freiwillig versichert', kind: 'gkv' },
-  familie: { value: 'gesetzlich familienversichert', kind: 'gkv' },
-  privat: { value: 'privat versichert', kind: 'pkv' },
-  heilfuersorge: { value: 'über freie Heilfürsorge abgesichert', kind: 'none' },
-};
-const KV_BY_VALUE = Object.fromEntries(Object.values(KV).map((k) => [k.value, k]));
-
-// Insurance types offered per employment status.
-const ERWERBSSTATUS = [
-  { value: 'Angestellt', kv: [KV.pflicht, KV.freiwillig, KV.familie, KV.privat] },
-  { value: 'Selbstständig / freiberuflich', kv: [KV.freiwillig, KV.pflicht, KV.privat] },
-  { value: 'Verbeamtet', kv: [KV.privat, KV.freiwillig, KV.heilfuersorge] },
-  { value: 'In Ausbildung / im Studium', kv: [KV.pflicht, KV.familie, KV.freiwillig, KV.privat] },
-  { value: 'Im Ruhestand', kv: [KV.pflicht, KV.freiwillig, KV.privat] },
-  { value: 'Derzeit nicht erwerbstätig', kv: [KV.pflicht, KV.freiwillig, KV.familie, KV.privat] },
-  { value: 'Sonstiges', kv: [KV.pflicht, KV.freiwillig, KV.familie, KV.privat] },
-];
-const kvOptions = (status) => ERWERBSSTATUS.find((e) => e.value === status)?.kv || [];
 const kvKind = (form) => KV_BY_VALUE[form.versicherungsart]?.kind;
 
-const WANTS_MAIL = 'Per E-Mail';
-const WANTS_PHONE = 'Telefonisch';
-const WANTS_WHATSAPP = 'Per WhatsApp';
 
 const hasMissingTeeth = (form) => form.fehlendeZaehne !== '' && form.fehlendeZaehne !== '0';
 const needsMail = (form) => form.kontaktweg.includes(WANTS_MAIL);
@@ -120,15 +100,7 @@ function validateStep(step, form) {
 // readable text. Statutory funds carry the total contribution rate.
 function buildPayload(form) {
   const kind = kvKind(form);
-  let krankenkasse = '';
-  if (form.kasseIstAndere) {
-    krankenkasse = `${form.kasseFreitext.trim()} (nicht in der Liste)`;
-  } else if (kind === 'gkv') {
-    const entry = GKV.find((k) => k.name === form.kasse);
-    krankenkasse = entry?.rate ? `${entry.name} (${entry.rate} %)` : form.kasse;
-  } else if (kind === 'pkv') {
-    krankenkasse = form.kasse;
-  }
+  const krankenkasse = krankenkasseText({ kind, kasse: form.kasse, istAndere: form.kasseIstAndere, freitext: form.kasseFreitext });
   return {
     datenschutz: form.datenschutz,
     behandlung: form.behandlung,
@@ -628,24 +600,20 @@ export default function Questionnaire() {
                 <StepHeading headingRef={headingRef} title="Zahnstatus" />
 
                 <Group id="behandlung" error={errors.behandlung} label="Erfolgt zur Zeit eine zahnärztliche oder kieferorthopädische Behandlung oder ist sie angeraten oder beabsichtigt? *">
-                  <RadioGroup name="behandlung" value={form.behandlung} onChange={update('behandlung')} options={[
-                    { value: 'Ja, bereits dokumentiert', label: 'Ja, wurde bereits in der Krankenakte oder Heil- und Kostenplan dokumentiert' },
-                    { value: 'Ja, nur kommuniziert', label: 'Ja, wurde bislang nur kommuniziert und noch nicht dokumentiert' },
-                    { value: 'Nein', label: 'Nein' },
-                  ]} />
+                  <RadioGroup name="behandlung" value={form.behandlung} onChange={update('behandlung')} options={BEHANDLUNG} />
                 </Group>
 
                 <Group id="heilkostenplan" error={errors.heilkostenplan} label="Liegt ein aktueller Heil- und Kostenplan Ihres Zahnarztes vor? *">
-                  <RadioGroup name="heilkostenplan" value={form.heilkostenplan} onChange={update('heilkostenplan')} options={['Ja', 'Nein']} />
+                  <RadioGroup name="heilkostenplan" value={form.heilkostenplan} onChange={update('heilkostenplan')} options={JA_NEIN} />
                 </Group>
 
                 <Group id="fehlendeZaehne" error={errors.fehlendeZaehne} label="Fehlen Zähne, außer Weisheitszähne, die nicht ersetzt sind? *">
-                  <Pills wrap value={form.fehlendeZaehne} onChange={setFehlendeZaehne} options={['0', '1', '2', '3', '4', '4+']} />
+                  <Pills wrap value={form.fehlendeZaehne} onChange={setFehlendeZaehne} options={FEHLENDE_ZAEHNE} />
                 </Group>
 
                 {hasMissingTeeth(form) && (
                   <Group id="zahnluecke" error={errors.zahnluecke} label="Möchten Sie vorhandene Zahnlücken mitversichern lassen? *">
-                    <Pills value={form.zahnluecke} onChange={update('zahnluecke')} options={['Ja', 'Nein']} />
+                    <Pills value={form.zahnluecke} onChange={update('zahnluecke')} options={JA_NEIN} />
                     <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, margin: '10px 0 0' }}>
                       {t('Je nach Tarif können fehlende Zähne zu einem Risikozuschlag oder Leistungsausschluss führen. Ob und unter welchen Bedingungen Ihre Zahnlücken mitversichert werden können, prüfe ich individuell.')}
                     </p>
@@ -653,24 +621,15 @@ export default function Questionnaire() {
                 )}
 
                 <Group id="parodontose" error={errors.parodontose} label="Wird derzeit oder wurde innerhalb der letzten drei Jahre eine parodontale Erkrankung festgestellt und/oder behandelt? (Parodontitis) *">
-                  <RadioGroup name="parodontose" value={form.parodontose} onChange={update('parodontose')} options={[
-                    { value: 'Ja, aktuell in Behandlung', label: 'Ja, ist aktuell noch in Behandlung oder wurde vor Vertragsbeginn festgestellt' },
-                    { value: 'Ja, ausgeheilt', label: 'Ja, ist bereits vollständig ausgeheilt und behandelt worden' },
-                    { value: 'Nein', label: 'Nein' },
-                  ]} />
+                  <RadioGroup name="parodontose" value={form.parodontose} onChange={update('parodontose')} options={PARODONTOSE} />
                 </Group>
 
                 <Group id="schwerpunkt" error={errors.schwerpunkt} label="Welcher Bereich ist Ihnen am wichtigsten? * (Mehrfachauswahl)">
-                  <CheckboxGroup name="schwerpunkt" values={form.schwerpunkt} onToggle={toggleIn('schwerpunkt')} options={[
-                    'Zahnersatz',
-                    'Zahnbehandlung',
-                    'Kieferorthopädie',
-                    'Kosmetische Eingriffe (Zahnreinigung, Bleaching etc.)',
-                  ]} />
+                  <CheckboxGroup name="schwerpunkt" values={form.schwerpunkt} onToggle={toggleIn('schwerpunkt')} options={SCHWERPUNKT} />
                 </Group>
 
                 <Group id="vorherigeVersicherung" error={errors.vorherigeVersicherung} label="Bestand innerhalb der letzten 6 Monate bereits eine anderweitige Zahnersatzversicherung? *">
-                  <Pills value={form.vorherigeVersicherung} onChange={update('vorherigeVersicherung')} options={['Ja', 'Nein']} />
+                  <Pills value={form.vorherigeVersicherung} onChange={update('vorherigeVersicherung')} options={JA_NEIN} />
                 </Group>
 
                 <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
@@ -691,7 +650,7 @@ export default function Questionnaire() {
 
                 {form.erwerbsstatus === 'Verbeamtet' && (
                   <Group id="beihilfe" error={errors.beihilfe} label="Haben Sie Anspruch auf Beihilfe? *">
-                    <RadioGroup name="beihilfe" value={form.beihilfe} onChange={update('beihilfe')} options={['Ja', 'Nein', 'Weiß ich nicht']} />
+                    <RadioGroup name="beihilfe" value={form.beihilfe} onChange={update('beihilfe')} options={BEIHILFE} />
                   </Group>
                 )}
 
@@ -734,10 +693,10 @@ export default function Questionnaire() {
                 {kind === 'gkv' && (
                   <>
                     <Group id="wechsel" error={errors.wechsel} label="Kommt ein Wechsel der Krankenkasse in Frage, wenn sich Preis und/oder Leistung dadurch verbessern? *">
-                      <RadioGroup name="wechsel" value={form.wechsel} onChange={update('wechsel')} options={['Ja, ich hätte gerne ein Vergleichsangebot', 'Nein']} />
+                      <RadioGroup name="wechsel" value={form.wechsel} onChange={update('wechsel')} options={WECHSEL} />
                     </Group>
                     <Group id="bonusprogramm" label="Nehmen Sie aktuell an einem Bonusprogramm Ihrer Krankenkasse teil?">
-                      <RadioGroup name="bonusprogramm" value={form.bonusprogramm} onChange={update('bonusprogramm')} options={['Ja', 'Nein']} />
+                      <RadioGroup name="bonusprogramm" value={form.bonusprogramm} onChange={update('bonusprogramm')} options={JA_NEIN} />
                     </Group>
                   </>
                 )}
@@ -825,17 +784,15 @@ export default function Questionnaire() {
                 </div>
 
                 <Group id="geschlecht" error={errors.geschlecht} label="Geschlecht *">
-                  <RadioGroup name="geschlecht" value={form.geschlecht} onChange={update('geschlecht')} options={['Männlich', 'Weiblich', 'Divers']} />
+                  <RadioGroup name="geschlecht" value={form.geschlecht} onChange={update('geschlecht')} options={GESCHLECHT} />
                 </Group>
 
                 <Group id="familienstand" error={errors.familienstand} label="Familienstand *">
-                  <RadioGroup name="familienstand" value={form.familienstand} onChange={update('familienstand')} options={[
-                    'Ledig', 'Verheiratet', 'Verpartnert (in einem Haushalt lebend)', 'Geschieden', 'Verwitwet',
-                  ]} />
+                  <RadioGroup name="familienstand" value={form.familienstand} onChange={update('familienstand')} options={FAMILIENSTAND} />
                 </Group>
 
                 <Group id="kontaktweg" error={errors.kontaktweg} label="Wie darf ich Sie kontaktieren? * (Mehrfachauswahl)">
-                  <CheckboxGroup name="kontaktweg" values={form.kontaktweg} onToggle={toggleKontaktweg} options={[WANTS_MAIL, WANTS_PHONE, WANTS_WHATSAPP]} />
+                  <CheckboxGroup name="kontaktweg" values={form.kontaktweg} onToggle={toggleKontaktweg} options={KONTAKTWEG} />
                 </Group>
 
                 {needsMail(form) && (
