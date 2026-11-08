@@ -136,7 +136,10 @@ function KundenListe({ name, rows, onOpenLead }) {
 }
 
 const th = { padding: '0 0 8px', fontSize: 11, fontWeight: 400, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.5 };
-const num = { textAlign: 'right', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums', paddingLeft: 12 };
+// Count and share sit right after the name, left-aligned, instead of at the far edge of the card.
+// Width and spacing come from .aw-num in globals.css, narrower on phones.
+const num = { textAlign: 'left', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' };
+const LOGO_SLOT = { width: 64, height: 34, flexShrink: 0 };
 
 // Fold-out overview above the lead list: how the applications of the chosen period spread
 // over insurers and tariffs, as a ring plus a table with count and share.
@@ -195,6 +198,10 @@ export default function Auswertung({ rows, allRows, periodText, onOpenLead }) {
   const inData = summaryItems.map((i) => i.key);
   const scopeOptions = GESELLSCHAFTEN.map((g) => g.name).filter((n) => inData.includes(n) || n === scope);
 
+  // Every view uses the same row: dot, logo slot (kept empty where a row has no logo, so names
+  // line up), name. Rows that open a customer list carry a chevron.
+  const withLogos = items.some((i) => i.logoOf);
+
   const switchView = (next) => { setView(next); setHover(null); setKundenOf(null); };
 
   return (
@@ -248,12 +255,12 @@ export default function Auswertung({ rows, allRows, periodText, onOpenLead }) {
                   <Donut segments={segments} total={total} center={center} activeKey={hover} onHover={setHover} />
                 </div>
                 <div style={{ flex: '1 1 320px', minWidth: 0 }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, color: 'var(--text-body)' }}>
+                  <table style={{ width: '100%', maxWidth: 620, tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: 14, color: 'var(--text-body)' }}>
                     <thead>
                       <tr>
                         <th scope="col" style={{ ...th, textAlign: 'left' }}>{{ tarife: 'Tarif', status: 'Status' }[view] || 'Gesellschaft'}</th>
-                        <th scope="col" style={{ ...th, ...num }}>Anzahl</th>
-                        <th scope="col" style={{ ...th, ...num }}>Anteil</th>
+                        <th scope="col" className="aw-num" style={{ ...th, ...num }}>Anzahl</th>
+                        <th scope="col" className="aw-num" style={{ ...th, ...num }}>Anteil</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -266,9 +273,11 @@ export default function Auswertung({ rows, allRows, periodText, onOpenLead }) {
                           style={{ borderTop: '1px solid var(--border)', background: kundenOpen || (hover && hover === segmentOf(item)) ? 'var(--accent-dim)' : 'transparent', transition: 'background 0.2s ease' }}
                         >
                           <td style={{ padding: '6px 0' }}>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '2px 10px', minWidth: 0, overflowWrap: 'anywhere' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, minHeight: 36, overflowWrap: 'anywhere' }}>
                               <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: '50%', flexShrink: 0, background: colorOf(item.key) }} />
-                              {item.logoOf && <InsurerLogo item={gesellschaftByName(item.logoOf) || { name: item.logoOf }} />}
+                              {item.logoOf
+                                ? <span className="aw-logo" style={{ display: 'flex', flexShrink: 0 }}><InsurerLogo item={gesellschaftByName(item.logoOf) || { name: item.logoOf }} /></span>
+                                : withLogos && <span aria-hidden="true" className="aw-logo" style={LOGO_SLOT} />}
                               {view === 'gesellschaften' ? (
                                 <button
                                   type="button" aria-expanded={kundenOpen} onClick={() => setKundenOf(kundenOpen ? null : item.key)} title="Kunden dieser Gesellschaft anzeigen"
@@ -278,14 +287,14 @@ export default function Auswertung({ rows, allRows, periodText, onOpenLead }) {
                                     font: 'inherit', fontWeight: kundenOpen ? 600 : 'inherit', color: 'inherit',
                                   }}
                                 >
-                                  <span style={{ textDecoration: 'underline', textDecorationColor: 'var(--border-strong)', textUnderlineOffset: 3 }}>{item.label}</span>
+                                  <span>{item.label}</span>
                                   <span style={{ display: 'flex', color: 'var(--text-muted)' }}><Chevron open={kundenOpen} /></span>
                                 </button>
-                              ) : <span style={{ padding: '6px 0' }}>{item.label}</span>}
+                              ) : <span style={{ padding: '6px 0', minWidth: 0 }}>{item.label}</span>}
                             </div>
                           </td>
-                          <td style={num}>{item.count}</td>
-                          <td style={num}>{percent(item.count, total)}</td>
+                          <td className="aw-num" style={num}>{item.count}</td>
+                          <td className="aw-num" style={num}>{percent(item.count, total)}</td>
                         </tr>
                         {view === 'gesellschaften' && (
                           <tr>

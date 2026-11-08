@@ -145,3 +145,11 @@ textarea::placeholder {
     text-align: center;
   }
 }
+
+/* CRM Auswertung: count and share right after the name; on phones narrower and without logos,
+   so names keep room. */
+.aw-num { width: 76px; padding-left: 20px; }
+@media (max-width: 560px) {
+  .aw-num { width: 50px; padding-left: 8px; }
+  .aw-logo { display: none !important; }
+}
