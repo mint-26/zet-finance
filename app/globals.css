@@ -153,3 +153,7 @@ textarea::placeholder {
   .aw-num { width: 50px; padding-left: 8px; }
   .aw-logo { display: none !important; }
 }
+
+/* CRM lead list: the whole summary row opens a lead. */
+.crm-lead-row { cursor: pointer; transition: background 0.2s ease; }
+.crm-lead-row:hover { background: var(--accent-dim); }

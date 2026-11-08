@@ -8,7 +8,7 @@ import Auswertung from '../../components/admin/Auswertung';
 import Dokumente from '../../components/admin/Dokumente';
 import Backup from '../../components/admin/Backup';
 import { selectLook, STATUS_OPTIONS } from '../../components/admin/ui';
-import { PeriodTabs, MonthTabs, MonthPanel, inPeriod, periodLabel, yearsOf, groupByMonth, leadDate, monthKeyOf } from '../../components/admin/Periods';
+import { PeriodTabs, MonthTabs, MonthPanel, inPeriod, periodLabel, yearsOf, groupByMonth, leadDate, monthKeyOf, Chevron } from '../../components/admin/Periods';
 import { GESELLSCHAFTEN } from '../../lib/gesellschaften';
 
 // Where a lead came from (column `quelle`). WhatsApp tests come from the bot preview.
@@ -604,8 +604,16 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
       overflow: 'hidden',
       scrollMarginTop: 16,
     }}>
-      {/* Summary row */}
-      <div style={{
+      {/* Summary row: a click anywhere opens or closes the details, except on its own controls
+          and while text is being selected (e.g. to copy a name). */}
+      <div
+        className="crm-lead-row"
+        onClick={(e) => {
+          if (e.target.closest('select, button, a, input, textarea, label')) return;
+          if (window.getSelection()?.toString()) return;
+          onToggle();
+        }}
+        style={{
         padding: '16px 20px',
         display: 'flex',
         flexWrap: 'wrap',
@@ -621,7 +629,8 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
           fontSize: 12,
           fontWeight: 600,
           whiteSpace: 'nowrap',
-          minWidth: 130,
+          width: 140,
+          flexShrink: 0,
           textAlign: 'center',
           boxSizing: 'border-box',
         }}>{statusOpt.label}</span>
@@ -645,11 +654,16 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
             ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
         </span>
-        <div style={{ flex: '1 1 160px', minWidth: 0 }}>
+        {/* Fixed name width: the details after it start at the same place in every row. */}
+        <div style={{ flex: '0 1 260px', minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-            <span style={{ fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {/* The name is the keyboard way to open the details; the mouse can click the whole row. */}
+            <button type="button" onClick={onToggle} aria-expanded={expanded} style={{
+              background: 'none', border: 0, padding: 0, cursor: 'pointer', minWidth: 0, textAlign: 'left',
+              font: 'inherit', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
               {s.name || '(Kein Name)'}
-            </span>
+            </button>
             {viaWhatsApp && <Tag color="#25a35a">{QUELLE_LABELS[s.quelle]}</Tag>}
             {isGespraech && <Tag color="#7D6D49">Gespräch</Tag>}
             {documentCount > 0 && (
@@ -684,7 +698,7 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
             </select>
           </div>
         </div>
-        <div style={{ fontSize: 12, color: 'var(--text-dim)', textAlign: 'right', whiteSpace: 'nowrap' }}>
+        <div style={{ fontSize: 12, color: 'var(--text-dim)', textAlign: 'left', whiteSpace: 'nowrap', width: 150, flexShrink: 0 }}>
           {closedAt || backAt ? (
             <>{closedAt ? `Abschluss ${shortDate(closedAt)}` : `Wieder aktiv ${shortDate(backAt)}`}<br />{createdAt ? `Anfrage ${shortDate(createdAt)}` : ''}</>
           ) : (
@@ -694,16 +708,7 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
             </>
           )}
         </div>
-        <button onClick={onToggle} style={{
-          background: 'transparent',
-          border: '1px solid var(--border)',
-          borderRadius: 8,
-          padding: '8px 14px',
-          color: 'var(--text-body)',
-          fontSize: 13,
-          cursor: 'pointer',
-          fontFamily: "'DM Sans', sans-serif",
-        }}>{expanded ? 'Schließen' : 'Details'}</button>
+        <span aria-hidden="true" style={{ display: 'flex', color: 'var(--text-muted)' }}><Chevron open={expanded} /></span>
       </div>
 
       {expanded && (
