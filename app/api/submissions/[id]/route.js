@@ -14,7 +14,17 @@ const ALLOWED_FIELDS = [
   'notizen',
   'alt_vertrag_gekuendigt',
   'kuendigungsbestaetigung_erhalten',
+  // Customer details Marco can correct by hand (CRM "Kundenangaben bearbeiten").
+  'name',
+  'email',
+  'telefon',
+  'anschrift',
+  'geburtsdatum',
+  'beruf',
+  'krankenkasse',
+  'anliegen',
 ];
+const TEXT_LIMITS = { name: 200, email: 200, telefon: 60, anschrift: 300, geburtsdatum: 20, beruf: 200, krankenkasse: 200, anliegen: 2000 };
 const ALLOWED_STATUS = ['offen', 'angebot_verschickt', 'abgelehnt', 'versichert', 'kein_interesse'];
 const ALLOWED_ABLEHNUNGSGRUND = ['mehr als 4 fehlende Zähne', 'Bonität'];
 const BOOLEAN_FIELDS = new Set([
@@ -62,6 +72,15 @@ export async function PATCH(request, { params }) {
 
   // "In aktuellen Monat holen" and its undo. The server sets the time.
   if ('wieder_aktiv' in body) update.wieder_aktiv_am = body.wieder_aktiv === true ? new Date().toISOString() : null;
+
+  for (const [key, limit] of Object.entries(TEXT_LIMITS)) {
+    if (!(key in update) || update[key] === null) continue;
+    if (typeof update[key] !== 'string') return NextResponse.json({ error: `Invalid value for ${key}` }, { status: 400 });
+    update[key] = update[key].trim().slice(0, limit) || null;
+  }
+  if ('name' in update && !update.name) {
+    return NextResponse.json({ error: 'Name must not be empty' }, { status: 400 });
+  }
 
   if (update.status && !ALLOWED_STATUS.includes(update.status)) {
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 });

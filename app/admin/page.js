@@ -156,15 +156,17 @@ function AdminContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
       });
-      if (!res.ok) { load(); return; }
+      if (!res.ok) { load(); return false; }
       // The server's dates count.
       const { ok, ...dates } = await res.json().catch(() => ({}));
       if (Object.keys(dates).length) {
         setSubmissions((prev) => prev.map((s) => s.id === id ? { ...s, ...dates } : s));
       }
+      return true;
     } catch {
       // On error, reload to sync state
       load();
+      return false;
     }
   };
 
@@ -679,32 +681,39 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
             )}
           </div>
         </div>
-        {/* Abgerechnet */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
-          <span style={{ fontSize: 11, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Abgerechnet</span>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <span style={{
-              width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
-              background: s.abgerechnet ? '#4a9e6a' : '#dc3c3c',
-            }} />
-            <select
-              value={s.abgerechnet ? 'true' : 'false'}
-              onChange={(e) => onUpdate('abgerechnet', e.target.value === 'true')}
-              aria-label="Abgerechnet"
-              style={{ ...inputStyle, ...selectLook, width: 'auto', height: 36, padding: '0 32px 0 10px', backgroundPosition: 'right 10px center' }}
-            >
-              <option value="false">Nein</option>
-              <option value="true">Ja</option>
-            </select>
-          </div>
-        </div>
-        <div style={{ fontSize: 12, color: 'var(--text-dim)', textAlign: 'left', whiteSpace: 'nowrap', width: 150, flexShrink: 0 }}>
+        {/* Abgerechnet: a pill in the style of the status, the whole pill is the dropdown. */}
+        <span style={{ position: 'relative', display: 'inline-flex', flexShrink: 0, width: 168 }}>
+          <span aria-hidden="true" style={{
+            position: 'absolute', left: 11, top: '50%', marginTop: -4, width: 8, height: 8, borderRadius: '50%',
+            background: s.abgerechnet ? '#4a9e6a' : '#dc3c3c', pointerEvents: 'none',
+          }} />
+          <select
+            value={s.abgerechnet ? 'true' : 'false'}
+            onChange={(e) => onUpdate('abgerechnet', e.target.value === 'true')}
+            aria-label="Abgerechnet"
+            style={{
+              ...selectLook, width: '100%', height: 30, padding: '0 28px 0 26px', borderRadius: 999,
+              backgroundPosition: 'right 10px center', backgroundSize: '12px', boxSizing: 'border-box',
+              border: `1px solid ${s.abgerechnet ? 'rgba(74,158,106,0.35)' : 'rgba(220,60,60,0.3)'}`,
+              backgroundColor: s.abgerechnet ? 'rgba(74,158,106,0.1)' : 'rgba(220,60,60,0.07)',
+              color: s.abgerechnet ? '#3d8a5a' : '#c23838',
+              fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", outline: 'none',
+            }}
+          >
+            <option value="false" style={{ background: 'var(--bg-card)', color: 'var(--text-body)' }}>Nicht abgerechnet</option>
+            <option value="true" style={{ background: 'var(--bg-card)', color: 'var(--text-body)' }}>Abgerechnet</option>
+          </select>
+        </span>
+        <div style={{ fontSize: 12, lineHeight: 1.45, textAlign: 'left', whiteSpace: 'nowrap', width: 150, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
           {closedAt || backAt ? (
-            <>{closedAt ? `Abschluss ${shortDate(closedAt)}` : `Wieder aktiv ${shortDate(backAt)}`}<br />{createdAt ? `Anfrage ${shortDate(createdAt)}` : ''}</>
-          ) : (
             <>
-              {createdAt ? shortDate(createdAt) : ''}<br />
-              {createdAt ? createdAt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : ''}
+              <span style={{ display: 'block', color: 'var(--text-body)' }}>{closedAt ? `Abschluss ${shortDate(closedAt)}` : `Wieder aktiv ${shortDate(backAt)}`}</span>
+              {createdAt && <span style={{ display: 'block', color: 'var(--text-dim)' }}>Anfrage {shortDate(createdAt)}</span>}
+            </>
+          ) : createdAt && (
+            <>
+              <span style={{ display: 'block', color: 'var(--text-body)' }}>Anfrage {shortDate(createdAt)}</span>
+              <span style={{ display: 'block', color: 'var(--text-dim)' }}>{createdAt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</span>
             </>
           )}
         </div>
@@ -814,33 +823,7 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
             <Dokumente submissionId={s.id} onChanged={onDocumentsChanged} />
           </div>
 
-          {/* Read-only fields */}
-          <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '14px 16px' }}>
-            {/* Empty answers are left out: older leads have many fields that no longer exist. */}
-            {fields.filter(([, value]) => value).map(([label, value, multi]) => {
-              const items = multi && typeof value === 'string' ? splitMulti(value) : null;
-              const isList = items && items.length > 1;
-              return (
-                <div key={label} style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: isList ? 6 : 2,
-                  ...(isList ? { gridColumn: '1 / -1' } : {}),
-                }}>
-                  <span style={{ fontSize: 11, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</span>
-                  {isList ? (
-                    <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      {items.map((item, i) => (
-                        <li key={i} style={{ fontSize: 14, color: 'var(--text-body)', lineHeight: 1.5 }}>{item}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <span style={{ fontSize: 14, color: 'var(--text-body)', wordBreak: 'break-word' }}>{value || '—'}</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <KundenAngaben s={s} fields={fields} isGespraech={isGespraech} onSave={onUpdateMany} />
 
           {/* Notification status */}
           <div style={{
@@ -961,9 +944,120 @@ const fieldLabel = { fontSize: 11, color: 'var(--text-dim)', textTransform: 'upp
 // Fields grow up to max and then stop, so they stay short on wide screens.
 const fieldBox = (min, max) => ({ display: 'flex', flexDirection: 'column', gap: 6, flex: `1 1 ${min}px`, maxWidth: max, minWidth: 0 });
 
-function EditableField({ label, min, max, children }) {
+// What Marco can correct by hand, e.g. a misspelt name. Answers to the questionnaire stay as
+// the customer gave them; only the contact details and free-text answers can be changed.
+const EDIT_FIELDS = [
+  { key: 'name', label: 'Name' },
+  { key: 'email', label: 'E-Mail', type: 'email' },
+  { key: 'telefon', label: 'Telefon', type: 'tel' },
+  { key: 'anschrift', label: 'Anschrift', wide: true },
+  { key: 'geburtsdatum', label: 'Geburtsdatum', type: 'date' },
+  { key: 'beruf', label: 'Beruf' },
+  { key: 'krankenkasse', label: 'Krankenkasse' },
+];
+const EDIT_FIELDS_GESPRAECH = [
+  { key: 'name', label: 'Name' },
+  { key: 'telefon', label: 'Telefon / WhatsApp', type: 'tel' },
+  { key: 'anliegen', label: 'Anliegen', wide: true, multiline: true },
+];
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function KundenAngaben({ s, fields, isGespraech, onSave }) {
+  const editable = isGespraech ? EDIT_FIELDS_GESPRAECH : EDIT_FIELDS;
+  const [draft, setDraft] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const editing = draft !== null;
+  const editedLabels = new Set(editable.map((f) => f.label).concat('Telefon / WhatsApp', 'Telefon'));
+
+  const start = () => {
+    setDraft(Object.fromEntries(editable.map((f) => [f.key, s[f.key] ?? ''])));
+    setError('');
+  };
+  const save = async () => {
+    const changes = {};
+    editable.forEach(({ key }) => {
+      const value = String(draft[key] ?? '').trim();
+      if (value !== String(s[key] ?? '').trim()) changes[key] = value || null;
+    });
+    if ('name' in changes && !changes.name) { setError('Der Name darf nicht leer sein.'); return; }
+    if (changes.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(changes.email)) { setError('Die E-Mail-Adresse sieht nicht vollständig aus.'); return; }
+    if (!Object.keys(changes).length) { setDraft(null); return; }
+    setSaving(true);
+    const ok = await onSave(changes);
+    setSaving(false);
+    if (ok) setDraft(null);
+    else setError('Speichern hat nicht geklappt, die alten Angaben sind wiederhergestellt. Bitte noch einmal versuchen.');
+  };
+
+  const shown = fields.filter(([label, value]) => value && !(editing && editedLabels.has(label)));
+
   return (
-    <label className={min ? 'crm-field' : undefined} style={min ? fieldBox(min, max) : { display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
+        <span style={{ ...fieldLabel, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)' }}>Kundenangaben</span>
+        {!editing && <button type="button" onClick={start} style={{ ...monthBtn, height: 36 }}>Bearbeiten</button>}
+      </div>
+
+      {editing && (
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '14px 16px' }}>
+            {editable.map((f) => {
+              const value = draft[f.key] ?? '';
+              const type = f.type === 'date' && value && !ISO_DATE.test(value) ? 'text' : (f.type || 'text');
+              const onChange = (e) => setDraft({ ...draft, [f.key]: e.target.value });
+              return (
+                <EditableField key={f.key} label={f.label} wide={f.wide}>
+                  {f.multiline
+                    ? <textarea value={value} onChange={onChange} rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+                    : <input type={type} value={value} onChange={onChange} onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setDraft(null); }} autoComplete="off" style={fieldStyle} />}
+                </EditableField>
+              );
+            })}
+          </div>
+          {error && <p role="alert" style={{ margin: '12px 0 0', fontSize: 13, color: '#dc3c3c' }}>{error}</p>}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
+            <button type="button" onClick={save} disabled={saving} style={{ ...monthBtn, background: 'var(--accent)', color: 'var(--bg-primary)', cursor: saving ? 'wait' : 'pointer' }}>
+              {saving ? 'Speichert …' : 'Speichern'}
+            </button>
+            <button type="button" onClick={() => setDraft(null)} disabled={saving} style={{ ...monthBtn, border: '1px solid var(--border)', color: 'var(--text-body)' }}>Abbrechen</button>
+          </div>
+        </div>
+      )}
+
+      {/* Empty answers are left out: older leads have many fields that no longer exist. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '14px 16px' }}>
+        {shown.map(([label, value, multi]) => {
+          const items = multi && typeof value === 'string' ? splitMulti(value) : null;
+          const isList = items && items.length > 1;
+          return (
+            <div key={label} style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: isList ? 6 : 2,
+              ...(isList ? { gridColumn: '1 / -1' } : {}),
+            }}>
+              <span style={fieldLabel}>{label}</span>
+              {isList ? (
+                <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {items.map((item, i) => (
+                    <li key={i} style={{ fontSize: 14, color: 'var(--text-body)', lineHeight: 1.5 }}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <span style={{ fontSize: 14, color: 'var(--text-body)', wordBreak: 'break-word' }}>{value || '—'}</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function EditableField({ label, min, max, wide, children }) {
+  return (
+    <label className={min ? 'crm-field' : undefined} style={min ? fieldBox(min, max) : { display: 'flex', flexDirection: 'column', gap: 6, ...(wide ? { gridColumn: '1 / -1' } : {}) }}>
       <span style={fieldLabel}>{label}</span>
       {children}
     </label>
