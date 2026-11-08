@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useTheme } from '../ThemeProvider';
 import SmoothHeight from '../SmoothHeight';
 import { InsurerLogo } from '../InsurerSelect';
@@ -97,17 +97,56 @@ const switchBtn = (active) => ({
   fontWeight: active ? 700 : 500, fontSize: 14, fontFamily: "'DM Sans', sans-serif",
 });
 
+const dateDe = (iso) => (iso ? new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
+
+// Everyone insured with one Gesellschaft, over all years and whatever period is chosen, newest
+// closing first. A name opens that customer in the list below.
+function KundenListe({ name, rows, onOpenLead }) {
+  const kunden = rows
+    .filter((r) => isAntrag(r) && r.gesellschaft === name)
+    .sort((a, b) => new Date(b.abgeschlossen_am || b.created_at) - new Date(a.abgeschlossen_am || a.created_at));
+  return (
+    <div style={{ padding: '4px 0 14px 20px' }}>
+      <p style={{ margin: '0 0 8px', fontSize: 12, color: 'var(--text-dim)' }}>
+        {kunden.length} {kunden.length === 1 ? 'Kunde' : 'Kunden'} bei {name} versichert, seit Beginn und unabhängig vom Zeitraum
+      </p>
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column' }}>
+        {kunden.map((k) => (
+          <li key={k.id} style={{
+            display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0 12px', padding: '6px 0',
+            borderTop: '1px dashed var(--border)', fontSize: 14,
+          }}>
+            <button
+              type="button" onClick={() => onOpenLead(k)} title="Kunden in der Liste öffnen"
+              style={{
+                background: 'none', border: 0, padding: '4px 0', cursor: 'pointer', textAlign: 'left', minWidth: 0,
+                font: 'inherit', fontWeight: 600, color: 'var(--text-primary)', overflowWrap: 'anywhere',
+                textDecoration: 'underline', textDecorationColor: 'var(--border-strong)', textUnderlineOffset: 3,
+              }}
+            >{k.name || 'Ohne Name'}</button>
+            {k.tarif && <span style={{ color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{k.tarif}</span>}
+            <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: 13, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+              {k.abgeschlossen_am ? `seit ${dateDe(k.abgeschlossen_am)}` : `Anfrage ${dateDe(k.created_at)}`}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 const th = { padding: '0 0 8px', fontSize: 11, fontWeight: 400, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.5 };
 const num = { textAlign: 'right', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums', paddingLeft: 12 };
 
 // Fold-out overview above the lead list: how the applications of the chosen period spread
 // over insurers and tariffs, as a ring plus a table with count and share.
-export default function Auswertung({ rows, allRows, periodText }) {
+export default function Auswertung({ rows, allRows, periodText, onOpenLead }) {
   const { theme } = useTheme();
   const [open, setOpen] = useState(false);
   const [view, setView] = useState('gesellschaften');
   const [scope, setScope] = useState('');
   const [hover, setHover] = useState(null);
+  const [kundenOf, setKundenOf] = useState(null);
 
   const mode = theme === 'dark' ? 'dark' : 'light';
   const antraege = rows.filter(isAntrag);
@@ -156,7 +195,7 @@ export default function Auswertung({ rows, allRows, periodText }) {
   const inData = summaryItems.map((i) => i.key);
   const scopeOptions = GESELLSCHAFTEN.map((g) => g.name).filter((n) => inData.includes(n) || n === scope);
 
-  const showTarife = (name) => { setScope(name); setView('tarife'); setHover(null); };
+  const switchView = (next) => { setView(next); setHover(null); setKundenOf(null); };
 
   return (
     <section style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, marginBottom: 24 }}>
@@ -181,9 +220,9 @@ export default function Auswertung({ rows, allRows, periodText }) {
           <div style={{ padding: '8px 20px 24px' }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, marginBottom: 24 }}>
               <div role="group" aria-label="Ansicht" style={{ display: 'inline-flex', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
-                <button type="button" aria-pressed={view === 'gesellschaften'} onClick={() => { setView('gesellschaften'); setHover(null); }} style={switchBtn(view === 'gesellschaften')}>Gesellschaften</button>
-                <button type="button" aria-pressed={view === 'tarife'} onClick={() => { setView('tarife'); setHover(null); }} style={switchBtn(view === 'tarife')}>Tarife</button>
-                <button type="button" aria-pressed={statusView} onClick={() => { setView('status'); setHover(null); }} style={switchBtn(statusView)}>Status</button>
+                <button type="button" aria-pressed={view === 'gesellschaften'} onClick={() => switchView('gesellschaften')} style={switchBtn(view === 'gesellschaften')}>Gesellschaften</button>
+                <button type="button" aria-pressed={view === 'tarife'} onClick={() => switchView('tarife')} style={switchBtn(view === 'tarife')}>Tarife</button>
+                <button type="button" aria-pressed={statusView} onClick={() => switchView('status')} style={switchBtn(statusView)}>Status</button>
               </div>
               {view === 'tarife' && (
                 <select
@@ -218,10 +257,13 @@ export default function Auswertung({ rows, allRows, periodText }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {items.map((item) => (
+                      {items.map((item) => {
+                        const kundenOpen = view === 'gesellschaften' && kundenOf === item.key;
+                        return (
+                        <Fragment key={item.key}>
                         <tr
-                          key={item.key} onMouseEnter={() => setHover(segmentOf(item))} onMouseLeave={() => setHover(null)}
-                          style={{ borderTop: '1px solid var(--border)', background: hover && hover === segmentOf(item) ? 'var(--accent-dim)' : 'transparent', transition: 'background 0.2s ease' }}
+                          onMouseEnter={() => setHover(segmentOf(item))} onMouseLeave={() => setHover(null)}
+                          style={{ borderTop: '1px solid var(--border)', background: kundenOpen || (hover && hover === segmentOf(item)) ? 'var(--accent-dim)' : 'transparent', transition: 'background 0.2s ease' }}
                         >
                           <td style={{ padding: '6px 0' }}>
                             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '2px 10px', minWidth: 0, overflowWrap: 'anywhere' }}>
@@ -229,19 +271,34 @@ export default function Auswertung({ rows, allRows, periodText }) {
                               {item.logoOf && <InsurerLogo item={gesellschaftByName(item.logoOf) || { name: item.logoOf }} />}
                               {view === 'gesellschaften' ? (
                                 <button
-                                  type="button" onClick={() => showTarife(item.key)} title="Tarife dieser Gesellschaft ansehen"
+                                  type="button" aria-expanded={kundenOpen} onClick={() => setKundenOf(kundenOpen ? null : item.key)} title="Kunden dieser Gesellschaft anzeigen"
                                   style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 6,
                                     background: 'none', border: 0, padding: '6px 0', cursor: 'pointer', textAlign: 'left', minWidth: 0,
-                                    font: 'inherit', color: 'inherit', textDecoration: 'underline', textDecorationColor: 'var(--border-strong)', textUnderlineOffset: 3,
+                                    font: 'inherit', fontWeight: kundenOpen ? 600 : 'inherit', color: 'inherit',
                                   }}
-                                >{item.label}</button>
+                                >
+                                  <span style={{ textDecoration: 'underline', textDecorationColor: 'var(--border-strong)', textUnderlineOffset: 3 }}>{item.label}</span>
+                                  <span style={{ display: 'flex', color: 'var(--text-muted)' }}><Chevron open={kundenOpen} /></span>
+                                </button>
                               ) : <span style={{ padding: '6px 0' }}>{item.label}</span>}
                             </div>
                           </td>
                           <td style={num}>{item.count}</td>
                           <td style={num}>{percent(item.count, total)}</td>
                         </tr>
-                      ))}
+                        {view === 'gesellschaften' && (
+                          <tr>
+                            <td colSpan={3} style={{ padding: 0 }}>
+                              <SmoothHeight duration={350}>
+                                {kundenOpen && <KundenListe name={item.key} rows={allRows} onOpenLead={onOpenLead} />}
+                              </SmoothHeight>
+                            </td>
+                          </tr>
+                        )}
+                        </Fragment>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

@@ -125,6 +125,15 @@ function AdminContent() {
     setFollowId(lead.id);
   };
 
+  // From the Auswertung: show one customer in the list, opened, whatever the filters were.
+  const openLead = (lead) => {
+    setSearch('');
+    setStatusFilter('alle');
+    setQuelleFilter('alle');
+    setExpandedId(lead.id);
+    followLead(lead);
+  };
+
   const updateFields = async (id, patch) => {
     // Optimistic update — patch one or multiple fields at once.
     const changes = { ...patch };
@@ -431,7 +440,7 @@ function AdminContent() {
 
         <PeriodTabs years={yearsOf(submissions)} value={period} onChange={changePeriod} />
 
-        <Auswertung rows={inSelectedPeriod} allRows={submissions} periodText={periodLabel(period)} />
+        <Auswertung rows={inSelectedPeriod} allRows={submissions} periodText={periodLabel(period)} onOpenLead={openLead} />
 
         {/* Filters */}
         <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
