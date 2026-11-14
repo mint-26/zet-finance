@@ -14,7 +14,7 @@ import Auswertung from '../../components/admin/Auswertung';
 import Dokumente from '../../components/admin/Dokumente';
 import Backup from '../../components/admin/Backup';
 import { selectLook, STATUS_OPTIONS, pillColors } from '../../components/admin/ui';
-import { PeriodTabs, MonthTabs, MonthPanel, MonthSummary, inPeriod, periodLabel, yearsOf, groupByMonth, leadDate, monthKeyOf, Chevron } from '../../components/admin/Periods';
+import { PeriodTabs, MonthTabs, MonthPanel, inPeriod, periodLabel, yearsOf, groupByMonth, leadDate, monthKeyOf, Chevron } from '../../components/admin/Periods';
 import { GESELLSCHAFTEN } from '../../lib/gesellschaften';
 
 // Where a lead came from (column `quelle`). WhatsApp tests come from the bot preview.
@@ -448,7 +448,7 @@ function AdminContent() {
 
         {/* Search first: it looks through all years, so it sits above the period bar. */}
         <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'stretch' }}>
-          <label style={{ position: 'relative', flex: '1 1 320px', minWidth: 0, display: 'flex' }}>
+          <label style={{ position: 'relative', flex: '0 1 520px', minWidth: 240, display: 'flex' }}>
             <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: 18, top: '50%', marginTop: -10, color: 'var(--text-muted)', pointerEvents: 'none' }}><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
             <input
               type="search"
@@ -457,7 +457,7 @@ function AdminContent() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{
-                width: '100%', height: 56, padding: '0 18px 0 50px',
+                width: '100%', height: 56, padding: '0 18px 0 50px', appearance: 'none', WebkitAppearance: 'none',
                 background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 12,
                 color: 'var(--text-primary)', fontSize: 16, fontFamily: "'DM Sans', sans-serif",
                 outline: 'none', boxSizing: 'border-box',
@@ -510,7 +510,6 @@ function AdminContent() {
             <>
               <MonthTabs months={months} activeKey={activeMonth?.key} onToggle={toggleMonth} />
               <MonthPanel monthKey={activeMonth?.key}>
-                {activeMonth && <MonthSummary month={activeMonth} />}
                 {activeMonth && leadCards(activeMonth.rows)}
               </MonthPanel>
             </>
@@ -522,6 +521,11 @@ function AdminContent() {
         .crm-month { animation: crmMonthIn 0.3s ease; }
         @keyframes crmMonthIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
         @media (prefers-reduced-motion: reduce) { .crm-month { animation: none; } .crm-tile, .crm-tile * { transition: none !important; } }
+        .crm-months { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 6px; }
+        .crm-status-box { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+        @media (max-width: 560px) { .crm-status-box { flex-direction: column; align-items: flex-start; gap: 5px; } }
+        @media (max-width: 900px) { .crm-months { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+        @media (max-width: 560px) { .crm-months { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
         .crm-controls { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px 12px; margin-bottom: 20px; }
         .crm-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px 24px; align-items: start; }
         main select:focus, main input:focus, main textarea:focus, main button[aria-haspopup]:focus {
@@ -1147,13 +1151,37 @@ function InfoField({ label, value, note, muted, min, max }) {
   );
 }
 
+// For insured customers the premium of the contract counts: Marco's own figure from his former
+// list (monatsbeitrag) if there is one, otherwise the one saved at closing (beitrag_abschluss).
+// Customers without a contract see today's premium.
 function BeitragFelder({ s }) {
   const r = berechneBeitrag({ gesellschaft: s.gesellschaft, tarif: s.tarif, geburtsdatum: s.geburtsdatum, fehlendeZaehne: s.fehlende_zaehne });
+  const vertrag = s.status === 'versichert' ? (s.monatsbeitrag ?? s.beitrag_abschluss) : null;
+  const erhoehung = r.ok && r.naechste;
+  const ab = erhoehung && r.naechste.ab.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const erhoehungFeld = r.ok ? (
+    <InfoField
+      label="Altersbedingte Erhöhung"
+      value={erhoehung ? `${r.naechste.mehr > 0 ? '+' : '−'} ${euro(Math.abs(r.naechste.mehr))} ab ${ab}` : 'Keine weitere Altersstufe'}
+      note={erhoehung ? `${r.naechste.mehr > 0 ? 'Dann' : 'Senkung auf'} ${euro(r.naechste.beitrag)} mtl., Altersstufe ab ${r.naechste.abAlter}` : null}
+      muted={!erhoehung} min={190} max={230}
+    />
+  ) : <InfoField label="Altersbedingte Erhöhung" value="—" muted min={190} max={230} />;
+  if (vertrag != null) {
+    const quelle = s.monatsbeitrag != null ? 'aus der bisherigen Liste' : 'bei Abschluss gespeichert';
+    const heute = r.ok && r.beitrag !== Number(vertrag) ? `, heute ${euro(r.beitrag)}` : '';
+    return (
+      <>
+        <InfoField label="Beitrag" value={`${euro(Number(vertrag))} mtl.`} note={`Vertrag, ${quelle}${heute}`} min={200} max={260} />
+        {erhoehungFeld}
+      </>
+    );
+  }
   if (!r.ok) {
     return (
       <>
         <InfoField label="Beitrag" value={r.grund} muted min={200} max={260} />
-        <InfoField label="Altersbedingte Erhöhung" value="—" muted min={190} max={230} />
+        {erhoehungFeld}
       </>
     );
   }
@@ -1163,17 +1191,10 @@ function BeitragFelder({ s }) {
     r.zuschlag > 0 && `inkl. ${euro(r.zuschlag)} Zuschlag, ${zahnText}`,
     r.ohneZuschlagstabelle && `${zahnText}, Zuschlag nicht beziffert`,
   ].filter(Boolean).join(', ');
-  const n = r.naechste;
-  const ab = n && n.ab.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
   return (
     <>
       <InfoField label="Beitrag" value={`${euro(r.beitrag)} mtl.`} note={note} min={200} max={260} />
-      <InfoField
-        label="Altersbedingte Erhöhung"
-        value={n ? `${n.mehr > 0 ? '+' : '−'} ${euro(Math.abs(n.mehr))} ab ${ab}` : 'Keine weitere Altersstufe'}
-        note={n ? `${n.mehr > 0 ? 'Dann' : 'Senkung auf'} ${euro(n.beitrag)} mtl., Altersstufe ab ${n.abAlter}` : null}
-        muted={!n} min={190} max={230}
-      />
+      {erhoehungFeld}
     </>
   );
 }

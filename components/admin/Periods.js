@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import SmoothHeight from '../SmoothHeight';
 import { STATUS_OPTIONS } from './ui';
 
@@ -78,7 +79,7 @@ export function PeriodTabs({ years, value, onChange }) {
   return (
     <div style={{ marginBottom: 16 }}>
       <div role="group" aria-label="Zeitraum" style={{
-        display: 'flex', overflowX: 'auto', scrollbarWidth: 'none', background: 'var(--bg-card)',
+        display: 'inline-flex', maxWidth: '100%', overflowX: 'auto', scrollbarWidth: 'none', background: 'var(--bg-card)',
         border: '1px solid var(--border)', borderRadius: 10,
       }}>
         {tabs.map((tab, i) => {
@@ -88,7 +89,7 @@ export function PeriodTabs({ years, value, onChange }) {
               key={tab.id} type="button" aria-pressed={active}
               onClick={() => onChange({ ...value, period: tab.id })}
               style={{
-                flex: '1 0 auto', minWidth: 64, minHeight: 48, padding: '0 12px', cursor: 'pointer',
+                flex: '0 0 auto', minWidth: 72, minHeight: 44, padding: '0 20px', cursor: 'pointer',
                 background: active ? 'var(--accent)' : 'transparent', border: 0,
                 borderLeft: i === 0 ? 0 : '1px solid var(--border)',
                 color: active ? 'var(--bg-primary)' : 'var(--text-body)',
@@ -125,66 +126,152 @@ export function Chevron({ open }) {
   );
 }
 
-// Months side by side as switches, newest first, all the same height: month, year, number of
-// leads and, if any, how many are open, so a new enquiry cannot go unnoticed in another month.
-// The chosen month's status counts sit above its list (MonthSummary), not in the tile, so the
-// tiles never grow and the rows stay even. Tiles wrap instead of scrolling, so no month is hidden.
+const MONTH_NAMES = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+const useIsoLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
+
+// One row per year with all twelve months, January to December, like a calendar strip; months
+// without leads stay faint and cannot be chosen. Newest year on top. Each tile: month, number of
+// leads and, if any, how many are open, so a new enquiry cannot go unnoticed. The chosen month's
+// status counts hang right below its tile (StatusPopover). Narrow screens: rows of six or four.
 export function MonthTabs({ months, activeKey, onToggle }) {
+  const byKey = new Map(months.map((m) => [m.key, m]));
+  const years = [...new Set(months.filter((m) => m.key !== 'ohne-datum').map((m) => m.key.slice(0, 4)))].sort().reverse();
+  const undated = byKey.get('ohne-datum');
   return (
-    <div role="group" aria-label="Monat" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
-      {months.map((month) => {
-        const active = month.key === activeKey;
-        const count = month.rows.length;
-        const offen = month.rows.filter((r) => (r.status || 'offen') === 'offen').length;
-        return (
-          <button
-            key={month.key} type="button" className="crm-tile" aria-expanded={active} onClick={() => onToggle(month.key)}
-            style={{
-              padding: 12, borderRadius: 10, cursor: 'pointer', textAlign: 'left',
-              display: 'flex', flexDirection: 'column', gap: 2, fontFamily: "'DM Sans', sans-serif",
-              background: active ? 'var(--accent)' : 'var(--bg-card)',
-              border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-              color: active ? 'var(--bg-primary)' : 'var(--text-primary)',
-              transition: 'background 0.2s ease, color 0.2s ease, border-color 0.2s ease',
-            }}
-          >
-            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-              <span style={{ fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{month.short}</span>
-              <span style={{ display: 'flex', opacity: active ? 0.85 : 0.5, transform: active ? 'rotate(90deg)' : 'none', transition: 'transform 0.25s ease' }}><Chevron open={false} /></span>
-            </span>
-            <span style={{ fontSize: 13, whiteSpace: 'nowrap' }}>
-              <span style={{ opacity: active ? 0.85 : 0.65 }}>{count} {count === 1 ? 'Lead' : 'Leads'}</span>
-              {offen > 0 && <span style={{ fontWeight: 700 }}> · {offen} offen</span>}
-            </span>
-          </button>
-        );
-      })}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {years.map((year) => (
+        <YearRow key={year} year={year} showYear={years.length > 1} byKey={byKey} activeKey={activeKey} onToggle={onToggle} />
+      ))}
+      {undated && <YearRow year="ohne-datum" showYear byKey={byKey} activeKey={activeKey} onToggle={onToggle} />}
     </div>
   );
 }
 
-// Status counts of the chosen month, as a calm row above its leads.
-export function MonthSummary({ month }) {
+function YearRow({ year, showYear, byKey, activeKey, onToggle }) {
+  const undated = year === 'ohne-datum';
+  const keys = undated ? ['ohne-datum'] : MONTH_NAMES.map((_, i) => `${year}-${String(i + 1).padStart(2, '0')}`);
+  const activeIndex = keys.indexOf(activeKey);
+  const active = activeIndex >= 0 ? byKey.get(activeKey) : null;
+  const rowRef = useRef(null);
+  const [cols, setCols] = useState(12);
+  const [center, setCenter] = useState(null);
+
+  // Columns per row (12, 6 or 4, see .crm-months) and the chosen tile's centre, for the status box.
+  useIsoLayoutEffect(() => {
+    const row = rowRef.current;
+    if (!row) return undefined;
+    const measure = () => {
+      setCols(getComputedStyle(row).gridTemplateColumns.split(' ').filter(Boolean).length || 12);
+      const tile = activeIndex >= 0 ? row.querySelector(`[data-index="${activeIndex}"]`) : null;
+      setCenter(tile ? Math.round(tile.getBoundingClientRect().left - row.getBoundingClientRect().left + tile.offsetWidth / 2) : null);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(row);
+    return () => ro.disconnect();
+  }, [activeIndex]);
+
+  // The status box takes the full width right after the last tile in the chosen month's row.
+  const insertAfter = activeIndex >= 0 ? Math.min(keys.length - 1, Math.floor(activeIndex / cols) * cols + cols - 1) : -1;
+
   return (
-    <div style={{
-      display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 18px', padding: '12px 16px',
-      background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, fontFamily: "'DM Sans', sans-serif",
-    }}>
-      <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginRight: 4 }}>{month.label}</span>
-      {STATUS_OPTIONS.map((option) => {
-        const amount = month.rows.filter((r) => (r.status || 'offen') === option.value).length;
-        return (
-          <span key={option.value} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, whiteSpace: 'nowrap',
-            color: amount > 0 ? 'var(--text-body)' : 'var(--text-dim)',
-            fontWeight: option.value === 'offen' && amount > 0 ? 700 : 400,
-          }}>
-            <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: '50%', background: option.color, opacity: amount > 0 ? 1 : 0.45 }} />
-            {option.label}
-            <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{amount}</span>
-          </span>
-        );
-      })}
+    <div>
+      {showYear && <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6, fontVariantNumeric: 'tabular-nums' }}>{undated ? 'Ohne Datum' : year}</div>}
+      <div ref={rowRef} role="group" aria-label={undated ? 'Ohne Datum' : `Monate ${year}`} className="crm-months">
+        {keys.flatMap((key, i) => {
+          const month = byKey.get(key);
+          const isActive = key === activeKey;
+          const count = month?.rows.length || 0;
+          const offen = month ? month.rows.filter((r) => (r.status || 'offen') === 'offen').length : 0;
+          const tile = (
+            <button
+              key={key} type="button" className="crm-tile" data-index={i} disabled={!month}
+              aria-expanded={month ? isActive : undefined} onClick={() => onToggle(key)}
+              aria-label={month ? `${month.label}: ${count} ${count === 1 ? 'Lead' : 'Leads'}${offen ? `, ${offen} offen` : ''}` : undefined}
+              style={{
+                minWidth: 0, padding: '9px 10px', borderRadius: 10, textAlign: 'left',
+                display: 'flex', flexDirection: 'column', gap: 1, fontFamily: "'DM Sans', sans-serif",
+                cursor: month ? 'pointer' : 'default', opacity: month ? 1 : 0.4,
+                background: isActive ? 'var(--accent)' : month ? 'var(--bg-card)' : 'transparent',
+                border: `1px solid ${isActive ? 'var(--accent)' : 'var(--border)'}`,
+                borderStyle: month ? 'solid' : 'dashed',
+                color: isActive ? 'var(--bg-primary)' : 'var(--text-primary)',
+                transition: 'background 0.2s ease, color 0.2s ease, border-color 0.2s ease',
+              }}
+            >
+              <span style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>{undated ? 'Ohne Datum' : MONTH_NAMES[i]}</span>
+              <span style={{ fontSize: 12, whiteSpace: 'nowrap', opacity: isActive ? 0.85 : 0.65, fontVariantNumeric: 'tabular-nums' }}>
+                {month ? `${count} ${count === 1 ? 'Lead' : 'Leads'}` : '–'}
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap', minHeight: 15, fontVariantNumeric: 'tabular-nums' }}>
+                {offen > 0 ? `${offen} offen` : ''}
+              </span>
+            </button>
+          );
+          return i === insertAfter && active ? [tile, <StatusPopover key="status" month={active} center={center} />] : [tile];
+        })}
+      </div>
+    </div>
+  );
+}
+
+const GAP = 12; // space between the tiles and the status box
+const GRID_GAP = 6; // row gap of .crm-months, the line starts at the tile's lower edge
+
+// Status counts of the chosen month: always on the left, right below the row of the chosen month.
+// A small arrow points up at the month when it sits above the box; a month further right is
+// reached by a thin line from the box with an arrow up to the month. On phones the counts stack.
+function StatusPopover({ month, center }) {
+  const boxRef = useRef(null);
+  const [box, setBox] = useState(null);
+
+  useIsoLayoutEffect(() => {
+    const el = boxRef.current;
+    if (!el) return undefined;
+    const measure = () => setBox((prev) => (prev && prev.w === el.offsetWidth && prev.h === el.offsetHeight ? prev : { w: el.offsetWidth, h: el.offsetHeight }));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [month.key]);
+
+  const above = box && center != null && center <= box.w - 18;
+  const elbow = box && center != null && !above;
+  const midY = GRID_GAP + GAP + (box ? box.h / 2 : 0);
+
+  return (
+    <div key={month.key} className="crm-month" style={{ gridColumn: '1 / -1', position: 'relative', paddingTop: GAP }}>
+      <div ref={boxRef} className="crm-status-box" style={{
+        position: 'relative', width: 'max-content', maxWidth: '100%', boxSizing: 'border-box', padding: '8px 14px',
+        background: 'var(--bg-card)', border: '1px solid var(--accent)', borderRadius: 10, fontFamily: "'DM Sans', sans-serif",
+      }}>
+        {above && (
+          <span aria-hidden="true" style={{
+            position: 'absolute', top: -6, left: center - 5, width: 10, height: 10, transform: 'rotate(45deg)',
+            background: 'var(--bg-card)', borderLeft: '1px solid var(--accent)', borderTop: '1px solid var(--accent)',
+          }} />
+        )}
+        {STATUS_OPTIONS.map((option) => {
+          const amount = month.rows.filter((r) => (r.status || 'offen') === option.value).length;
+          return (
+            <span key={option.value} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, whiteSpace: 'nowrap',
+              color: amount > 0 ? 'var(--text-body)' : 'var(--text-dim)',
+              fontWeight: option.value === 'offen' && amount > 0 ? 700 : 400,
+            }}>
+              <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: '50%', background: option.color, opacity: amount > 0 ? 1 : 0.45 }} />
+              {option.label}
+              <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{amount}</span>
+            </span>
+          );
+        })}
+      </div>
+      {elbow && (
+        <svg aria-hidden="true" width={center + 6} height={midY} style={{ position: 'absolute', top: -GRID_GAP, left: 0, overflow: 'visible', pointerEvents: 'none' }}>
+          <path d={`M ${box.w} ${midY} H ${center} V 3`} fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinejoin="round" />
+          <path d={`M ${center - 4} 7 L ${center} 1 L ${center + 4} 7`} fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
     </div>
   );
 }

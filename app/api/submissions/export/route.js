@@ -23,6 +23,8 @@ function boolLabel(v) {
   return null;
 }
 
+const toNumber = (v) => (v == null || v === '' || Number.isNaN(Number(v)) ? null : Number(v));
+
 export async function GET() {
   if (!isAuthenticated()) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -50,6 +52,7 @@ export async function GET() {
     { header: 'Ablehnungsgrund', key: 'ablehnungsgrund', width: 24 },
     { header: 'Provision', key: 'provision', width: 12 },
     { header: 'Monatsbeitrag', key: 'monatsbeitrag', width: 14 },
+    { header: 'Beitrag bei Abschluss (berechnet)', key: 'beitrag_abschluss', width: 30 },
     { header: 'Gesellschaft', key: 'gesellschaft', width: 18 },
     { header: 'Tarif', key: 'tarif', width: 18 },
     { header: 'Abgeschlossen am', key: 'abgeschlossen_am', width: 16 },
@@ -101,8 +104,10 @@ export async function GET() {
       status: STATUS_LABELS[row.status] || row.status,
       abgerechnet: boolLabel(row.abgerechnet),
       ablehnungsgrund: row.ablehnungsgrund,
-      provision: row.provision,
-      monatsbeitrag: row.monatsbeitrag,
+      // Amounts come from the database as text; as numbers Excel can add them up.
+      provision: toNumber(row.provision),
+      monatsbeitrag: toNumber(row.monatsbeitrag),
+      beitrag_abschluss: toNumber(row.beitrag_abschluss),
       gesellschaft: row.gesellschaft,
       tarif: row.tarif,
       abgeschlossen_am: row.abgeschlossen_am ? new Date(row.abgeschlossen_am) : null,

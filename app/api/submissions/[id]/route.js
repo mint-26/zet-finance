@@ -3,6 +3,10 @@ import { getSupabaseAdmin } from '../../../../lib/supabase';
 import { isAuthenticated } from '../../../../lib/auth';
 import { DOKUMENTE_BUCKET } from '../../../../lib/dokumente';
 import { ANTWORT_FELDER, splitMulti } from '../../../../lib/fragebogen';
+import { berechneBeitrag } from '../../../../lib/tarife';
+
+// Fields the premium at closing depends on (lib/tarife.js).
+const BEITRAG_FELDER = ['status', 'gesellschaft', 'tarif', 'geburtsdatum', 'fehlende_zaehne'];
 
 export const dynamic = 'force-dynamic';
 
@@ -121,13 +125,35 @@ export async function PATCH(request, { params }) {
 
   const supabase = getSupabaseAdmin();
 
-  // The closing date follows the status: it moves the lead to the top of that month in the CRM.
-  if (update.status) {
-    const { data: current } = await supabase.from('zahnzusatz_submissions').select('status').eq('id', id).maybeSingle();
-    const wasClosed = current?.status === 'versichert';
-    const isClosed = update.status === 'versichert';
-    if (isClosed && !wasClosed) update.abgeschlossen_am = new Date().toISOString();
-    if (!isClosed && wasClosed) update.abgeschlossen_am = null;
+  if (BEITRAG_FELDER.some((key) => key in update)) {
+    const { data: current } = await supabase
+      .from('zahnzusatz_submissions')
+      .select('status, gesellschaft, tarif, geburtsdatum, fehlende_zaehne, abgeschlossen_am, created_at')
+      .eq('id', id)
+      .maybeSingle();
+
+    // The closing date follows the status: it moves the lead to the top of that month in the CRM.
+    if (update.status) {
+      const wasClosed = current?.status === 'versichert';
+      const isClosed = update.status === 'versichert';
+      if (isClosed && !wasClosed) update.abgeschlossen_am = new Date().toISOString();
+      if (!isClosed && wasClosed) update.abgeschlossen_am = null;
+    }
+
+    // Premium at closing, kept for the commission: the customer's age in the year of closing,
+    // with the surcharge for missing teeth. It follows tariff and answers while the customer is
+    // insured, and is cleared when the status is taken back. Later price changes in
+    // lib/tarife.js do not touch it.
+    const merged = { ...(current || {}), ...update };
+    if (merged.status === 'versichert') {
+      const stichtag = new Date(merged.abgeschlossen_am || merged.created_at || Date.now());
+      const beitrag = berechneBeitrag({
+        gesellschaft: merged.gesellschaft, tarif: merged.tarif, geburtsdatum: merged.geburtsdatum, fehlendeZaehne: merged.fehlende_zaehne,
+      }, stichtag);
+      update.beitrag_abschluss = beitrag.ok ? beitrag.beitrag : null;
+    } else if (current?.status === 'versichert') {
+      update.beitrag_abschluss = null;
+    }
   }
 
   const { error } = await supabase
@@ -140,7 +166,7 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: 'Failed to update submission' }, { status: 500 });
   }
 
-  const dates = Object.fromEntries(['abgeschlossen_am', 'wieder_aktiv_am'].filter((k) => k in update).map((k) => [k, update[k]]));
+  const dates = Object.fromEntries(['abgeschlossen_am', 'wieder_aktiv_am', 'beitrag_abschluss'].filter((k) => k in update).map((k) => [k, update[k]]));
   return NextResponse.json({ ok: true, ...dates });
 }
 
