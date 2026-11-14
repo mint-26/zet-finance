@@ -125,15 +125,13 @@ export function Chevron({ open }) {
   );
 }
 
-const TILE_EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
-
-// Months side by side as switches, newest first. Closed, a tile shows month, year and number of
-// leads; open leads stay visible as a label, so a new enquiry cannot go unnoticed in another month.
-// The chosen month's tile unfolds to show every status with its count, while its leads open below.
-// Tiles wrap instead of scrolling, so no month is hidden.
+// Months side by side as switches, newest first, all the same height: month, year, number of
+// leads and, if any, how many are open, so a new enquiry cannot go unnoticed in another month.
+// The chosen month's status counts sit above its list (MonthSummary), not in the tile, so the
+// tiles never grow and the rows stay even. Tiles wrap instead of scrolling, so no month is hidden.
 export function MonthTabs({ months, activeKey, onToggle }) {
   return (
-    <div role="group" aria-label="Monat" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(158px, 1fr))', gap: 8, alignItems: 'start' }}>
+    <div role="group" aria-label="Monat" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
       {months.map((month) => {
         const active = month.key === activeKey;
         const count = month.rows.length;
@@ -152,45 +150,39 @@ export function MonthTabs({ months, activeKey, onToggle }) {
           >
             <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               <span style={{ fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{month.short}</span>
-              <span style={{ display: 'flex', opacity: active ? 0.85 : 0.5 }}><Chevron open={active} /></span>
+              <span style={{ display: 'flex', opacity: active ? 0.85 : 0.5, transform: active ? 'rotate(90deg)' : 'none', transition: 'transform 0.25s ease' }}><Chevron open={false} /></span>
             </span>
             <span style={{ fontSize: 13, whiteSpace: 'nowrap' }}>
               <span style={{ opacity: active ? 0.85 : 0.65 }}>{count} {count === 1 ? 'Lead' : 'Leads'}</span>
-              {offen > 0 && <span style={{ fontWeight: 700, opacity: active ? 0 : 1, transition: 'opacity 0.2s ease' }}> · {offen} offen</span>}
-            </span>
-            <span aria-hidden={!active} style={{
-              display: 'grid', gridTemplateRows: active ? '1fr' : '0fr', transition: `grid-template-rows 0.45s ${TILE_EASE}`,
-            }}>
-              <span style={{ display: 'block', minHeight: 0, overflow: 'hidden', margin: '0 -2px', padding: '0 2px' }}>
-                <span style={{
-                  display: 'flex', flexDirection: 'column', gap: 3, marginTop: 8, paddingTop: 8,
-                  borderTop: `1px solid ${active ? 'currentColor' : 'var(--border)'}`,
-                }}>
-                  {STATUS_OPTIONS.map((option, i) => {
-                    const amount = month.rows.filter((r) => (r.status || 'offen') === option.value).length;
-                    const shown = amount > 0 ? 1 : 0.78;
-                    return (
-                      <span key={option.value} style={{
-                        display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, lineHeight: 1.35,
-                        fontWeight: option.value === 'offen' && amount > 0 ? 700 : 400,
-                        opacity: active ? shown : 0, transform: active ? 'none' : 'translateY(-4px)',
-                        transition: active
-                          ? `opacity 0.35s ease ${0.06 + i * 0.04}s, transform 0.45s ${TILE_EASE} ${0.06 + i * 0.04}s`
-                          : 'opacity 0.12s ease, transform 0.12s ease',
-                      }}>
-                        <span aria-hidden="true" style={{
-                          width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: option.color,
-                          boxShadow: '0 0 0 1px var(--bg-primary)',
-                        }} />
-                        <span style={{ flex: 1, minWidth: 0, whiteSpace: 'nowrap' }}>{option.label}</span>
-                        <span style={{ fontVariantNumeric: 'tabular-nums' }}>{amount}</span>
-                      </span>
-                    );
-                  })}
-                </span>
-              </span>
+              {offen > 0 && <span style={{ fontWeight: 700 }}> · {offen} offen</span>}
             </span>
           </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// Status counts of the chosen month, as a calm row above its leads.
+export function MonthSummary({ month }) {
+  return (
+    <div style={{
+      display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 18px', padding: '12px 16px',
+      background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, fontFamily: "'DM Sans', sans-serif",
+    }}>
+      <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginRight: 4 }}>{month.label}</span>
+      {STATUS_OPTIONS.map((option) => {
+        const amount = month.rows.filter((r) => (r.status || 'offen') === option.value).length;
+        return (
+          <span key={option.value} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, whiteSpace: 'nowrap',
+            color: amount > 0 ? 'var(--text-body)' : 'var(--text-dim)',
+            fontWeight: option.value === 'offen' && amount > 0 ? 700 : 400,
+          }}>
+            <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: '50%', background: option.color, opacity: amount > 0 ? 1 : 0.45 }} />
+            {option.label}
+            <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{amount}</span>
+          </span>
         );
       })}
     </div>

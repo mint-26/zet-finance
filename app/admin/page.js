@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ThemeProvider, useTheme } from '../../components/ThemeProvider';
 import { formatBirthdate } from '../../lib/format';
+import { istFokus, fokusTarife, berechneBeitrag, euro } from '../../lib/tarife';
 import { GKV, PKV } from '../../lib/insurers';
 import {
   KV, KV_BY_VALUE, ERWERBSSTATUS, KONTAKTWEG, JA_NEIN, BEHANDLUNG, FEHLENDE_ZAEHNE, PARODONTOSE, SCHWERPUNKT,
@@ -13,7 +14,7 @@ import Auswertung from '../../components/admin/Auswertung';
 import Dokumente from '../../components/admin/Dokumente';
 import Backup from '../../components/admin/Backup';
 import { selectLook, STATUS_OPTIONS, pillColors } from '../../components/admin/ui';
-import { PeriodTabs, MonthTabs, MonthPanel, inPeriod, periodLabel, yearsOf, groupByMonth, leadDate, monthKeyOf, Chevron } from '../../components/admin/Periods';
+import { PeriodTabs, MonthTabs, MonthPanel, MonthSummary, inPeriod, periodLabel, yearsOf, groupByMonth, leadDate, monthKeyOf, Chevron } from '../../components/admin/Periods';
 import { GESELLSCHAFTEN } from '../../lib/gesellschaften';
 
 // Where a lead came from (column `quelle`). WhatsApp tests come from the bot preview.
@@ -445,63 +446,40 @@ function AdminContent() {
           </div>
         </div>
 
+        {/* Search first: it looks through all years, so it sits above the period bar. */}
+        <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'stretch' }}>
+          <label style={{ position: 'relative', flex: '1 1 320px', minWidth: 0, display: 'flex' }}>
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: 18, top: '50%', marginTop: -10, color: 'var(--text-muted)', pointerEvents: 'none' }}><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+            <input
+              type="search"
+              aria-label="Kunden suchen"
+              placeholder="Kunden suchen: Name, E-Mail oder Telefon"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                width: '100%', height: 56, padding: '0 18px 0 50px',
+                background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: 12,
+                color: 'var(--text-primary)', fontSize: 16, fontFamily: "'DM Sans', sans-serif",
+                outline: 'none', boxSizing: 'border-box',
+              }}
+            />
+          </label>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} aria-label="Status" style={filterSelect}>
+            <option value="alle" style={optionStyle}>Alle Status</option>
+            {STATUS_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value} style={optionStyle}>{o.label}</option>
+            ))}
+          </select>
+          <select value={quelleFilter} onChange={(e) => setQuelleFilter(e.target.value)} aria-label="Quelle" style={filterSelect}>
+            <option value="alle" style={optionStyle}>Alle Quellen</option>
+            <option value="web" style={optionStyle}>Website</option>
+            <option value="whatsapp" style={optionStyle}>WhatsApp</option>
+          </select>
+        </div>
+
         <PeriodTabs years={yearsOf(submissions)} value={period} onChange={changePeriod} />
 
         <Auswertung rows={inSelectedPeriod} allRows={submissions} periodText={periodLabel(period)} onOpenLead={openLead} />
-
-        {/* Filters */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
-          <input
-            type="text"
-            placeholder="Suche (Name, E-Mail, Telefon)"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{
-              flex: 1,
-              minWidth: 200,
-              padding: '10px 16px',
-              background: 'var(--input-bg)',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              color: 'var(--text-body)',
-              fontSize: 14,
-              fontFamily: "'DM Sans', sans-serif",
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
-          />
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{
-            padding: '10px 16px',
-            background: 'var(--input-bg)',
-            border: '1px solid var(--border)',
-            borderRadius: 8,
-            color: 'var(--text-body)',
-            fontSize: 14,
-            fontFamily: "'DM Sans', sans-serif",
-            outline: 'none',
-            ...selectLook,
-          }}>
-            <option value="alle">Alle Status</option>
-            {STATUS_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-          <select value={quelleFilter} onChange={(e) => setQuelleFilter(e.target.value)} aria-label="Quelle" style={{
-            padding: '10px 16px',
-            background: 'var(--input-bg)',
-            border: '1px solid var(--border)',
-            borderRadius: 8,
-            color: 'var(--text-body)',
-            fontSize: 14,
-            fontFamily: "'DM Sans', sans-serif",
-            outline: 'none',
-            ...selectLook,
-          }}>
-            <option value="alle">Alle Quellen</option>
-            <option value="web">Website</option>
-            <option value="whatsapp">WhatsApp</option>
-          </select>
-        </div>
 
         {/* List */}
         {loading ? (
@@ -531,7 +509,10 @@ function AdminContent() {
           ) : (
             <>
               <MonthTabs months={months} activeKey={activeMonth?.key} onToggle={toggleMonth} />
-              <MonthPanel monthKey={activeMonth?.key}>{activeMonth && leadCards(activeMonth.rows)}</MonthPanel>
+              <MonthPanel monthKey={activeMonth?.key}>
+                {activeMonth && <MonthSummary month={activeMonth} />}
+                {activeMonth && leadCards(activeMonth.rows)}
+              </MonthPanel>
             </>
           )
         )}
@@ -776,8 +757,16 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
                 onChooseOther={() => onUpdateMany({ gesellschaft: null, tarif: null })}
               />
             </div>
-            <EditableField label="Tarif" min={160} max={210}>
-              {/* The key resets the field when the insurer, and with it the tariff, changes. */}
+            <EditableField label="Tarif" min={istFokus(s.gesellschaft) ? 210 : 160} max={istFokus(s.gesellschaft) ? 250 : 210}>
+              {istFokus(s.gesellschaft) ? (
+                // Focus insurers: their tariffs from lib/tarife.js. An older hand-typed entry stays selectable.
+                <select value={s.tarif ?? ''} onChange={(e) => onUpdate('tarif', e.target.value || null)} style={selectStyle}>
+                  <option value="" style={optionStyle}>Tarif wählen</option>
+                  {fokusTarife(s.gesellschaft).map((t) => <option key={t} value={t} style={optionStyle}>{t}</option>)}
+                  {s.tarif && !fokusTarife(s.gesellschaft).includes(s.tarif) && <option value={s.tarif} style={optionStyle}>{s.tarif} (bisherige Eingabe)</option>}
+                </select>
+              ) : (<>
+              {/* Other insurers: typed by hand. The key resets the field when the insurer changes. */}
               <input
                 key={s.gesellschaft ?? ''}
                 type="text"
@@ -791,7 +780,9 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
               <datalist id={`tarife-${s.id}`}>
                 {[...(tarifOptions[s.gesellschaft] || [])].map((o) => <option key={o} value={o} />)}
               </datalist>
+              </>)}
             </EditableField>
+            {s.gesellschaft && <BeitragFelder s={s} />}
             {(canBringBack || canUndoBack) && (
               <div className="crm-field" style={fieldBox(190, 420)}>
                 <span style={fieldLabel}>Kunde meldet sich wieder</span>
@@ -801,18 +792,6 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
                 </div>
               </div>
             )}
-            <EditableField label="Vertrag gekündigt" min={150} max={170}>
-              <BoolSelect
-                value={s.alt_vertrag_gekuendigt}
-                onChange={(v) => onUpdate('alt_vertrag_gekuendigt', v)}
-              />
-            </EditableField>
-            <EditableField label="Kündigungsbestätigung" min={170} max={190}>
-              <BoolSelect
-                value={s.kuendigungsbestaetigung_erhalten}
-                onChange={(v) => onUpdate('kuendigungsbestaetigung_erhalten', v)}
-              />
-            </EditableField>
           </div>
 
           <div className="crm-two">
@@ -920,26 +899,6 @@ function Tag({ color, children }) {
       fontWeight: 600,
       whiteSpace: 'nowrap',
     }}>{children}</span>
-  );
-}
-
-// Tri-state select for nullable booleans: null | true | false.
-// Stored as ' ' / 'true' / 'false' in the <select>; converted back on change.
-function BoolSelect({ value, onChange }) {
-  const current = value === true ? 'true' : value === false ? 'false' : '';
-  return (
-    <select
-      value={current}
-      onChange={(e) => {
-        const v = e.target.value;
-        onChange(v === '' ? null : v === 'true');
-      }}
-      style={selectStyle}
-    >
-      <option value="">—</option>
-      <option value="true">Ja</option>
-      <option value="false">Nein</option>
-    </select>
   );
 }
 
@@ -1172,6 +1131,53 @@ function KundenAngaben({ s, fields, isGespraech, onSave }) {
   );
 }
 
+// Read-only fields next to the tariff: monthly premium from the age and missing teeth, and the
+// next age-related change (lib/tarife.js). Recomputed whenever tariff, birth date or teeth change.
+function InfoField({ label, value, note, muted, min, max }) {
+  return (
+    <div className="crm-field" style={fieldBox(min, max)}>
+      <span style={fieldLabel}>{label}</span>
+      <div style={{
+        ...fieldStyle, display: 'flex', alignItems: 'center', background: 'transparent', borderStyle: 'dashed',
+        color: muted ? 'var(--text-muted)' : 'var(--text-primary)', fontWeight: muted ? 400 : 600,
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontVariantNumeric: 'tabular-nums',
+      }}>{value}</div>
+      {note && <span style={{ fontSize: 12, lineHeight: 1.4, color: 'var(--text-dim)' }}>{note}</span>}
+    </div>
+  );
+}
+
+function BeitragFelder({ s }) {
+  const r = berechneBeitrag({ gesellschaft: s.gesellschaft, tarif: s.tarif, geburtsdatum: s.geburtsdatum, fehlendeZaehne: s.fehlende_zaehne });
+  if (!r.ok) {
+    return (
+      <>
+        <InfoField label="Beitrag" value={r.grund} muted min={200} max={260} />
+        <InfoField label="Altersbedingte Erhöhung" value="—" muted min={190} max={230} />
+      </>
+    );
+  }
+  const zahnText = `${r.zaehne} ${r.zaehne === 1 ? 'fehlender Zahn' : 'fehlende Zähne'}`;
+  const note = [
+    `Alter ${r.alter}`,
+    r.zuschlag > 0 && `inkl. ${euro(r.zuschlag)} Zuschlag, ${zahnText}`,
+    r.ohneZuschlagstabelle && `${zahnText}, Zuschlag nicht beziffert`,
+  ].filter(Boolean).join(', ');
+  const n = r.naechste;
+  const ab = n && n.ab.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return (
+    <>
+      <InfoField label="Beitrag" value={`${euro(r.beitrag)} mtl.`} note={note} min={200} max={260} />
+      <InfoField
+        label="Altersbedingte Erhöhung"
+        value={n ? `${n.mehr > 0 ? '+' : '−'} ${euro(Math.abs(n.mehr))} ab ${ab}` : 'Keine weitere Altersstufe'}
+        note={n ? `${n.mehr > 0 ? 'Dann' : 'Senkung auf'} ${euro(n.beitrag)} mtl., Altersstufe ab ${n.abAlter}` : null}
+        muted={!n} min={190} max={230}
+      />
+    </>
+  );
+}
+
 function EditableField({ label, min, max, wide, as: Tag = 'label', children }) {
   return (
     <Tag className={min ? 'crm-field' : undefined} style={min ? fieldBox(min, max) : { display: 'flex', flexDirection: 'column', gap: 6, ...(wide ? { gridColumn: '1 / -1' } : {}) }}>
@@ -1198,6 +1204,11 @@ const inputStyle = {
 const fieldStyle = { ...inputStyle, height: 44, padding: '0 12px' };
 const selectStyle = { ...fieldStyle, ...selectLook };
 const optionStyle = { background: 'var(--select-option-bg)', color: 'var(--text-body)' };
+const filterSelect = {
+  height: 56, padding: '0 16px', background: 'var(--input-bg)', border: '1px solid var(--border)', borderRadius: 12,
+  color: 'var(--text-body)', fontSize: 14, fontFamily: "'DM Sans', sans-serif", outline: 'none', ...selectLook,
+  paddingRight: 40, backgroundPosition: 'right 14px center',
+};
 const monthBtn = {
   ...fieldStyle, width: 'auto', background: 'transparent', border: '1px solid var(--accent)',
   color: 'var(--text-primary)', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
