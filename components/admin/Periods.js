@@ -218,9 +218,9 @@ function YearRow({ year, showYear, byKey, activeKey, onToggle }) {
 const GAP = 12; // space between the tiles and the status box
 const GRID_GAP = 6; // row gap of .crm-months, the line starts at the tile's lower edge
 
-// Status counts of the chosen month: always on the left, right below the row of the chosen month.
-// A small arrow points up at the month when it sits above the box; a month further right is
-// reached by a thin line from the box with an arrow up to the month. On phones the counts stack.
+// Status counts of the chosen month: always on the left, right below the row of the chosen month,
+// joined to the month by a thin line: straight up when the month sits above the box, otherwise
+// from the box's right edge across and up. On phones the counts stack.
 function StatusPopover({ month, center }) {
   const boxRef = useRef(null);
   const [box, setBox] = useState(null);
@@ -245,12 +245,6 @@ function StatusPopover({ month, center }) {
         position: 'relative', width: 'max-content', maxWidth: '100%', boxSizing: 'border-box', padding: '8px 14px',
         background: 'var(--bg-card)', border: '1px solid var(--accent)', borderRadius: 10, fontFamily: "'DM Sans', sans-serif",
       }}>
-        {above && (
-          <span aria-hidden="true" style={{
-            position: 'absolute', top: -6, left: center - 5, width: 10, height: 10, transform: 'rotate(45deg)',
-            background: 'var(--bg-card)', borderLeft: '1px solid var(--accent)', borderTop: '1px solid var(--accent)',
-          }} />
-        )}
         {STATUS_OPTIONS.map((option) => {
           const amount = month.rows.filter((r) => (r.status || 'offen') === option.value).length;
           return (
@@ -266,10 +260,12 @@ function StatusPopover({ month, center }) {
           );
         })}
       </div>
-      {elbow && (
-        <svg aria-hidden="true" width={center + 6} height={midY} style={{ position: 'absolute', top: -GRID_GAP, left: 0, overflow: 'visible', pointerEvents: 'none' }}>
-          <path d={`M ${box.w} ${midY} H ${center} V 3`} fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinejoin="round" />
-          <path d={`M ${center - 4} 7 L ${center} 1 L ${center + 4} 7`} fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      {(above || elbow) && (
+        <svg aria-hidden="true" width={Math.max(center, box.w) + 2} height={midY} style={{ position: 'absolute', top: -GRID_GAP, left: 0, overflow: 'visible', pointerEvents: 'none' }}>
+          <path
+            d={above ? `M ${center} 0 V ${GRID_GAP + GAP}` : `M ${box.w} ${midY} H ${center} V 0`}
+            fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinejoin="round"
+          />
         </svg>
       )}
     </div>
