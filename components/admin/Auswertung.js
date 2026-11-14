@@ -7,6 +7,7 @@ import { InsurerLogo } from '../InsurerSelect';
 import { Chevron } from './Periods';
 import { selectLook, STATUS_OPTIONS } from './ui';
 import { GESELLSCHAFTEN, gesellschaftByName } from '../../lib/gesellschaften';
+import { tarifOderStandard } from '../../lib/tarife';
 
 // Marco's rule (04.11.2026): the Gesellschaft is chosen as soon as a customer gets an offer,
 // whatever the status; a customer counts in this overview once set to "Versichert".
@@ -42,7 +43,7 @@ const percent = (count, total) => `${(total ? (count / total) * 100 : 0).toLocal
 function buildItems(rows, view, scope) {
   const items = new Map();
   rows.filter((r) => view === 'gesellschaften' || !scope || r.gesellschaft === scope).forEach((r) => {
-    const tarif = (r.tarif || '').trim();
+    const tarif = tarifOderStandard(r.gesellschaft, r.tarif);
     let item;
     if (view === 'gesellschaften') item = { key: r.gesellschaft, label: r.gesellschaft, logoOf: r.gesellschaft };
     else if (!tarif) item = { key: NO_TARIF, label: 'Ohne Tarifangabe' };

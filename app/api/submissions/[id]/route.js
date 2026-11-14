@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from '../../../../lib/supabase';
 import { isAuthenticated } from '../../../../lib/auth';
 import { DOKUMENTE_BUCKET } from '../../../../lib/dokumente';
 import { ANTWORT_FELDER, splitMulti } from '../../../../lib/fragebogen';
-import { berechneBeitrag } from '../../../../lib/tarife';
+import { berechneBeitrag, istFokus, standardTarif } from '../../../../lib/tarife';
 
 // Fields the premium at closing depends on (lib/tarife.js).
 const BEITRAG_FELDER = ['status', 'gesellschaft', 'tarif', 'geburtsdatum', 'fehlende_zaehne'];
@@ -145,6 +145,11 @@ export async function PATCH(request, { params }) {
     // insured, and is cleared when the status is taken back. Later price changes in
     // lib/tarife.js do not touch it.
     const merged = { ...(current || {}), ...update };
+    // Without a tariff, a focus insurer's customer has its 100er.
+    if (istFokus(merged.gesellschaft) && !(merged.tarif || '').trim()) {
+      update.tarif = standardTarif(merged.gesellschaft);
+      merged.tarif = update.tarif;
+    }
     if (merged.status === 'versichert') {
       const stichtag = new Date(merged.abgeschlossen_am || merged.created_at || Date.now());
       const beitrag = berechneBeitrag({
@@ -166,7 +171,7 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: 'Failed to update submission' }, { status: 500 });
   }
 
-  const dates = Object.fromEntries(['abgeschlossen_am', 'wieder_aktiv_am', 'beitrag_abschluss'].filter((k) => k in update).map((k) => [k, update[k]]));
+  const dates = Object.fromEntries(['abgeschlossen_am', 'wieder_aktiv_am', 'beitrag_abschluss', 'tarif'].filter((k) => k in update).map((k) => [k, update[k]]));
   return NextResponse.json({ ok: true, ...dates });
 }
 

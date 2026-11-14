@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ThemeProvider, useTheme } from '../../components/ThemeProvider';
 import { formatBirthdate } from '../../lib/format';
-import { istFokus, fokusTarife, berechneBeitrag, euro } from '../../lib/tarife';
+import { istFokus, fokusTarife, standardTarif, berechneBeitrag, euro } from '../../lib/tarife';
 import { GKV, PKV } from '../../lib/insurers';
 import {
   KV, KV_BY_VALUE, ERWERBSSTATUS, KONTAKTWEG, JA_NEIN, BEHANDLUNG, FEHLENDE_ZAEHNE, PARODONTOSE, SCHWERPUNKT,
@@ -757,15 +757,15 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
                 searchLabel="Gesellschaft suchen"
                 otherLabel="Keine Auswahl"
                 compact
-                onSelect={(item) => { if (item.name !== s.gesellschaft) onUpdateMany({ gesellschaft: item.name, tarif: null }); }}
+                onSelect={(item) => { if (item.name !== s.gesellschaft) onUpdateMany({ gesellschaft: item.name, tarif: standardTarif(item.name) }); }}
                 onChooseOther={() => onUpdateMany({ gesellschaft: null, tarif: null })}
               />
             </div>
             <EditableField label="Tarif" min={istFokus(s.gesellschaft) ? 210 : 160} max={istFokus(s.gesellschaft) ? 250 : 210}>
               {istFokus(s.gesellschaft) ? (
                 // Focus insurers: their tariffs from lib/tarife.js. An older hand-typed entry stays selectable.
-                <select value={s.tarif ?? ''} onChange={(e) => onUpdate('tarif', e.target.value || null)} style={selectStyle}>
-                  <option value="" style={optionStyle}>Tarif wählen</option>
+                // Without an entry, the 100er counts (standardTarif).
+                <select value={s.tarif || standardTarif(s.gesellschaft)} onChange={(e) => onUpdate('tarif', e.target.value)} style={selectStyle}>
                   {fokusTarife(s.gesellschaft).map((t) => <option key={t} value={t} style={optionStyle}>{t}</option>)}
                   {s.tarif && !fokusTarife(s.gesellschaft).includes(s.tarif) && <option value={s.tarif} style={optionStyle}>{s.tarif} (bisherige Eingabe)</option>}
                 </select>
