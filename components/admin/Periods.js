@@ -129,27 +129,53 @@ export function Chevron({ open }) {
 const MONTH_NAMES = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
 const useIsoLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
-// One row per year with all twelve months, January to December, like a calendar strip; months
-// without leads stay faint and cannot be chosen. Newest year on top. Each tile: month, number of
+// One row per year with all twelve months, by default December on the left to January on the
+// right; a small button flips the order (kept in this browser). Months without leads stay faint
+// and cannot be chosen. Newest year on top. Each tile: month, number of
 // leads and, if any, how many are open, so a new enquiry cannot go unnoticed. The chosen month's
 // status counts hang right below its tile (StatusPopover). Narrow screens: rows of six or four.
+const ORDER_KEY = 'crm-monate-reihenfolge';
+
 export function MonthTabs({ months, activeKey, onToggle }) {
   const byKey = new Map(months.map((m) => [m.key, m]));
   const years = [...new Set(months.filter((m) => m.key !== 'ohne-datum').map((m) => m.key.slice(0, 4)))].sort().reverse();
   const undated = byKey.get('ohne-datum');
+  const [newestFirst, setNewestFirst] = useState(true);
+  useEffect(() => {
+    try { if (localStorage.getItem(ORDER_KEY) === 'jan') setNewestFirst(false); } catch { /* no storage */ }
+  }, []);
+  const flip = () => {
+    const next = !newestFirst;
+    setNewestFirst(next);
+    try { localStorage.setItem(ORDER_KEY, next ? 'dez' : 'jan'); } catch { /* no storage */ }
+  };
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: -6 }}>
+        <button
+          type="button" onClick={flip} title="Reihenfolge der Monate umdrehen"
+          aria-label={`Reihenfolge der Monate: ${newestFirst ? 'Dezember bis Januar' : 'Januar bis Dezember'}. Umdrehen`}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 32, padding: '0 10px', cursor: 'pointer',
+            background: 'transparent', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-muted)',
+            fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+          }}
+        >
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" /></svg>
+          {newestFirst ? 'Dez → Jan' : 'Jan → Dez'}
+        </button>
+      </div>
       {years.map((year) => (
-        <YearRow key={year} year={year} showYear={years.length > 1} byKey={byKey} activeKey={activeKey} onToggle={onToggle} />
+        <YearRow key={year} year={year} showYear={years.length > 1} byKey={byKey} activeKey={activeKey} onToggle={onToggle} newestFirst={newestFirst} />
       ))}
-      {undated && <YearRow year="ohne-datum" showYear byKey={byKey} activeKey={activeKey} onToggle={onToggle} />}
+      {undated && <YearRow year="ohne-datum" showYear byKey={byKey} activeKey={activeKey} onToggle={onToggle} newestFirst={newestFirst} />}
     </div>
   );
 }
 
-function YearRow({ year, showYear, byKey, activeKey, onToggle }) {
+function YearRow({ year, showYear, byKey, activeKey, onToggle, newestFirst }) {
   const undated = year === 'ohne-datum';
-  const keys = undated ? ['ohne-datum'] : MONTH_NAMES.map((_, i) => `${year}-${String(i + 1).padStart(2, '0')}`);
+  const keys = undated ? ['ohne-datum'] : MONTH_NAMES.map((_, i) => `${year}-${String(newestFirst ? 12 - i : i + 1).padStart(2, '0')}`);
   const activeIndex = keys.indexOf(activeKey);
   const active = activeIndex >= 0 ? byKey.get(activeKey) : null;
   const rowRef = useRef(null);
@@ -199,7 +225,7 @@ function YearRow({ year, showYear, byKey, activeKey, onToggle }) {
                 transition: 'background 0.2s ease, color 0.2s ease, border-color 0.2s ease',
               }}
             >
-              <span style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>{undated ? 'Ohne Datum' : MONTH_NAMES[i]}</span>
+              <span style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>{undated ? 'Ohne Datum' : MONTH_NAMES[Number(key.slice(5)) - 1]}</span>
               <span style={{ fontSize: 12, whiteSpace: 'nowrap', opacity: isActive ? 0.85 : 0.65, fontVariantNumeric: 'tabular-nums' }}>
                 {month ? `${count} ${count === 1 ? 'Lead' : 'Leads'}` : '–'}
               </span>

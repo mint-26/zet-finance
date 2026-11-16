@@ -11,6 +11,7 @@ import {
 } from '../../lib/fragebogen';
 import InsurerSelect from '../../components/InsurerSelect';
 import Auswertung from '../../components/admin/Auswertung';
+import Abrechnung from '../../components/admin/Abrechnung';
 import Dokumente from '../../components/admin/Dokumente';
 import Backup from '../../components/admin/Backup';
 import { selectLook, STATUS_OPTIONS, pillColors } from '../../components/admin/ui';
@@ -18,7 +19,14 @@ import { PeriodTabs, MonthTabs, MonthPanel, inPeriod, periodLabel, yearsOf, grou
 import { GESELLSCHAFTEN } from '../../lib/gesellschaften';
 
 // Where a lead came from (column `quelle`). WhatsApp tests come from the bot preview.
-const QUELLE_LABELS = { web: 'Website', whatsapp: 'WhatsApp', whatsapp_test: 'WhatsApp (Test)' };
+const QUELLE_LABELS = { web: 'Website', whatsapp: 'WhatsApp', whatsapp_test: 'WhatsApp (Test)', bestand: 'Vertragsbestand' };
+
+// Main tabs of the CRM.
+const TABS = [
+  { id: 'leads', label: 'Leads', title: 'Fragebogen-Einsendungen' },
+  { id: 'controlling', label: 'Controlling', title: 'Controlling' },
+  { id: 'abrechnung', label: 'Abrechnung', title: 'Abrechnung' },
+];
 
 const ABLEHNUNGSGRUND_OPTIONS = ['mehr als 4 fehlende Zähne', 'Bonität'];
 
@@ -46,6 +54,7 @@ function AdminContent() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('alle');
   const [quelleFilter, setQuelleFilter] = useState('alle');
+  const [tab, setTab] = useState('leads');
   const [expandedId, setExpandedId] = useState(null);
   const [period, setPeriod] = useState({ period: String(new Date().getFullYear()), von: '', bis: '' });
   // undefined: nothing chosen yet, the newest month is shown. null: closed by the user.
@@ -132,10 +141,12 @@ function AdminContent() {
   };
 
   // From the Auswertung: show one customer in the list, opened, whatever the filters were.
+  // Customers from the contract lists (Vertragsbestand) only show with their own filter.
   const openLead = (lead) => {
+    setTab('leads');
     setSearch('');
     setStatusFilter('alle');
-    setQuelleFilter('alle');
+    setQuelleFilter(lead.quelle === 'bestand' ? 'bestand' : 'alle');
     setExpandedId(lead.id);
     followLead(lead);
   };
@@ -229,15 +240,18 @@ function AdminContent() {
     if (statusFilter !== 'alle' && s.status !== statusFilter) return false;
     if (quelleFilter === 'web' && s.quelle && s.quelle !== 'web') return false;
     if (quelleFilter === 'whatsapp' && !(s.quelle || '').startsWith('whatsapp')) return false;
+    // Customers only known from a contract list are no leads: they show with their own filter
+    // or in a search.
+    if (quelleFilter === 'bestand' ? s.quelle !== 'bestand' : s.quelle === 'bestand' && !searching) return false;
     if (search) {
       const q = search.toLowerCase();
-      const hay = `${s.name || ''} ${s.email || ''} ${s.telefon || ''}`.toLowerCase();
+      const hay = `${s.name || ''} ${s.email || ''} ${s.telefon || ''} ${s.vertragsnummer || ''}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
     return true;
   });
 
-  const pendingNotifications = submissions.filter((s) => !s.notification_sent_at).length;
+  const pendingNotifications = submissions.filter((s) => !s.notification_sent_at && s.quelle !== 'bestand').length;
 
   const months = groupByMonth(filtered);
   // A month the current filters no longer contain falls back to the newest one.
@@ -403,12 +417,14 @@ function AdminContent() {
               fontWeight: 700,
               color: 'var(--text-primary)',
               margin: 0,
-            }}>Fragebogen-Einsendungen</h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 4 }}>
-              {filtered.length} {filtered.length === 1 ? 'Eintrag' : 'Einträge'}
-              {filtered.length !== submissions.length && ` (von ${submissions.length})`}
-              {searching && ', Suche über alle Jahre'}
-            </p>
+            }}>{TABS.find((t) => t.id === tab).title}</h1>
+            {tab === 'leads' && (
+              <p style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 4 }}>
+                {filtered.length} {filtered.length === 1 ? 'Eintrag' : 'Einträge'}
+                {filtered.length !== submissions.length && ` (von ${submissions.length})`}
+                {searching && ', Suche über alle Jahre'}
+              </p>
+            )}
             {pendingNotifications > 0 && (
               <div style={{
                 marginTop: 12,
@@ -446,7 +462,17 @@ function AdminContent() {
           </div>
         </div>
 
+        <nav role="tablist" aria-label="Bereiche" className="crm-tabs">
+          {TABS.map((t) => (
+            <button
+              key={t.id} type="button" role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}
+              className={tab === t.id ? 'crm-tab active' : 'crm-tab'}
+            >{t.label}</button>
+          ))}
+        </nav>
+
         {/* Search first: it looks through all years, so it sits above the period bar. */}
+        {tab === 'leads' && (
         <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'stretch' }}>
           <label style={{ position: 'relative', flex: '0 1 520px', minWidth: 240, display: 'flex' }}>
             <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: 18, top: '50%', marginTop: -10, color: 'var(--text-muted)', pointerEvents: 'none' }}><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
@@ -474,15 +500,23 @@ function AdminContent() {
             <option value="alle" style={optionStyle}>Alle Quellen</option>
             <option value="web" style={optionStyle}>Website</option>
             <option value="whatsapp" style={optionStyle}>WhatsApp</option>
+            <option value="bestand" style={optionStyle}>Vertragsbestand ohne Anfrage</option>
           </select>
         </div>
+        )}
 
         <PeriodTabs years={yearsOf(submissions)} value={period} onChange={changePeriod} />
 
-        <Auswertung rows={inSelectedPeriod} allRows={submissions} periodText={periodLabel(period)} onOpenLead={openLead} />
+        {tab === 'controlling' && (
+          <Auswertung alwaysOpen rows={inSelectedPeriod} allRows={submissions} periodText={periodLabel(period)} onOpenLead={openLead} />
+        )}
+
+        {tab === 'abrechnung' && (
+          <Abrechnung rows={inSelectedPeriod} periodText={periodLabel(period)} onOpenLead={openLead} />
+        )}
 
         {/* List */}
-        {loading ? (
+        {tab !== 'leads' ? null : loading ? (
           <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Lade...</div>
         ) : filtered.length === 0 ? (
           <div style={{
@@ -656,6 +690,7 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
               {s.name || '(Kein Name)'}
             </button>
             {viaWhatsApp && <Tag color="#25a35a">{QUELLE_LABELS[s.quelle]}</Tag>}
+            {s.quelle === 'bestand' && <Tag color="#2a78d6">Vertragsbestand</Tag>}
             {isGespraech && <Tag color="#7D6D49">Gespräch</Tag>}
             {documentCount > 0 && (
               <span
@@ -698,6 +733,11 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
             <>
               <span style={{ display: 'block', color: 'var(--text-body)' }}>{closedAt ? `Abschluss ${shortDate(closedAt)}` : `Wieder aktiv ${shortDate(backAt)}`}</span>
               {createdAt && <span style={{ display: 'block', color: 'var(--text-dim)' }}>Anfrage {shortDate(createdAt)}</span>}
+            </>
+          ) : s.quelle === 'bestand' && createdAt ? (
+            <>
+              <span style={{ display: 'block', color: 'var(--text-body)' }}>Vertragsbeginn</span>
+              <span style={{ display: 'block', color: 'var(--text-dim)' }}>{shortDate(createdAt)}</span>
             </>
           ) : createdAt && (
             <>
@@ -787,6 +827,12 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
               </>)}
             </EditableField>
             {s.gesellschaft && <BeitragFelder s={s} />}
+            {s.vertragsnummer && (
+              <InfoField
+                label="Vertrag" value={s.vertragsnummer} min={190} max={260}
+                note={s.vertragsbeginn ? `Beginn ${new Date(s.vertragsbeginn).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}, laut Vertragsstand Fonds Finanz` : 'laut Vertragsstand Fonds Finanz'}
+              />
+            )}
             {(canBringBack || canUndoBack) && (
               <div className="crm-field" style={fieldBox(190, 420)}>
                 <span style={fieldLabel}>Kunde meldet sich wieder</span>

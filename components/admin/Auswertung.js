@@ -7,7 +7,8 @@ import { InsurerLogo } from '../InsurerSelect';
 import { Chevron } from './Periods';
 import { selectLook, STATUS_OPTIONS } from './ui';
 import { GESELLSCHAFTEN, gesellschaftByName } from '../../lib/gesellschaften';
-import { tarifOderStandard } from '../../lib/tarife';
+import { tarifOderStandard, euro } from '../../lib/tarife';
+import { vertragsBeitrag } from '../../lib/provision';
 
 // Marco's rule (04.11.2026): the Gesellschaft is chosen as soon as a customer gets an offer,
 // whatever the status; a customer counts in this overview once set to "Versichert".
@@ -48,8 +49,12 @@ function buildItems(rows, view, scope) {
     if (view === 'gesellschaften') item = { key: r.gesellschaft, label: r.gesellschaft, logoOf: r.gesellschaft };
     else if (!tarif) item = { key: NO_TARIF, label: 'Ohne Tarifangabe' };
     else item = { key: `${r.gesellschaft}|${tarif.toLowerCase()}`, label: tarif, logoOf: scope ? null : r.gesellschaft };
-    if (!items.has(item.key)) items.set(item.key, { ...item, count: 0 });
-    items.get(item.key).count += 1;
+    if (!items.has(item.key)) items.set(item.key, { ...item, count: 0, beitrag: 0, ohneBeitrag: 0 });
+    const entry = items.get(item.key);
+    entry.count += 1;
+    const { beitrag } = vertragsBeitrag(r);
+    if (beitrag == null) entry.ohneBeitrag += 1;
+    else entry.beitrag = Math.round((entry.beitrag + beitrag) * 100) / 100;
   });
   return [...items.values()].sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'de'));
 }
@@ -125,7 +130,8 @@ function KundenListe({ name, rows, onOpenLead }) {
                 textDecoration: 'underline', textDecorationColor: 'var(--border-strong)', textUnderlineOffset: 3,
               }}
             >{k.name || 'Ohne Name'}</button>
-            {k.tarif && <span style={{ color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{k.tarif}</span>}
+            {tarifOderStandard(k.gesellschaft, k.tarif) && <span style={{ color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{tarifOderStandard(k.gesellschaft, k.tarif)}</span>}
+            {vertragsBeitrag(k).beitrag != null && <span style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>{euro(vertragsBeitrag(k).beitrag)} mtl.</span>}
             <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: 13, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
               {k.abgeschlossen_am ? `seit ${dateDe(k.abgeschlossen_am)}` : `Anfrage ${dateDe(k.created_at)}`}
             </span>
@@ -144,9 +150,10 @@ const LOGO_SLOT = { width: 64, height: 34, flexShrink: 0 };
 
 // Fold-out overview above the lead list: how the applications of the chosen period spread
 // over insurers and tariffs, as a ring plus a table with count and share.
-export default function Auswertung({ rows, allRows, periodText, onOpenLead }) {
+export default function Auswertung({ rows, allRows, periodText, onOpenLead, alwaysOpen = false }) {
   const { theme } = useTheme();
-  const [open, setOpen] = useState(false);
+  const [openState, setOpen] = useState(false);
+  const open = alwaysOpen || openState;
   const [view, setView] = useState('gesellschaften');
   const [scope, setScope] = useState('');
   const [hover, setHover] = useState(null);
@@ -155,7 +162,8 @@ export default function Auswertung({ rows, allRows, periodText, onOpenLead }) {
   const mode = theme === 'dark' ? 'dark' : 'light';
   const antraege = rows.filter(isAntrag);
   const ohneGesellschaft = rows.filter((r) => ANTRAG_STATUS.includes(r.status) && !r.gesellschaft && r.quelle !== 'whatsapp_test').length;
-  const leads = rows.filter((r) => r.quelle !== 'whatsapp_test');
+  // Status shares: only real enquiries, not customers known only from a contract list.
+  const leads = rows.filter((r) => r.quelle !== 'whatsapp_test' && r.quelle !== 'bestand');
   const statusView = view === 'status';
   const items = statusView
     ? STATUS_CHART.map((chart) => ({
@@ -208,14 +216,14 @@ export default function Auswertung({ rows, allRows, periodText, onOpenLead }) {
   return (
     <section style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, marginBottom: 24 }}>
       <button
-        type="button" aria-expanded={open} onClick={() => setOpen((v) => !v)}
+        type="button" aria-expanded={alwaysOpen ? undefined : open} onClick={alwaysOpen ? undefined : () => setOpen((v) => !v)}
         style={{
           width: '100%', minHeight: 60, padding: '12px 20px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '4px 12px',
-          background: 'transparent', border: 0, cursor: 'pointer', textAlign: 'left',
+          background: 'transparent', border: 0, cursor: alwaysOpen ? 'default' : 'pointer', textAlign: 'left',
           fontFamily: "'DM Sans', sans-serif", color: 'var(--text-primary)',
         }}
       >
-        <Chevron open={open} />
+        {!alwaysOpen && <Chevron open={open} />}
         <span style={{ fontSize: 17, fontWeight: 600 }}>Auswertung</span>
         <span style={{ fontSize: 14, color: 'var(--text-muted)', marginLeft: 'auto' }}>
           {periodText}: {summaryTotal} {summaryTotal === 1 ? 'Antrag' : 'Anträge'}
@@ -256,12 +264,13 @@ export default function Auswertung({ rows, allRows, periodText, onOpenLead }) {
                   <Donut segments={segments} total={total} center={center} activeKey={hover} onHover={setHover} />
                 </div>
                 <div style={{ flex: '1 1 320px', minWidth: 0 }}>
-                  <table style={{ width: '100%', maxWidth: 620, tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: 14, color: 'var(--text-body)' }}>
+                  <table style={{ width: '100%', maxWidth: 740, tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: 14, color: 'var(--text-body)' }}>
                     <thead>
                       <tr>
                         <th scope="col" style={{ ...th, textAlign: 'left' }}>{{ tarife: 'Tarif', status: 'Status' }[view] || 'Gesellschaft'}</th>
                         <th scope="col" className="aw-num" style={{ ...th, ...num }}>Anzahl</th>
                         <th scope="col" className="aw-num" style={{ ...th, ...num }}>Anteil</th>
+                        {!statusView && <th scope="col" className="aw-num aw-sum" style={{ ...th, ...num }}>Beiträge mtl.</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -296,10 +305,15 @@ export default function Auswertung({ rows, allRows, periodText, onOpenLead }) {
                           </td>
                           <td className="aw-num" style={num}>{item.count}</td>
                           <td className="aw-num" style={num}>{percent(item.count, total)}</td>
+                          {!statusView && (
+                            <td className="aw-num aw-sum" style={num} title={item.ohneBeitrag ? `${item.ohneBeitrag} ohne bekannten Beitrag` : undefined}>
+                              {euro(item.beitrag)}{item.ohneBeitrag > 0 && <span style={{ color: 'var(--text-dim)' }}> *</span>}
+                            </td>
+                          )}
                         </tr>
                         {view === 'gesellschaften' && (
                           <tr>
-                            <td colSpan={3} style={{ padding: 0 }}>
+                            <td colSpan={4} style={{ padding: 0 }}>
                               <SmoothHeight duration={350}>
                                 {kundenOpen && <KundenListe name={item.key} rows={allRows} onOpenLead={onOpenLead} />}
                               </SmoothHeight>
@@ -310,6 +324,16 @@ export default function Auswertung({ rows, allRows, periodText, onOpenLead }) {
                         );
                       })}
                     </tbody>
+                    {!statusView && (
+                      <tfoot>
+                        <tr style={{ borderTop: '1px solid var(--border-strong)', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          <td style={{ padding: '10px 0' }}>Gesamt</td>
+                          <td className="aw-num" style={num}>{total}</td>
+                          <td className="aw-num" style={num}>100 %</td>
+                          <td className="aw-num aw-sum" style={num}>{euro(Math.round(items.reduce((s, i) => s + i.beitrag, 0) * 100) / 100)}</td>
+                        </tr>
+                      </tfoot>
+                    )}
                   </table>
                 </div>
               </div>
@@ -319,6 +343,8 @@ export default function Auswertung({ rows, allRows, periodText, onOpenLead }) {
               {statusView ? `Grundlage: ${total} ${total === 1 ? 'Lead' : 'Leads'} in diesem Zeitraum, mit ihrem aktuellen Status. Abgeschlossene und wieder aktive Kunden zählen in dem Monat, in dem sie auch in der Liste stehen.` : (
                 <>
                   Gezählt werden Kunden mit Status „Versichert“ und gewählter Gesellschaft, im Monat ihres Abschlusses. Ältere Kunden ohne Abschlussdatum zählen im Monat ihrer Anfrage.
+                  {' '}Beiträge pro Monat: Wert aus Marcos alter Liste, sonst der bei Abschluss gespeicherte oder aus Tarif und Alter berechnete Beitrag (ohne Tarifangabe der 100er).
+                  {items.some((i) => i.ohneBeitrag) && ` * Enthält Verträge ohne bekannten Beitrag (${items.reduce((s, i) => s + i.ohneBeitrag, 0)}), etwa Gesellschaften ohne hinterlegte Beitragstabelle.`}
                   {ohneGesellschaft > 0 && ` ${ohneGesellschaft} ${ohneGesellschaft === 1 ? 'versicherter Kunde hat' : 'versicherte Kunden haben'} in diesem Zeitraum noch keine Gesellschaft und ${ohneGesellschaft === 1 ? 'fehlt' : 'fehlen'} hier.`}
                 </>
               )}

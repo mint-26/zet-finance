@@ -14,7 +14,7 @@ const STATUS_LABELS = {
   kein_interesse: 'Kein Interesse',
 };
 
-const QUELLE_LABELS = { web: 'Website', whatsapp: 'WhatsApp', whatsapp_test: 'WhatsApp (Test)' };
+const QUELLE_LABELS = { web: 'Website', whatsapp: 'WhatsApp', whatsapp_test: 'WhatsApp (Test)', bestand: 'Vertragsbestand' };
 const TYP_LABELS = { zahnzusatz: 'Zahnzusatz', gespraech: 'Gespräch' };
 
 function boolLabel(v) {
@@ -55,6 +55,8 @@ export async function GET() {
     { header: 'Beitrag bei Abschluss (berechnet)', key: 'beitrag_abschluss', width: 30 },
     { header: 'Gesellschaft', key: 'gesellschaft', width: 18 },
     { header: 'Tarif', key: 'tarif', width: 18 },
+    { header: 'Vertragsnummer', key: 'vertragsnummer', width: 18 },
+    { header: 'Vertragsbeginn', key: 'vertragsbeginn', width: 14 },
     { header: 'Abgeschlossen am', key: 'abgeschlossen_am', width: 16 },
     { header: 'Wieder aktiv am', key: 'wieder_aktiv_am', width: 16 },
     { header: 'Vertrag gekündigt', key: 'alt_vertrag_gekuendigt', width: 20 },
@@ -108,6 +110,8 @@ export async function GET() {
       provision: toNumber(row.provision),
       monatsbeitrag: toNumber(row.monatsbeitrag),
       beitrag_abschluss: toNumber(row.beitrag_abschluss),
+      vertragsnummer: row.vertragsnummer,
+      vertragsbeginn: row.vertragsbeginn ? new Date(row.vertragsbeginn) : null,
       gesellschaft: row.gesellschaft,
       tarif: row.tarif,
       abgeschlossen_am: row.abgeschlossen_am ? new Date(row.abgeschlossen_am) : null,
