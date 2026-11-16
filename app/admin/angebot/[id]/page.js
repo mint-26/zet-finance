@@ -139,8 +139,8 @@ function Verlauf({ reihen }) {
 const istLeer = (v) => !v || (!v.s && !v.staffel && (!v.t || v.t.trim() === '-'));
 const leer = (spalten, key) => spalten.every((s) => s.leistungen && istLeer(s.leistungen[key]));
 
-const kicker = { fontFamily: SANS, fontSize: 11, letterSpacing: 2.2, textTransform: 'uppercase', color: C.champagneDark };
-const h2 = { fontFamily: SERIF, fontWeight: 400, fontSize: 24, color: INK, margin: '0 0 4px' };
+const kicker = { fontFamily: SANS, fontSize: 11, letterSpacing: 2.2, textTransform: 'uppercase', color: C.champagneDark, marginBottom: 8 };
+const h2 = { fontFamily: SERIF, fontWeight: 400, fontSize: 24, lineHeight: 1.25, color: INK, margin: '0 0 12px' };
 
 export default function AngebotPage({ params }) {
   const [lead, setLead] = useState(null);
@@ -268,7 +268,7 @@ export default function AngebotPage({ params }) {
       <section style={{ background: C.ivory }}>
         <div className="blatt" style={{ padding: '34px 40px 30px' }}>
           <div style={kicker}>Angebot für</div>
-          <h1 style={{ fontFamily: SERIF, fontWeight: 400, fontSize: 38, lineHeight: 1.15, margin: '8px 0 18px', color: INK }}>{lead.name}</h1>
+          <h1 style={{ fontFamily: SERIF, fontWeight: 400, fontSize: 38, lineHeight: 1.15, margin: '0 0 20px', color: INK }}>{lead.name}</h1>
           <dl style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 40px', margin: 0 }}>
             {meta.map(([k, v]) => (
               <div key={k}>
@@ -329,7 +329,7 @@ export default function AngebotPage({ params }) {
       <div className="blatt abschnitt" style={{ padding: '26px 40px 0' }}>
         <div style={kicker}>Beitragsentwicklung</div>
         <h2 style={h2}>So entwickelt sich Ihr Beitrag mit dem Alter</h2>
-        <p style={{ fontSize: 12.5, color: MUTED, margin: '0 0 16px', lineHeight: 1.5 }}>
+        <p style={{ fontSize: 12.5, color: MUTED, margin: '0 0 20px', lineHeight: 1.55 }}>
           Zahnzusatztarife steigen in Altersstufen, jeweils zum 1. Januar des Jahres, in dem Sie die nächste Stufe erreichen.
         </p>
         <div style={{ border: `1px solid ${LINE}`, borderRadius: 14, padding: '18px 18px 10px' }}>
@@ -388,7 +388,7 @@ export default function AngebotPage({ params }) {
       <div className="blatt" style={{ padding: '36px 40px 28px' }}>
         <div style={kicker}>Unabhängig verglichen</div>
         <h2 style={h2}>Unsere Partnergesellschaften</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: '16px 20px', alignItems: 'center', justifyItems: 'center', marginTop: 16 }} className="partner">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: '16px 20px', alignItems: 'center', justifyItems: 'center', marginTop: 24 }} className="partner">
           {PARTNER.map(([name, file]) => (
             <img key={name} src={`/insurers/gesellschaften/${file}.png`} alt={name} style={{ maxHeight: 30, maxWidth: '100%', objectFit: 'contain', filter: 'grayscale(1)', opacity: 0.75 }} />
           ))}
