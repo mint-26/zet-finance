@@ -11,7 +11,7 @@
 
 import { Fragment, useEffect, useState } from 'react';
 import { berechneBeitrag, beitragsVerlauf, geburtsjahr, euro } from '../../../../lib/tarife';
-import { SECTIONS, leistungenVon, begrenzungText, LEISTUNGEN_STAND } from '../../../../lib/leistungen';
+import { SECTIONS, leistungenVon, begrenzungText, LEISTUNGEN_STAND, BEWERTUNG_QUELLE } from '../../../../lib/leistungen';
 import { C, CONTACT } from '../../../../lib/brand';
 import { formatBirthdate } from '../../../../lib/format';
 
@@ -139,6 +139,28 @@ function Verlauf({ reihen }) {
 const istLeer = (v) => !v || (!v.s && !v.staffel && (!v.t || v.t.trim() === '-'));
 const leer = (spalten, key) => spalten.every((s) => s.leistungen && istLeer(s.leistungen[key]));
 
+// Rows where all tariffs say the same are merged into one line ("Bei allen Tarifen: 100 %"), so
+// only the differences take space.
+function zeilenVon(sec, spalten) {
+  const rows = sec.rows.filter(([key]) => !leer(spalten, key));
+  if (spalten.length < 2 || spalten.some((s) => !s.leistungen)) return rows.map(([key, text, sub]) => ({ key, text, sub }));
+  const out = [];
+  const gruppen = new Map();
+  rows.forEach(([key, text, sub]) => {
+    const vals = spalten.map((s) => s.leistungen[key]);
+    const gleich = vals.every((v) => v && !v.staffel && v.s === vals[0].s && (v.t || '') === (vals[0].t || ''));
+    if (!gleich) { out.push({ key, text, sub }); return; }
+    const sig = `${vals[0].s}|${vals[0].t || ''}`;
+    if (gruppen.has(sig)) { gruppen.get(sig).texte.push(text); return; }
+    const g = { key, texte: [text], gemeinsam: vals[0] };
+    gruppen.set(sig, g);
+    out.push(g);
+  });
+  return out;
+}
+
+const WHATSAPP = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '4915254611314').replace(/\D/g, '');
+
 const kicker = { fontFamily: SANS, fontSize: 11, letterSpacing: 2.2, textTransform: 'uppercase', color: C.champagneDark, marginBottom: 8 };
 const h2 = { fontFamily: SERIF, fontWeight: 400, fontSize: 24, lineHeight: 1.25, color: INK, margin: '0 0 12px' };
 
@@ -148,6 +170,7 @@ export default function AngebotPage({ params }) {
   const [auswahl, setAuswahl] = useState([]);
   const [empfohlen, setEmpfohlen] = useState(-1);
   const [mitGesellschaft, setMitGesellschaft] = useState(false);
+  const [notiz, setNotiz] = useState('');
   const [statusGesetzt, setStatusGesetzt] = useState(false);
   const [pdfState, setPdfState] = useState('');
 
@@ -156,6 +179,7 @@ export default function AngebotPage({ params }) {
     setAuswahl(parseAuswahl(p));
     setEmpfohlen(p.has('e') ? Number(p.get('e')) : -1);
     setMitGesellschaft(p.get('g') === '1');
+    setNotiz((p.get('n') || '').slice(0, 600));
     fetch('/api/submissions').then(async (res) => {
       if (res.status === 401) { setState('login'); return; }
       const data = await res.json();
@@ -189,7 +213,14 @@ export default function AngebotPage({ params }) {
     beitrag: berechneBeitrag({ gesellschaft: a.gesellschaft, tarif: a.tarif, geburtsdatum: lead.geburtsdatum, fehlendeZaehne: lead.fehlende_zaehne }, beginn),
     leistungen: leistungenVon(a.gesellschaft, a.tarif),
     verlauf: alter != null ? beitragsVerlauf({ gesellschaft: a.gesellschaft, tarif: a.tarif, fehlendeZaehne: lead.fehlende_zaehne }, alter) : [],
-  }));
+  })).map((sp) => {
+    // The next age band, shown on the card when it starts within a year of the insurance start.
+    const n = sp.verlauf[1];
+    const ab = n && jahr ? new Date(jahr + n.abAlter, 0, 1) : null;
+    const bald = ab && ab > beginn && ab - beginn <= 366 * 86400000;
+    return { ...sp, sprung: bald ? { ab, beitrag: n.beitrag } : null };
+  });
+  const gueltigBis = new Date(beginn.getFullYear(), beginn.getMonth(), 0);
   const cols = `minmax(0, 0.95fr) repeat(${spalten.length}, minmax(0, 1fr))`;
 
   const pdfLaden = async () => {
@@ -200,7 +231,7 @@ export default function AngebotPage({ params }) {
       const blob = await res.blob();
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `Zahnzusatz-Vergleich ${lead.name || ''}.pdf`.replace(/\s+\.pdf$/, '.pdf');
+      a.download = `Zahnzusatz-Vergleich ${lead.name || 'Kunde'} ${dateDe(new Date())}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -223,7 +254,7 @@ export default function AngebotPage({ params }) {
     lead.geburtsdatum && ['Geburtsdatum', formatBirthdate(lead.geburtsdatum)],
     ['Versicherungsbeginn', dateDe(beginn)],
     zaehne !== '0' && ['Fehlende Zähne', zaehne],
-    ['Erstellt am', dateDe(heute)],
+    ['Angebot gültig bis', dateDe(gueltigBis)],
   ].filter(Boolean);
 
   const cell = (i, extra = {}) => ({ padding: '9px 12px', fontSize: 12.5, lineHeight: 1.45, color: INK, background: i === empfohlen ? TINT : 'transparent', ...extra });
@@ -305,6 +336,15 @@ export default function AngebotPage({ params }) {
                       <div style={{ fontSize: 12, marginTop: 6, color: top ? 'rgba(241,238,230,0.75)' : MUTED }}>
                         monatlich{s.beitrag.zuschlag > 0 ? `, inkl. ${euro(s.beitrag.zuschlag)} Zuschlag` : ''}
                       </div>
+                      {s.sprung && (
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10, padding: '4px 9px', borderRadius: 999, fontSize: 11.5,
+                          background: top ? 'rgba(181,161,113,0.18)' : '#f4efe3', color: top ? C.champagne : C.champagneDark,
+                        }}>
+                          <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 16 10 10 14 14 20 8" /><polyline points="15 8 20 8 20 13" /></svg>
+                          ab {dateDe(s.sprung.ab)}: {euro(s.sprung.beitrag)}
+                        </div>
+                      )}
                     </>
                   ) : <div style={{ fontSize: 13 }}>{s.beitrag.grund}</div>}
                 </div>
@@ -323,6 +363,13 @@ export default function AngebotPage({ params }) {
             );
           })}
         </div>
+        {notiz.trim() && (
+          <div style={{ marginTop: 22, padding: '18px 22px', background: C.ivory, borderLeft: `3px solid ${C.champagne}`, borderRadius: '0 12px 12px 0' }}>
+            <div style={{ ...kicker, marginBottom: 6 }}>Meine Empfehlung für Sie</div>
+            <p style={{ margin: 0, fontFamily: SERIF, fontSize: 15.5, lineHeight: 1.55, color: INK, whiteSpace: 'pre-line' }}>{notiz.trim()}</p>
+            <div style={{ marginTop: 8, fontSize: 12, color: MUTED }}>Marco Arpa</div>
+          </div>
+        )}
       </main>
 
       {/* Premium development */}
@@ -366,15 +413,20 @@ export default function AngebotPage({ params }) {
                 {sec.note && s.leistungen?.noten?.[sec.key] && <span style={{ display: 'block', textTransform: 'none', letterSpacing: 0, color: OK, fontSize: 11.5, marginTop: 2 }}>{s.leistungen.noten[sec.key]}</span>}
               </div>
             ))}
-            {sec.rows.filter(([key]) => !leer(spalten, key)).map(([key, text, sub]) => (
-              <Fragment key={key}>
+            {zeilenVon(sec, spalten).map((z) => (
+              <Fragment key={z.key}>
                 <div className="zeile" style={{ ...rowLabel, borderBottom: `1px solid ${LINE}` }}>
-                  {text}
-                  {sub && <div style={{ fontSize: 10.5, color: '#9a948a' }}>{sub}</div>}
+                  {z.texte ? z.texte.join(', ') : z.text}
+                  {z.sub && <div style={{ fontSize: 10.5, color: '#9a948a' }}>{z.sub}</div>}
                 </div>
-                {spalten.map((s, i) => (
+                {z.gemeinsam ? (
+                  <div className="zeile" style={{ ...cell(-2), gridColumn: '2 / -1', borderBottom: `1px solid ${LINE}`, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                    <span style={{ color: MUTED, whiteSpace: 'nowrap' }}>Bei allen Tarifen:</span>
+                    <Wert wert={z.gemeinsam} startJahr={startJahr} />
+                  </div>
+                ) : spalten.map((s, i) => (
                   <div key={i} className="zeile" style={{ ...cell(i), borderBottom: `1px solid ${LINE}` }}>
-                    <Wert wert={s.leistungen ? (s.leistungen[key] || {}) : null} startJahr={startJahr} />
+                    <Wert wert={s.leistungen ? (s.leistungen[z.key] || {}) : null} startJahr={startJahr} />
                   </div>
                 ))}
               </Fragment>
@@ -385,6 +437,33 @@ export default function AngebotPage({ params }) {
 
       {/* Partners and contact, kept together on the last page */}
       <div className="schluss">
+      <div className="blatt" style={{ padding: '40px 40px 0' }}>
+        <div className="abschnitt" style={{ background: C.black, color: C.ivory, borderRadius: 16, padding: '26px 28px' }}>
+          <div style={{ ...kicker, color: C.champagne }}>So geht's weiter</div>
+          <h2 style={{ ...h2, color: C.ivory }}>In drei Schritten zu Ihrem Schutz</h2>
+          <ol className="schritte" style={{ listStyle: 'none', margin: '6px 0 0', padding: 0, display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 18 }}>
+            {[
+              ['Tarif wählen', 'Sagen Sie mir kurz, welcher Tarif es sein soll, oder stellen Sie Ihre Fragen.'],
+              ['Antrag unterschreiben', 'Ich bereite den Antrag vor, Sie unterschreiben ihn bequem digital.'],
+              [`Geschützt ab ${dateDe(beginn)}`, 'Ihr Versicherungsschutz beginnt, die Police kommt per Post oder E-Mail.'],
+            ].map(([t, d], i) => (
+              <li key={t} style={{ display: 'flex', gap: 12 }}>
+                <span style={{ fontFamily: SERIF, fontSize: 26, lineHeight: 1, color: C.champagne }}>{i + 1}</span>
+                <span>
+                  <strong style={{ display: 'block', fontSize: 13.5, marginBottom: 3 }}>{t}</strong>
+                  <span style={{ fontSize: 12, lineHeight: 1.5, color: 'rgba(241,238,230,0.75)' }}>{d}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 22 }}>
+            <a href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hallo Marco, ich habe mir das Zahnzusatz-Angebot angesehen.')}`} style={ctaBtn(true)}>Per WhatsApp antworten</a>
+            <a href={CONTACT.phoneHref} style={ctaBtn(false)}>Anrufen: {CONTACT.phone}</a>
+            <a href={`mailto:${CONTACT.email}?subject=${encodeURIComponent('Mein Zahnzusatz-Angebot')}`} style={ctaBtn(false)}>{CONTACT.email}</a>
+          </div>
+        </div>
+      </div>
+      <div className="abschnitt">
       <div className="blatt" style={{ padding: '36px 40px 28px' }}>
         <div style={kicker}>Unabhängig verglichen</div>
         <h2 style={h2}>Unsere Partnergesellschaften</h2>
@@ -395,7 +474,8 @@ export default function AngebotPage({ params }) {
         </div>
         <p style={{ fontSize: 10.5, color: '#8f897f', lineHeight: 1.6, margin: '26px 0 0' }}>
           Unverbindlicher Vergleich vom {dateDe(heute)} für einen Versicherungsbeginn am {dateDe(beginn)}. Monatsbeiträge nach tariflichem Alter
-          (Kalenderjahr minus Geburtsjahr){zaehne !== '0' ? ', inklusive Risikozuschlag für fehlende Zähne' : ''}. Leistungsangaben Stand {LEISTUNGEN_STAND}.
+          (Kalenderjahr minus Geburtsjahr){zaehne !== '0' ? ', inklusive Risikozuschlag für fehlende Zähne' : ''}. Leistungsangaben Stand {LEISTUNGEN_STAND}. {BEWERTUNG_QUELLE}.
+          Das Angebot gilt für einen Versicherungsbeginn am {dateDe(beginn)}; bei späterem Beginn kann sich der Beitrag ändern.
           Maßgeblich sind allein die Versicherungsbedingungen und der Antrag der jeweiligen Gesellschaft.
         </p>
       </div>
@@ -410,22 +490,24 @@ export default function AngebotPage({ params }) {
         </div>
       </footer>
       </div>
+      </div>
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&family=Gelasio&display=swap');
         .angebot .blatt { max-width: 980px; margin: 0 auto; box-sizing: border-box; }
-        .angebot .zeile, .angebot article, .angebot .abschnitt, .angebot .schluss { break-inside: avoid; }
+        .angebot .zeile, .angebot article, .angebot .abschnitt { break-inside: avoid; }
         @media (max-width: 720px) {
           .angebot .karten { grid-template-columns: minmax(0, 1fr) !important; }
           .angebot .blatt { padding-left: 18px !important; padding-right: 18px !important; }
           .angebot .partner { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+          .angebot .schritte { grid-template-columns: minmax(0, 1fr) !important; }
         }
         @media print {
           @page { size: A4; margin: 12mm 0; }
           @page :first { margin-top: 0; }
           html, body { background: #fff !important; }
           .no-print { display: none !important; }
-          .angebot { -webkit-print-color-adjust: exact; print-color-adjust: exact; min-height: 0 !important; zoom: 0.82; }
+          .angebot { -webkit-print-color-adjust: exact; print-color-adjust: exact; min-height: 0 !important; zoom: 0.76; }
           .angebot .blatt { max-width: none; padding-left: 12mm !important; padding-right: 12mm !important; }
           .angebot .details { break-before: page; padding-top: 0 !important; }
         }
@@ -433,6 +515,12 @@ export default function AngebotPage({ params }) {
     </div>
   );
 }
+
+const ctaBtn = (primary) => ({
+  display: 'inline-flex', alignItems: 'center', minHeight: 40, padding: '0 16px', borderRadius: 999, textDecoration: 'none',
+  fontFamily: SANS, fontSize: 12.5, fontWeight: 700,
+  background: primary ? C.champagne : 'transparent', color: primary ? C.black : C.ivory, border: primary ? 0 : '1px solid rgba(241,238,230,0.3)',
+});
 
 const toolbarBtn = (primary) => ({
   minHeight: 36, padding: '0 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: SANS,

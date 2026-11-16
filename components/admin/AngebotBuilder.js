@@ -19,13 +19,23 @@ const field = {
 };
 const optionStyle = { background: 'var(--select-option-bg)', color: 'var(--text-body)' };
 
-// "Angebot erstellen" in the lead details: three tariffs, their column names and the recommended
-// one; opens the offer page (app/admin/angebot/[id]) in a new tab, ready to save as PDF.
-export default function AngebotBuilder({ s }) {
+// The choice saved with the lead the last time (column angebot_auswahl), if it is still valid.
+function letzteAuswahl(a) {
+  if (!a || !Array.isArray(a.spalten) || a.spalten.length !== 3) return null;
+  const ok = a.spalten.every((sp) => sp && FOKUS[sp.gesellschaft] && fokusTarife(sp.gesellschaft).includes(sp.tarif));
+  return ok ? a : null;
+}
+
+// "Angebot erstellen" in the lead details: three tariffs, their column names, the recommended one
+// and a personal note; opens the offer page (app/admin/angebot/[id]) in a new tab. The choice is
+// saved with the lead, so it is there again next time.
+export default function AngebotBuilder({ s, onSave }) {
+  const letzte = letzteAuswahl(s.angebot_auswahl);
   const [open, setOpen] = useState(false);
-  const [spalten, setSpalten] = useState(VORLAGE);
-  const [empfohlen, setEmpfohlen] = useState(2);
-  const [mitGesellschaft, setMitGesellschaft] = useState(false);
+  const [spalten, setSpalten] = useState(letzte ? letzte.spalten.map((sp) => ({ gesellschaft: sp.gesellschaft, tarif: sp.tarif, label: String(sp.label || sp.tarif) })) : VORLAGE);
+  const [empfohlen, setEmpfohlen] = useState(letzte ? Number(letzte.empfohlen ?? -1) : 2);
+  const [mitGesellschaft, setMitGesellschaft] = useState(letzte ? !!letzte.mitGesellschaft : false);
+  const [notiz, setNotiz] = useState(letzte ? String(letzte.notiz || '') : '');
 
   const heute = new Date();
   const beginn = new Date(heute.getFullYear(), heute.getMonth() + 1, 1);
@@ -36,7 +46,9 @@ export default function AngebotBuilder({ s }) {
     spalten.forEach((sp) => p.append('t', `${sp.gesellschaft}|${sp.tarif}|${sp.label.trim() || sp.tarif}`));
     if (empfohlen >= 0) p.set('e', String(empfohlen));
     if (mitGesellschaft) p.set('g', '1');
+    if (notiz.trim()) p.set('n', notiz.trim().slice(0, 600));
     window.open(`/admin/angebot/${s.id}?${p.toString()}`, '_blank', 'noopener');
+    onSave?.({ spalten, empfohlen, mitGesellschaft, notiz: notiz.trim().slice(0, 600), am: new Date().toISOString() });
   };
 
   return (
@@ -59,7 +71,10 @@ export default function AngebotBuilder({ s }) {
           // Padding instead of a margin: SmoothHeight measures this box, a margin would cut off its frame.
           <div style={{ paddingTop: 10, paddingBottom: 2 }}>
           <div style={{ padding: 16, border: '1px solid var(--accent)', borderRadius: 12, background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <p style={{ margin: '0 0 2px', fontSize: 12, color: 'var(--text-muted)' }}>Stern = Empfehlung im Angebot (nochmal klicken: ohne Empfehlung)</p>
+            <p style={{ margin: '0 0 2px', fontSize: 12, color: 'var(--text-muted)' }}>
+              Stern = Empfehlung im Angebot (nochmal klicken: ohne Empfehlung)
+              {letzte?.am && ` · Zuletzt geöffnet am ${new Date(letzte.am).toLocaleDateString('de-DE')}, Auswahl von damals ist geladen`}
+            </p>
             {spalten.map((sp, i) => {
               const r = berechneBeitrag({ gesellschaft: sp.gesellschaft, tarif: sp.tarif, geburtsdatum: s.geburtsdatum, fehlendeZaehne: s.fehlende_zaehne }, beginn);
               const hatLeistungen = !!leistungenVon(sp.gesellschaft, sp.tarif);
@@ -92,6 +107,14 @@ export default function AngebotBuilder({ s }) {
                 </div>
               );
             })}
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6 }}>
+              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Persönliche Empfehlung (optional, steht im Angebot unter den Tarifen)</span>
+              <textarea
+                value={notiz} onChange={(e) => setNotiz(e.target.value)} rows={2} maxLength={600}
+                placeholder="z. B. Premium+ passt gut zu Ihnen, weil Ihnen Implantate und Prophylaxe wichtig sind."
+                style={{ ...field, height: 'auto', minHeight: 64, padding: '10px 12px', resize: 'vertical', lineHeight: 1.45 }}
+              />
+            </label>
             {/* Footer: options and notes on the left, the action on the right, below a hairline. */}
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px 24px', marginTop: 6, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
               <div style={{ flex: '1 1 320px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>

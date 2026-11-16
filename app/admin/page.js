@@ -13,6 +13,7 @@ import InsurerSelect from '../../components/InsurerSelect';
 import Auswertung from '../../components/admin/Auswertung';
 import Abrechnung from '../../components/admin/Abrechnung';
 import AngebotBuilder from '../../components/admin/AngebotBuilder';
+import Erhoehungen from '../../components/admin/Erhoehungen';
 import Dokumente from '../../components/admin/Dokumente';
 import Backup from '../../components/admin/Backup';
 import { selectLook, STATUS_OPTIONS, pillColors } from '../../components/admin/ui';
@@ -511,6 +512,9 @@ function AdminContent() {
         {tab === 'controlling' && (
           <Auswertung alwaysOpen rows={inSelectedPeriod} allRows={submissions} periodText={periodLabel(period)} onOpenLead={openLead} />
         )}
+        {tab === 'controlling' && (
+          <Erhoehungen rows={submissions} onOpenLead={openLead} />
+        )}
 
         {tab === 'abrechnung' && (
           <Abrechnung rows={inSelectedPeriod} periodText={periodLabel(period)} onOpenLead={openLead} />
@@ -845,7 +849,7 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
             )}
           </div>
 
-          {!isGespraech && <AngebotBuilder s={s} />}
+          {!isGespraech && <AngebotBuilder s={s} onSave={(auswahl) => onUpdateMany({ angebot_auswahl: auswahl })} />}
 
           <div className="crm-two">
             <EditableField label="Beratungsdokumentation">

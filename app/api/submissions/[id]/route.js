@@ -17,6 +17,7 @@ const ALLOWED_FIELDS = [
   'tarif',
   'abgerechnet',
   'notizen',
+  'angebot_auswahl',
   'alt_vertrag_gekuendigt',
   'kuendigungsbestaetigung_erhalten',
   // Customer details Marco can correct by hand (CRM "Kundenangaben bearbeiten").
@@ -79,6 +80,14 @@ export async function PATCH(request, { params }) {
 
   // "In aktuellen Monat holen" and its undo. The server sets the time.
   if ('wieder_aktiv' in body) update.wieder_aktiv_am = body.wieder_aktiv === true ? new Date().toISOString() : null;
+
+  // Last offer put together in the CRM (AngebotBuilder): a small object, never anything else.
+  if ('angebot_auswahl' in update && update.angebot_auswahl !== null) {
+    const v = update.angebot_auswahl;
+    if (typeof v !== 'object' || Array.isArray(v) || JSON.stringify(v).length > 4000) {
+      return NextResponse.json({ error: 'Invalid value for angebot_auswahl' }, { status: 400 });
+    }
+  }
 
   for (const [key, limit] of Object.entries(TEXT_LIMITS)) {
     if (!(key in update) || update[key] === null) continue;

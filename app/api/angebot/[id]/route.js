@@ -23,7 +23,7 @@ async function browserStarten() {
   return puppeteer.launch({ args: chromium.args, executablePath: await chromium.executablePath(), headless: true });
 }
 
-const dateiname = (name) => `Zahnzusatz-Vergleich ${String(name || 'Kunde').replace(/[^\p{L}\p{N} .-]/gu, '').trim()}.pdf`;
+const dateiname = (name) => `Zahnzusatz-Vergleich ${String(name || 'Kunde').replace(/[^\p{L}\p{N} .-]/gu, '').trim()} ${new Date().toLocaleDateString('de-DE', { timeZone: 'Europe/Berlin' })}.pdf`;
 
 export async function GET(request, { params }) {
   if (!isAuthenticated()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -34,7 +34,7 @@ export async function GET(request, { params }) {
   const ablegen = url.searchParams.get('ablegen') === '1';
   const auswahl = new URLSearchParams();
   url.searchParams.getAll('t').slice(0, 3).forEach((t) => auswahl.append('t', t));
-  ['e', 'g'].forEach((k) => { if (url.searchParams.has(k)) auswahl.set(k, url.searchParams.get(k)); });
+  ['e', 'g', 'n'].forEach((k) => { if (url.searchParams.has(k)) auswahl.set(k, url.searchParams.get(k).slice(0, 600)); });
   const seite = `${url.origin}/admin/angebot/${id}?${auswahl.toString()}&pdf=1`;
 
   let browser;
