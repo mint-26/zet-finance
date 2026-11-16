@@ -92,24 +92,31 @@ export default function AngebotBuilder({ s }) {
                 </div>
               );
             })}
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, marginTop: 4 }}>
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-muted)', cursor: 'pointer' }}>
-                <input type="checkbox" checked={mitGesellschaft} onChange={(e) => setMitGesellschaft(e.target.checked)} />
-                Gesellschaft und Tarif im Angebot nennen
-              </label>
+            {/* Footer: options and notes on the left, the action on the right, below a hairline. */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px 24px', marginTop: 6, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
+              <div style={{ flex: '1 1 320px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-body)', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={mitGesellschaft} onChange={(e) => setMitGesellschaft(e.target.checked)} />
+                  Gesellschaft und Tarif im Angebot nennen
+                </label>
+                {!s.geburtsdatum && <span style={{ fontSize: 12, color: '#c9762b' }}>Für die Beiträge fehlt das Geburtsdatum (unter „Kundenangaben“ eintragen).</span>}
+                <span style={{ fontSize: 12, color: 'var(--text-dim)', lineHeight: 1.45 }}>
+                  Beiträge für einen Beginn am {beginn.toLocaleDateString('de-DE')}. Im Angebot dann „PDF herunterladen“, es wird auch bei den Dokumenten abgelegt.
+                </span>
+              </div>
               <button
                 type="button" onClick={oeffnen} disabled={!s.geburtsdatum}
                 style={{
-                  marginLeft: 'auto', minHeight: 42, padding: '0 18px', borderRadius: 10, border: 0, cursor: s.geburtsdatum ? 'pointer' : 'not-allowed',
+                  display: 'inline-flex', alignItems: 'center', gap: 8, minHeight: 42, padding: '0 18px', borderRadius: 10, border: 0,
+                  cursor: s.geburtsdatum ? 'pointer' : 'not-allowed', flexShrink: 0,
                   background: s.geburtsdatum ? 'linear-gradient(135deg, var(--accent), var(--accent-light))' : 'var(--text-dim)',
                   color: 'var(--bg-primary)', fontWeight: 700, fontSize: 14, fontFamily: "'DM Sans', sans-serif",
                 }}
-              >Angebot öffnen</button>
+              >
+                Angebot öffnen
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 4h6v6" /><path d="M20 4l-9 9" /><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg>
+              </button>
             </div>
-            {!s.geburtsdatum && <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>Für die Beiträge fehlt das Geburtsdatum (unter „Kundenangaben“ eintragen).</p>}
-            <p style={{ margin: 0, fontSize: 12, color: 'var(--text-dim)' }}>
-              Beiträge für einen Beginn am {beginn.toLocaleDateString('de-DE')}. Das Angebot öffnet sich in einem neuen Tab, dort „PDF herunterladen“ (wird auch bei den Dokumenten abgelegt).
-            </p>
           </div>
           </div>
         )}
