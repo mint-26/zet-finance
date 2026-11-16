@@ -5,8 +5,9 @@
 // t=Gesellschaft|Tarif|Spaltenname (three times), e=index of the recommended column, g=1 names the
 // insurer under the column name. Marco's rule: no insurer or tariff names by default, the
 // customer only sees his column names; the partner logos sit at the very end.
-// "Als PDF speichern" uses the browser's print dialog (A4, vector, a few hundred KB, so the PDF
-// opens on a phone via WhatsApp).
+// "PDF herunterladen" gets the PDF from app/api/angebot/[id], where Chrome renders this page with
+// its print styles (A4, vector, a few hundred KB, so it opens on a phone via WhatsApp), and files
+// it with the lead's documents.
 
 import { Fragment, useEffect, useState } from 'react';
 import { berechneBeitrag, beitragsVerlauf, geburtsjahr, euro } from '../../../../lib/tarife';
@@ -14,8 +15,10 @@ import { SECTIONS, leistungenVon, begrenzungText, LEISTUNGEN_STAND } from '../..
 import { C, CONTACT } from '../../../../lib/brand';
 import { formatBirthdate } from '../../../../lib/format';
 
-const SERIF = "Georgia, 'Times New Roman', serif";
-const SANS = 'Arial, Helvetica, sans-serif';
+// Georgia and Arial on Macs and PCs; on the server that renders the PDF (Linux) their
+// metric-compatible twins Gelasio and Arimo, loaded below.
+const SERIF = "Georgia, Gelasio, 'Times New Roman', serif";
+const SANS = 'Arial, Arimo, Helvetica, sans-serif';
 const INK = '#141414';
 const MUTED = '#6b665e';
 const LINE = 'rgba(9,9,9,0.10)';
@@ -50,12 +53,14 @@ function Icon({ s, size = 14 }) {
   return null;
 }
 
+const STERN = 'M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z';
+
 function Sterne({ wert, hell }) {
   const voll = Math.round(wert);
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, color: hell ? 'rgba(241,238,230,0.75)' : MUTED }}>
-      <span aria-hidden="true" style={{ color: C.champagne, letterSpacing: 1.5, fontSize: 13 }}>
-        {'★'.repeat(voll)}<span style={{ opacity: 0.3 }}>{'★'.repeat(5 - voll)}</span>
+      <span aria-hidden="true" style={{ display: 'inline-flex', gap: 2 }}>
+        {[0, 1, 2, 3, 4].map((i) => <svg key={i} width="12" height="12" viewBox="0 0 24 24"><path d={STERN} fill={C.champagne} opacity={i < voll ? 1 : 0.3} /></svg>)}
       </span>
       {wert.toLocaleString('de-DE')} / 5 Kundenbewertung
     </div>
@@ -144,6 +149,7 @@ export default function AngebotPage({ params }) {
   const [empfohlen, setEmpfohlen] = useState(-1);
   const [mitGesellschaft, setMitGesellschaft] = useState(false);
   const [statusGesetzt, setStatusGesetzt] = useState(false);
+  const [pdfState, setPdfState] = useState('');
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
@@ -186,6 +192,25 @@ export default function AngebotPage({ params }) {
   }));
   const cols = `minmax(0, 0.95fr) repeat(${spalten.length}, minmax(0, 1fr))`;
 
+  const pdfLaden = async () => {
+    setPdfState('laeuft');
+    try {
+      const res = await fetch(`/api/angebot/${lead.id}${window.location.search}&ablegen=1`);
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `Zahnzusatz-Vergleich ${lead.name || ''}.pdf`.replace(/\s+\.pdf$/, '.pdf');
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      setPdfState(res.headers.get('X-Angebot-Abgelegt') === '1' ? 'abgelegt' : 'fertig');
+    } catch {
+      setPdfState('fehler');
+    }
+  };
+
   const markieren = async () => {
     const res = await fetch(`/api/submissions/${lead.id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'angebot_verschickt' }),
@@ -205,7 +230,7 @@ export default function AngebotPage({ params }) {
   const rowLabel = { padding: '9px 12px 9px 0', fontSize: 12.5, lineHeight: 1.35, color: MUTED };
 
   return (
-    <div className="angebot" style={{ background: '#fff', minHeight: '100vh', fontFamily: SANS, color: INK }}>
+    <div className="angebot" data-angebot-fertig={lead.name || 'Kunde'} style={{ background: '#fff', minHeight: '100vh', fontFamily: SANS, color: INK }}>
       <div className="no-print" style={{ position: 'sticky', top: 0, zIndex: 5, background: '#2a2925', color: '#fff', padding: '10px 16px', display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
         <a href="/admin" style={{ color: '#fff', fontSize: 14 }}>← CRM</a>
         <span style={{ fontSize: 14, opacity: 0.75 }}>Angebot für {lead.name}</span>
@@ -213,8 +238,15 @@ export default function AngebotPage({ params }) {
           {lead.status !== 'angebot_verschickt' && !statusGesetzt && (
             <button type="button" onClick={markieren} style={toolbarBtn(false)}>Status „Angebot verschickt“ setzen</button>
           )}
-          {statusGesetzt && <span style={{ fontSize: 13 }}>Status gesetzt ✓</span>}
-          <button type="button" onClick={() => window.print()} style={toolbarBtn(true)}>Als PDF speichern</button>
+          {statusGesetzt && <span style={{ fontSize: 13 }}>Status gesetzt</span>}
+          {pdfState && pdfState !== 'laeuft' && (
+            <span style={{ fontSize: 13, color: pdfState === 'fehler' ? '#ffb4a8' : C.champagne }}>
+              {{ abgelegt: 'PDF geladen und bei den Dokumenten abgelegt', fertig: 'PDF geladen', fehler: 'PDF fehlgeschlagen, bitte nochmal' }[pdfState]}
+            </span>
+          )}
+          <button type="button" onClick={pdfLaden} disabled={pdfState === 'laeuft'} style={toolbarBtn(true)}>
+            {pdfState === 'laeuft' ? 'PDF wird erstellt …' : 'PDF herunterladen'}
+          </button>
         </span>
       </div>
 
@@ -380,6 +412,7 @@ export default function AngebotPage({ params }) {
       </div>
 
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&family=Gelasio&display=swap');
         .angebot .blatt { max-width: 980px; margin: 0 auto; box-sizing: border-box; }
         .angebot .zeile, .angebot article, .angebot .abschnitt, .angebot .schluss { break-inside: avoid; }
         @media (max-width: 720px) {

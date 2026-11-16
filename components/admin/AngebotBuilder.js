@@ -103,7 +103,7 @@ export default function AngebotBuilder({ s }) {
             </div>
             {!s.geburtsdatum && <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>Für die Beiträge fehlt das Geburtsdatum (unter „Kundenangaben“ eintragen).</p>}
             <p style={{ margin: 0, fontSize: 12, color: 'var(--text-dim)' }}>
-              Beiträge für einen Beginn am {beginn.toLocaleDateString('de-DE')}. Das Angebot öffnet sich in einem neuen Tab, dort „Als PDF speichern“.
+              Beiträge für einen Beginn am {beginn.toLocaleDateString('de-DE')}. Das Angebot öffnet sich in einem neuen Tab, dort „PDF herunterladen“ (wird auch bei den Dokumenten abgelegt).
             </p>
           </div>
         )}
