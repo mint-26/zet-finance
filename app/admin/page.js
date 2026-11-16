@@ -12,6 +12,7 @@ import {
 import InsurerSelect from '../../components/InsurerSelect';
 import Auswertung from '../../components/admin/Auswertung';
 import Abrechnung from '../../components/admin/Abrechnung';
+import AngebotBuilder from '../../components/admin/AngebotBuilder';
 import Dokumente from '../../components/admin/Dokumente';
 import Backup from '../../components/admin/Backup';
 import { selectLook, STATUS_OPTIONS, pillColors } from '../../components/admin/ui';
@@ -843,6 +844,8 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
               </div>
             )}
           </div>
+
+          {!isGespraech && <AngebotBuilder s={s} />}
 
           <div className="crm-two">
             <EditableField label="Beratungsdokumentation">

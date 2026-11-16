@@ -179,6 +179,10 @@ textarea::placeholder {
 .crm-tab.active { color: var(--text-primary); border-bottom-color: var(--accent); }
 .crm-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
+/* CRM "Angebot erstellen": one row per tariff column. */
+.angebot-zeile { display: grid; grid-template-columns: 130px minmax(0, 1.2fr) minmax(0, 1.2fr) 150px auto; gap: 10px; align-items: center; }
+@media (max-width: 860px) { .angebot-zeile { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-bottom: 10px; border-bottom: 1px dashed var(--border); } }
+
 /* CRM lead list: the whole summary row opens a lead. */
 .crm-lead-row { cursor: pointer; transition: background 0.2s ease; }
 .crm-lead-row:hover { background: var(--accent-dim); }
