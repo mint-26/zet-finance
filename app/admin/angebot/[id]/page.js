@@ -1,32 +1,37 @@
 'use client';
 
-// Offer for one lead in the look of Marco's Canva offers: three tariffs side by side with monthly
-// premium, rating, benefits and premium development by age. Opened from the CRM ("Angebot
-// erstellen"); the choice comes in the URL: t=Gesellschaft|Tarif|Spaltenname (three times),
-// e=index of the recommended column, g=1 shows the insurer under the column name.
-// "Als PDF speichern" uses the browser's print dialog; the print styles below lay it out on A4.
+// Offer for one lead: three tariffs side by side, in Marco's brand (black, ivory, champagne,
+// Georgia). Opened from the CRM ("Angebot erstellen"); the choice comes in the URL:
+// t=Gesellschaft|Tarif|Spaltenname (three times), e=index of the recommended column, g=1 names the
+// insurer under the column name. Marco's rule: no insurer or tariff names by default, the
+// customer only sees his column names; the partner logos sit at the very end.
+// "Als PDF speichern" uses the browser's print dialog (A4, vector, a few hundred KB, so the PDF
+// opens on a phone via WhatsApp).
 
 import { Fragment, useEffect, useState } from 'react';
 import { berechneBeitrag, beitragsVerlauf, geburtsjahr, euro } from '../../../../lib/tarife';
 import { SECTIONS, leistungenVon, begrenzungText, LEISTUNGEN_STAND } from '../../../../lib/leistungen';
-import { CONTACT } from '../../../../lib/brand';
+import { C, CONTACT } from '../../../../lib/brand';
 import { formatBirthdate } from '../../../../lib/format';
 
-const NAVY = '#1d3a5c';
-const GREEN = '#2e8b3a';
-const GREY_HEAD = '#d6d6d6';
-const GREY_LABEL = '#ededed';
-const LINE = '#dedede';
-const SERIES = ['#2a78d6', '#eb6834', '#1baf7a'];
-const FONT = 'Arial, Helvetica, sans-serif';
+const SERIF = "Georgia, 'Times New Roman', serif";
+const SANS = 'Arial, Helvetica, sans-serif';
+const INK = '#141414';
+const MUTED = '#6b665e';
+const LINE = 'rgba(9,9,9,0.10)';
+const TINT = '#F8F5EE';
+const OK = '#2F6B45';
+const NO = '#A8473A';
+// Chart: ink, champagne, steel blue; far apart in lightness, so they stay apart without colour.
+const SERIES = ['#141414', '#B5A171', '#3F6E96'];
 const PARTNER = [
-  ['Württembergische', 'gesellschaften/wuerttembergische.png'], ['Münchener Verein', 'gesellschaften/muenchener-verein.png'],
-  ['Allianz', 'gesellschaften/allianz.png'], ['Nürnberger', 'gesellschaften/nuernberger.png'], ['AXA', 'gesellschaften/axa.png'],
-  ['Barmenia', 'gesellschaften/barmenia.png'], ['DKV', 'gesellschaften/dkv.png'], ['SIGNAL IDUNA', 'gesellschaften/signal-iduna.png'],
-  ['BBKK', 'gesellschaften/bbkk.png'], ['SDK', 'gesellschaften/sdk.png'], ['HanseMerkur', 'gesellschaften/hansemerkur.png'], ['uniVersa', 'gesellschaften/universa.png'],
+  ['Allianz', 'allianz'], ['AXA', 'axa'], ['Münchener Verein', 'muenchener-verein'], ['Württembergische', 'wuerttembergische'],
+  ['BBKK', 'bbkk'], ['Barmenia Gothaer', 'barmenia'], ['DKV', 'dkv'], ['Nürnberger', 'nuernberger'],
+  ['SIGNAL IDUNA', 'signal-iduna'], ['SDK', 'sdk'], ['HanseMerkur', 'hansemerkur'], ['uniVersa', 'universa'],
 ];
 
 const dateDe = (d) => d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const preis = (n) => euro(n).replace(/\s€$/, ' €');
 
 function parseAuswahl(params) {
   return params.getAll('t').slice(0, 3).map((v) => {
@@ -35,83 +40,102 @@ function parseAuswahl(params) {
   });
 }
 
-function Icon({ s }) {
+function Icon({ s, size = 14 }) {
   if (s === 'ja') {
-    return <svg aria-label="enthalten" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7cb342" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="10" /><polyline points="7.5 12.5 10.5 15.5 16.5 9" /></svg>;
+    return <svg aria-label="enthalten" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={OK} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><polyline points="4 12.5 9.5 18 20 6.5" /></svg>;
   }
   if (s === 'nein') {
-    return <svg aria-label="nicht enthalten" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#e53935" strokeWidth="2.2" strokeLinecap="round" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="10" /><line x1="12" y1="7" x2="12" y2="13" /><line x1="12" y1="16.5" x2="12" y2="16.6" /></svg>;
+    return <svg aria-label="nicht enthalten" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={NO} strokeWidth="2.4" strokeLinecap="round" style={{ flexShrink: 0, marginTop: 2 }}><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></svg>;
   }
   return null;
 }
 
-function Sterne({ wert }) {
+function Sterne({ wert, hell }) {
   const voll = Math.round(wert);
   return (
-    <div style={{ textAlign: 'center' }}>
-      <div style={{ fontSize: 12, color: '#333' }}>{wert.toLocaleString('de-DE')} von <strong>5</strong> Sternen</div>
-      <div aria-hidden="true" style={{ color: '#f2c14e', fontSize: 15, letterSpacing: 2, marginTop: 2 }}>
-        {'★'.repeat(voll)}<span style={{ color: '#d9d9d9' }}>{'★'.repeat(5 - voll)}</span>
-      </div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, color: hell ? 'rgba(241,238,230,0.75)' : MUTED }}>
+      <span aria-hidden="true" style={{ color: C.champagne, letterSpacing: 1.5, fontSize: 13 }}>
+        {'★'.repeat(voll)}<span style={{ opacity: 0.3 }}>{'★'.repeat(5 - voll)}</span>
+      </span>
+      {wert.toLocaleString('de-DE')} / 5 Kundenbewertung
     </div>
   );
 }
 
-function Zelle({ wert, startJahr }) {
-  if (!wert) return <span style={{ color: '#9a9a9a', fontStyle: 'italic' }}>Angaben folgen</span>;
+// The few facts on each card: what a customer compares first.
+function kurzfakten(l, startJahr) {
+  if (!l) return [{ s: undefined, t: 'Leistungsangaben folgen' }];
+  const erste = (v) => (v?.t || '').split('\n')[0];
+  const fakten = [
+    { s: l.kronen?.s, t: `Zahnersatz ${erste(l.kronen)}` },
+    { s: l.fuellungen?.s, t: `Zahnbehandlung ${erste(l.fuellungen)}` },
+    { s: l.pzr?.s, t: `Zahnreinigung: ${erste(l.pzr).replace(/ für alle Prophylaxemaßnahmen$/, '')}` },
+    { s: l.kfo?.s, t: `Kieferorthopädie Kinder: ${erste(l.kfo).replace('Ohne Zuzahlung Krankenkasse: ', '')}` },
+    { s: l.wartezeit?.t === 'Ohne Wartezeit' ? 'ja' : undefined, t: l.wartezeit?.t || '' },
+  ];
+  if (l.begrenzung?.staffel) {
+    const st = l.begrenzung.staffel;
+    fakten.push({ s: undefined, t: `Anfangs begrenzt: bis ${st[st.length - 1].toLocaleString('de-DE')} € in ${st.length} Jahren, ab ${startJahr + st.length} unbegrenzt` });
+  }
+  return fakten.filter((f) => f.t);
+}
+
+function Wert({ wert, startJahr }) {
+  if (!wert) return <span style={{ color: '#a29c92', fontStyle: 'italic' }}>Angaben folgen</span>;
   if (wert.staffel) return <span style={{ whiteSpace: 'pre-line' }}>{begrenzungText(wert, startJahr)}</span>;
+  if ((!wert.t || wert.t.trim() === '-') && !wert.s) return <span style={{ color: '#b9b3a8' }}>–</span>;
   return (
-    <span style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+    <span style={{ display: 'flex', gap: 7, alignItems: 'flex-start', fontSize: (wert.t || '').length > 70 ? 11.5 : undefined, color: (wert.t || '').length > 70 ? '#45413b' : undefined }}>
       <Icon s={wert.s} />
-      <span style={{ whiteSpace: 'pre-line' }}>{wert.t}</span>
+      <span style={{ whiteSpace: 'pre-line' }}>{wert.t || (wert.s === 'ja' ? 'Enthalten' : '')}</span>
     </span>
   );
 }
 
-// Step chart of the monthly premium by age, one line per tariff, from today's age to 80.
+// Step chart of the monthly premium by age, from today's age to 80, one line per tariff.
 function Verlauf({ reihen }) {
-  const W = 620; const H = 230; const L = 46; const R = 12; const T = 12; const B = 34;
+  const W = 680; const H = 215; const L = 48; const R = 16; const T = 14; const B = 36;
   const alle = reihen.flatMap((r) => r.punkte);
-  if (!alle.length) return <p style={{ fontSize: 13, color: '#777', margin: 0 }}>Für diese Tarife ist keine Beitragstabelle hinterlegt.</p>;
+  if (!alle.length) return <p style={{ fontSize: 13, color: MUTED, margin: 0 }}>Für diese Tarife ist keine Beitragstabelle hinterlegt.</p>;
   const minAlter = Math.min(...alle.map((p) => p.abAlter));
   const maxAlter = Math.max(80, minAlter + 10);
-  const maxBeitrag = Math.ceil(Math.max(...alle.map((p) => p.beitrag)) / 20) * 20 || 20;
+  const schritt = Math.max(...alle.map((p) => p.beitrag)) > 100 ? 40 : 20;
+  const maxBeitrag = Math.ceil(Math.max(...alle.map((p) => p.beitrag)) / schritt) * schritt || schritt;
   const x = (a) => L + ((a - minAlter) / (maxAlter - minAlter)) * (W - L - R);
   const y = (b) => T + (1 - b / maxBeitrag) * (H - T - B);
-  const ticksY = Array.from({ length: maxBeitrag / 20 + 1 }, (_, i) => i * 20).filter((v, i, arr) => arr.length <= 8 || i % 2 === 0);
+  const ticksY = Array.from({ length: maxBeitrag / schritt + 1 }, (_, i) => i * schritt);
   const ticksX = [];
-  for (let a = Math.ceil(minAlter / 5) * 5; a <= maxAlter; a += 5) ticksX.push(a);
+  for (let a = Math.ceil(minAlter / 10) * 10; a <= maxAlter; a += 10) ticksX.push(a);
+  if (ticksX[0] - minAlter >= 4) ticksX.unshift(minAlter);
   const pfad = (punkte) => punkte.map((p, i) => {
-    const nx = i + 1 < punkte.length ? punkte[i + 1].abAlter : maxAlter;
-    return `${i === 0 ? 'M' : 'V'} ${i === 0 ? `${x(p.abAlter)} ${y(p.beitrag)}` : y(p.beitrag)} H ${x(nx)}`;
+    const bis = i + 1 < punkte.length ? punkte[i + 1].abAlter : maxAlter;
+    return `${i === 0 ? `M ${x(p.abAlter)} ${y(p.beitrag)}` : `V ${y(p.beitrag)}`} H ${x(bis)}`;
   }).join(' ');
   return (
-    <div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 28px', fontSize: 13, color: '#333', marginBottom: 8 }}>
-        {reihen.map((r, i) => (
-          <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 12, height: 12, background: SERIES[i], borderRadius: 2 }} />{r.label}
-          </span>
-        ))}
-      </div>
-      <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="Monatsbeitrag nach Alter" style={{ display: 'block', fontFamily: FONT }}>
-        {ticksY.map((v) => (
-          <g key={v}>
-            <line x1={L} x2={W - R} y1={y(v)} y2={y(v)} stroke="#e6e6e6" />
-            <text x={L - 8} y={y(v) + 4} fontSize="10" textAnchor="end" fill="#777">{v} €</text>
-          </g>
-        ))}
-        {ticksX.map((a) => <text key={a} x={x(a)} y={H - B + 16} fontSize="10" textAnchor="middle" fill="#777">{a}</text>)}
-        <text x={(L + W - R) / 2} y={H - 4} fontSize="10" textAnchor="middle" fill="#555" fontWeight="700">Alter</text>
-        {reihen.map((r, i) => r.punkte.length > 0 && (
-          <path key={i} d={pfad(r.punkte)} fill="none" stroke={SERIES[i]} strokeWidth="2" strokeLinejoin="round">
-            <title>{`${r.label}: ${r.punkte.map((p) => `ab ${p.abAlter}: ${euro(p.beitrag)}`).join(', ')}`}</title>
-          </path>
-        ))}
-      </svg>
-    </div>
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="Monatsbeitrag nach Alter" style={{ display: 'block', fontFamily: SANS }}>
+      {ticksY.map((v) => (
+        <g key={v}>
+          <line x1={L} x2={W - R} y1={y(v)} y2={y(v)} stroke={v === 0 ? 'rgba(9,9,9,0.25)' : 'rgba(9,9,9,0.07)'} />
+          <text x={L - 8} y={y(v) + 4} fontSize="10.5" textAnchor="end" fill={MUTED}>{v} €</text>
+        </g>
+      ))}
+      {ticksX.map((a) => <text key={a} x={x(a)} y={H - B + 18} fontSize="10.5" textAnchor="middle" fill={MUTED}>{a}</text>)}
+      <text x={W - R} y={H - 4} fontSize="10.5" textAnchor="end" fill={MUTED}>Alter in Jahren</text>
+      {reihen.map((r, i) => r.punkte.length > 0 && (
+        <path key={i} d={pfad(r.punkte)} fill="none" stroke={SERIES[i]} strokeWidth="2.25" strokeLinejoin="round">
+          <title>{`${r.label}: ${r.punkte.map((p) => `ab ${p.abAlter}: ${euro(p.beitrag)}`).join(', ')}`}</title>
+        </path>
+      ))}
+    </svg>
   );
 }
+
+// A row nobody fills (e.g. "Besonderheiten Erstattung" without any) is left out.
+const istLeer = (v) => !v || (!v.s && !v.staffel && (!v.t || v.t.trim() === '-'));
+const leer = (spalten, key) => spalten.every((s) => s.leistungen && istLeer(s.leistungen[key]));
+
+const kicker = { fontFamily: SANS, fontSize: 11, letterSpacing: 2.2, textTransform: 'uppercase', color: C.champagneDark };
+const h2 = { fontFamily: SERIF, fontWeight: 400, fontSize: 24, color: INK, margin: '0 0 4px' };
 
 export default function AngebotPage({ params }) {
   const [lead, setLead] = useState(null);
@@ -135,27 +159,32 @@ export default function AngebotPage({ params }) {
     }).catch(() => setState('fehler'));
   }, [params.id]);
 
+  useEffect(() => {
+    if (lead) document.title = `Zahnzusatz-Vergleich ${lead.name || ''}`.trim();
+  }, [lead]);
+
   if (state !== 'ok') {
     const text = { laden: 'Lade Angebot …', login: 'Bitte zuerst im CRM anmelden.', fehlt: 'Diesen Kunden gibt es nicht.', fehler: 'Das Angebot konnte nicht geladen werden.' }[state];
     return (
-      <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONT, background: '#fff', color: '#333', padding: 24 }}>
-        <p>{text} {state !== 'laden' && <a href="/admin" style={{ color: NAVY }}>Zum CRM</a>}</p>
+      <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: SANS, background: C.ivory, color: INK, padding: 24 }}>
+        <p>{text} {state !== 'laden' && <a href="/admin" style={{ color: C.champagneDark }}>Zum CRM</a>}</p>
       </main>
     );
   }
 
   const heute = new Date();
   const beginn = new Date(heute.getFullYear(), heute.getMonth() + 1, 1);
+  const startJahr = beginn.getFullYear();
   const jahr = geburtsjahr(lead.geburtsdatum);
-  const alter = jahr ? beginn.getFullYear() - jahr : null;
+  const alter = jahr ? startJahr - jahr : null;
+  const zaehne = String(lead.fehlende_zaehne || '0');
   const spalten = auswahl.map((a) => ({
     ...a,
     beitrag: berechneBeitrag({ gesellschaft: a.gesellschaft, tarif: a.tarif, geburtsdatum: lead.geburtsdatum, fehlendeZaehne: lead.fehlende_zaehne }, beginn),
     leistungen: leistungenVon(a.gesellschaft, a.tarif),
     verlauf: alter != null ? beitragsVerlauf({ gesellschaft: a.gesellschaft, tarif: a.tarif, fehlendeZaehne: lead.fehlende_zaehne }, alter) : [],
   }));
-  const cols = `minmax(150px, 0.9fr) repeat(${spalten.length}, minmax(0, 1fr))`;
-  const zaehne = String(lead.fehlende_zaehne || '0');
+  const cols = `minmax(0, 0.95fr) repeat(${spalten.length}, minmax(0, 1fr))`;
 
   const markieren = async () => {
     const res = await fetch(`/api/submissions/${lead.id}`, {
@@ -165,131 +194,207 @@ export default function AngebotPage({ params }) {
     else alert('Der Status konnte nicht gesetzt werden.');
   };
 
-  const randRechts = (i) => (i === empfohlen ? `2px solid ${GREEN}` : `1px solid ${LINE}`);
-  const zelle = (i, extra = {}) => ({
-    padding: '10px 12px', fontSize: 12.5, lineHeight: 1.45, color: '#333', background: '#fff',
-    borderTop: `1px solid ${LINE}`, borderLeft: i === empfohlen ? `2px solid ${GREEN}` : `1px solid ${LINE}`, borderRight: randRechts(i), ...extra,
-  });
-  const label = { padding: '10px 12px', fontSize: 12.5, lineHeight: 1.35, color: '#333', background: GREY_LABEL, borderTop: `1px solid ${LINE}` };
+  const meta = [
+    lead.geburtsdatum && ['Geburtsdatum', formatBirthdate(lead.geburtsdatum)],
+    ['Versicherungsbeginn', dateDe(beginn)],
+    zaehne !== '0' && ['Fehlende Zähne', zaehne],
+    ['Erstellt am', dateDe(heute)],
+  ].filter(Boolean);
+
+  const cell = (i, extra = {}) => ({ padding: '9px 12px', fontSize: 12.5, lineHeight: 1.45, color: INK, background: i === empfohlen ? TINT : 'transparent', ...extra });
+  const rowLabel = { padding: '9px 12px 9px 0', fontSize: 12.5, lineHeight: 1.35, color: MUTED };
 
   return (
-    <div className="angebot" style={{ background: '#fff', minHeight: '100vh', fontFamily: FONT, color: '#333' }}>
-      <div className="no-print" style={{ position: 'sticky', top: 0, zIndex: 5, background: '#1f1f1f', color: '#fff', padding: '10px 16px', display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+    <div className="angebot" style={{ background: '#fff', minHeight: '100vh', fontFamily: SANS, color: INK }}>
+      <div className="no-print" style={{ position: 'sticky', top: 0, zIndex: 5, background: '#2a2925', color: '#fff', padding: '10px 16px', display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
         <a href="/admin" style={{ color: '#fff', fontSize: 14 }}>← CRM</a>
-        <span style={{ fontSize: 14, opacity: 0.8 }}>Angebot für {lead.name}</span>
-        <span style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 14, opacity: 0.75 }}>Angebot für {lead.name}</span>
+        <span style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           {lead.status !== 'angebot_verschickt' && !statusGesetzt && (
             <button type="button" onClick={markieren} style={toolbarBtn(false)}>Status „Angebot verschickt“ setzen</button>
           )}
-          {statusGesetzt && <span style={{ fontSize: 13, alignSelf: 'center' }}>Status gesetzt ✓</span>}
+          {statusGesetzt && <span style={{ fontSize: 13 }}>Status gesetzt ✓</span>}
           <button type="button" onClick={() => window.print()} style={toolbarBtn(true)}>Als PDF speichern</button>
         </span>
       </div>
 
-      <header style={{ background: '#e8e8e8', padding: '16px 28px', display: 'flex', alignItems: 'center', gap: 16 }}>
-        <img src="/logo-black.svg?v=7" alt="" style={{ height: 56, width: 'auto', display: 'block' }} />
-        <span style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: 18, letterSpacing: 3, color: '#111' }}>MARCO ARPA</span>
+      {/* Page 1: brand, customer, the three tariffs */}
+      <header style={{ background: C.black, color: C.ivory }}>
+        <div className="blatt" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '26px 40px' }}>
+          <img src="/logo-white.svg?v=7" alt="" style={{ height: 58, width: 'auto', display: 'block' }} />
+          <div>
+            <div style={{ fontFamily: SERIF, fontSize: 21, letterSpacing: 5 }}>MARCO ARPA</div>
+            <div style={{ ...kicker, color: C.champagne, fontSize: 10, marginTop: 4 }}>Versicherungsmakler</div>
+          </div>
+          <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+            <div style={{ ...kicker, color: C.champagne }}>Zahnzusatzversicherung</div>
+            <div style={{ fontFamily: SERIF, fontSize: 15, marginTop: 4, color: 'rgba(241,238,230,0.85)' }}>Ihr persönlicher Vergleich</div>
+          </div>
+        </div>
       </header>
 
-      <div className="blatt" style={{ maxWidth: 1000, margin: '0 auto', padding: '0 16px 40px' }}>
-        {/* Head: customer and the three tariffs */}
-        <div className="block" style={{ display: 'grid', gridTemplateColumns: cols, marginTop: 0 }}>
-          <div style={{ ...label, borderTop: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '28px 12px', gap: 6 }}>
-            <div style={{ fontSize: 17 }}>Zahnzusatzvergleich</div>
-            <div style={{ fontSize: 17, color: NAVY }}>{lead.name}</div>
-            <div style={{ fontSize: 11.5, color: '#666', lineHeight: 1.5, marginTop: 6 }}>
-              {lead.geburtsdatum && <>geb. {formatBirthdate(lead.geburtsdatum)}<br /></>}
-              Beginn {dateDe(beginn)}
-              {zaehne !== '0' && <><br />{zaehne} fehlende{zaehne === '1' ? 'r Zahn' : ' Zähne'}</>}
-            </div>
-          </div>
-          {spalten.map((s, i) => (
-            <div key={i} style={{ ...zelle(i, { borderTop: i === empfohlen ? `2px solid ${GREEN}` : 0 }), display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: '24px 12px', textAlign: 'center' }}>
-              <div style={{ fontSize: 20, letterSpacing: 0.5, textTransform: 'uppercase', color: '#222' }}>{s.label}</div>
-              {mitGesellschaft && <div style={{ fontSize: 11.5, color: '#666', marginTop: -8 }}>{s.gesellschaft}, {s.tarif}</div>}
-              <div style={{ background: NAVY, color: '#fff', borderRadius: 8, padding: '12px 10px', minWidth: 140, maxWidth: '100%', boxSizing: 'border-box' }}>
-                {s.beitrag.ok ? (
-                  <>
-                    <div style={{ fontSize: 22 }}>{euro(s.beitrag.beitrag).replace(' €', '€')}</div>
-                    <div style={{ fontSize: 11, opacity: 0.85, marginTop: 2 }}>pro Monat</div>
-                  </>
-                ) : <div style={{ fontSize: 12 }}>{s.beitrag.grund}</div>}
-              </div>
-              {s.beitrag.ok && s.beitrag.zuschlag > 0 && <div style={{ fontSize: 11, color: '#666', marginTop: -6 }}>inkl. {euro(s.beitrag.zuschlag)} Zuschlag</div>}
-              {i === empfohlen && <div style={{ fontSize: 11, fontWeight: 700, color: GREEN, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: -4 }}>Empfehlung</div>}
-            </div>
-          ))}
-          <div style={label}>Kundenbewertung</div>
-          {spalten.map((s, i) => (
-            <div key={i} style={zelle(i, { borderBottom: i === empfohlen ? `2px solid ${GREEN}` : `1px solid ${LINE}` })}>
-              {s.leistungen?.sterne ? <Sterne wert={s.leistungen.sterne} /> : <div style={{ textAlign: 'center', color: '#9a9a9a' }}>–</div>}
-            </div>
-          ))}
-        </div>
-
-        {SECTIONS.map((sec) => (
-          <section key={sec.key} className="block" style={{ marginTop: 36, display: 'grid', gridTemplateColumns: cols, border: `1px solid ${LINE}` }}>
-            <div style={{ background: GREY_HEAD, padding: '12px 12px', fontSize: 15, color: '#333', gridColumn: sec.note ? 'auto' : '1 / -1' }}>{sec.title}</div>
-            {sec.note && spalten.map((s, i) => (
-              <div key={i} style={{ background: GREY_HEAD, padding: 6 }}>
-                <div style={{ background: '#fff', textAlign: 'center', padding: '6px 4px', fontSize: 12.5, color: GREEN }}>{s.leistungen?.noten?.[sec.key] || '–'}</div>
+      <section style={{ background: C.ivory }}>
+        <div className="blatt" style={{ padding: '34px 40px 30px' }}>
+          <div style={kicker}>Angebot für</div>
+          <h1 style={{ fontFamily: SERIF, fontWeight: 400, fontSize: 38, lineHeight: 1.15, margin: '8px 0 18px', color: INK }}>{lead.name}</h1>
+          <dl style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 40px', margin: 0 }}>
+            {meta.map(([k, v]) => (
+              <div key={k}>
+                <dt style={{ fontSize: 10.5, letterSpacing: 1.2, textTransform: 'uppercase', color: MUTED }}>{k}</dt>
+                <dd style={{ margin: '3px 0 0', fontSize: 15, color: INK }}>{v}</dd>
               </div>
             ))}
-            {sec.rows.map(([key, text, sub]) => (
+          </dl>
+        </div>
+      </section>
+
+      <main className="blatt" style={{ padding: '30px 40px 10px' }}>
+        <div className="karten" style={{ display: 'grid', gridTemplateColumns: `repeat(${spalten.length}, minmax(0, 1fr))`, gap: 14, alignItems: 'stretch' }}>
+          {spalten.map((s, i) => {
+            const top = i === empfohlen;
+            return (
+              <article key={i} style={{
+                position: 'relative', borderRadius: 14, padding: '26px 20px 22px', display: 'flex', flexDirection: 'column', gap: 14,
+                background: top ? C.black : '#fff', color: top ? C.ivory : INK, border: top ? `1px solid ${C.black}` : `1px solid ${LINE}`,
+              }}>
+                {top && (
+                  <span style={{ position: 'absolute', top: -11, left: 20, background: C.champagne, color: C.black, fontSize: 10.5, fontWeight: 700, letterSpacing: 1.4, textTransform: 'uppercase', padding: '5px 10px', borderRadius: 999 }}>
+                    Unsere Empfehlung
+                  </span>
+                )}
+                <div>
+                  <div style={{ fontFamily: SERIF, fontSize: 24 }}>{s.label}</div>
+                  {mitGesellschaft && <div style={{ fontSize: 11.5, marginTop: 4, color: top ? 'rgba(241,238,230,0.7)' : MUTED }}>{s.gesellschaft}, {s.tarif}</div>}
+                </div>
+                <div>
+                  {s.beitrag.ok ? (
+                    <>
+                      <span style={{ fontFamily: SERIF, fontSize: 40, lineHeight: 1, color: top ? C.champagne : INK }}>{preis(s.beitrag.beitrag)}</span>
+                      <div style={{ fontSize: 12, marginTop: 6, color: top ? 'rgba(241,238,230,0.75)' : MUTED }}>
+                        monatlich{s.beitrag.zuschlag > 0 ? `, inkl. ${euro(s.beitrag.zuschlag)} Zuschlag` : ''}
+                      </div>
+                    </>
+                  ) : <div style={{ fontSize: 13 }}>{s.beitrag.grund}</div>}
+                </div>
+                {s.leistungen?.sterne && <Sterne wert={s.leistungen.sterne} hell={top} />}
+                <ul style={{ listStyle: 'none', margin: 0, padding: '14px 0 0', borderTop: `1px solid ${top ? 'rgba(241,238,230,0.18)' : LINE}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {kurzfakten(s.leistungen, startJahr).map((f) => (
+                    <li key={f.t} style={{ display: 'flex', gap: 8, fontSize: 12.5, lineHeight: 1.4 }}>
+                      {f.s === 'ja'
+                        ? <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={top ? C.champagne : OK} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><polyline points="4 12.5 9.5 18 20 6.5" /></svg>
+                        : <span aria-hidden="true" style={{ width: 14, flexShrink: 0, textAlign: 'center', color: top ? C.champagne : C.champagneDark }}>·</span>}
+                      <span>{f.t}</span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            );
+          })}
+        </div>
+      </main>
+
+      {/* Premium development */}
+      <div className="blatt abschnitt" style={{ padding: '26px 40px 0' }}>
+        <div style={kicker}>Beitragsentwicklung</div>
+        <h2 style={h2}>So entwickelt sich Ihr Beitrag mit dem Alter</h2>
+        <p style={{ fontSize: 12.5, color: MUTED, margin: '0 0 16px', lineHeight: 1.5 }}>
+          Zahnzusatztarife steigen in Altersstufen, jeweils zum 1. Januar des Jahres, in dem Sie die nächste Stufe erreichen.
+        </p>
+        <div style={{ border: `1px solid ${LINE}`, borderRadius: 14, padding: '18px 18px 10px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 28px', marginBottom: 10 }}>
+            {spalten.map((s, i) => {
+              const naechste = s.verlauf[1];
+              return (
+                <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 12.5 }}>
+                  <span style={{ width: 18, height: 3, background: SERIES[i], marginTop: 8, borderRadius: 2 }} />
+                  <span>
+                    <strong style={{ fontWeight: 700 }}>{s.label}</strong>
+                    <span style={{ display: 'block', color: MUTED, fontSize: 11.5 }}>
+                      {s.verlauf.length ? `heute ${euro(s.verlauf[0].beitrag)}${naechste ? `, ab ${naechste.abAlter}: ${euro(naechste.beitrag)}` : ''}` : 'keine Beitragstabelle'}
+                    </span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <Verlauf reihen={spalten.map((s) => ({ label: s.label, punkte: s.verlauf }))} />
+        </div>
+      </div>
+
+      {/* Details */}
+      <div className="blatt details" style={{ padding: '40px 40px 0' }}>
+        <div style={kicker}>Im Detail</div>
+        <h2 style={h2}>Leistungen im Vergleich</h2>
+        {SECTIONS.map((sec) => (
+          <section key={sec.key} className="abschnitt" style={{ marginTop: 22, display: 'grid', gridTemplateColumns: cols }}>
+            <div style={{ fontFamily: SERIF, fontSize: 17, color: INK, padding: '10px 12px 10px 0', borderBottom: `1.5px solid ${C.champagne}` }}>{sec.title}</div>
+            {spalten.map((s, i) => (
+              <div key={i} style={{ ...cell(i, { padding: '10px 12px' }), borderBottom: `1.5px solid ${C.champagne}`, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: MUTED }}>
+                {s.label}
+                {sec.note && s.leistungen?.noten?.[sec.key] && <span style={{ display: 'block', textTransform: 'none', letterSpacing: 0, color: OK, fontSize: 11.5, marginTop: 2 }}>{s.leistungen.noten[sec.key]}</span>}
+              </div>
+            ))}
+            {sec.rows.filter(([key]) => !leer(spalten, key)).map(([key, text, sub]) => (
               <Fragment key={key}>
-                <div className="zeile" style={label}>
+                <div className="zeile" style={{ ...rowLabel, borderBottom: `1px solid ${LINE}` }}>
                   {text}
-                  {sub && <div style={{ fontSize: 10.5, color: '#777' }}>{sub}</div>}
+                  {sub && <div style={{ fontSize: 10.5, color: '#9a948a' }}>{sub}</div>}
                 </div>
                 {spalten.map((s, i) => (
-                  <div key={i} className="zeile" style={zelle(i)}>
-                    <Zelle wert={s.leistungen ? (s.leistungen[key] || { t: '' }) : null} startJahr={beginn.getFullYear()} />
+                  <div key={i} className="zeile" style={{ ...cell(i), borderBottom: `1px solid ${LINE}` }}>
+                    <Wert wert={s.leistungen ? (s.leistungen[key] || {}) : null} startJahr={startJahr} />
                   </div>
                 ))}
               </Fragment>
             ))}
           </section>
         ))}
+      </div>
 
-        <section className="block" style={{ marginTop: 36, display: 'grid', gridTemplateColumns: cols, border: `1px solid ${LINE}` }}>
-          <div style={{ background: GREY_HEAD, padding: 12, fontSize: 15, gridColumn: '1 / -1' }}>Beitragsentwicklung</div>
-          <div style={label}>Beitragsentwicklung im Alter</div>
-          {spalten.map((s, i) => (
-            <div key={i} style={zelle(i)}>
-              {s.verlauf.length > 1
-                ? `Altersbedingte Beitragserhöhung, siehe Beitragschart. Ab ${s.verlauf[1].abAlter} Jahren ${euro(s.verlauf[1].beitrag)}.`
-                : s.verlauf.length === 1 ? 'Keine weitere Altersstufe.' : 'Keine Beitragstabelle hinterlegt.'}
-            </div>
+      {/* Partners and contact, kept together on the last page */}
+      <div className="schluss">
+      <div className="blatt" style={{ padding: '36px 40px 28px' }}>
+        <div style={kicker}>Unabhängig verglichen</div>
+        <h2 style={h2}>Unsere Partnergesellschaften</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: '16px 20px', alignItems: 'center', justifyItems: 'center', marginTop: 16 }} className="partner">
+          {PARTNER.map(([name, file]) => (
+            <img key={name} src={`/insurers/gesellschaften/${file}.png`} alt={name} style={{ maxHeight: 30, maxWidth: '100%', objectFit: 'contain', filter: 'grayscale(1)', opacity: 0.75 }} />
           ))}
-          <div style={label} />
-          <div style={{ gridColumn: '2 / -1', padding: '14px 16px', borderTop: `1px solid ${LINE}`, background: '#fff' }}>
-            <Verlauf reihen={spalten.map((s) => ({ label: s.label, punkte: s.verlauf }))} />
-          </div>
-        </section>
-
-        <p style={{ fontSize: 11, color: '#777', lineHeight: 1.6, marginTop: 24 }}>
-          Unverbindlicher Vergleich vom {dateDe(heute)} für einen Versicherungsbeginn am {dateDe(beginn)}. Monatsbeiträge nach dem tariflichen Alter
-          (Kalenderjahr minus Geburtsjahr){zaehne !== '0' ? ' inklusive Risikozuschlag für fehlende Zähne' : ''}. Leistungsangaben Stand {LEISTUNGEN_STAND}.
+        </div>
+        <p style={{ fontSize: 10.5, color: '#8f897f', lineHeight: 1.6, margin: '26px 0 0' }}>
+          Unverbindlicher Vergleich vom {dateDe(heute)} für einen Versicherungsbeginn am {dateDe(beginn)}. Monatsbeiträge nach tariflichem Alter
+          (Kalenderjahr minus Geburtsjahr){zaehne !== '0' ? ', inklusive Risikozuschlag für fehlende Zähne' : ''}. Leistungsangaben Stand {LEISTUNGEN_STAND}.
           Maßgeblich sind allein die Versicherungsbedingungen und der Antrag der jeweiligen Gesellschaft.
-          <br />Marco Arpa, Versicherungsmakler nach § 34d GewO · {CONTACT.phone} · {CONTACT.email}
         </p>
       </div>
 
-      <footer className="block" style={{ background: '#e8e8e8', padding: '28px 16px' }}>
-        <div style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '18px 24px', alignItems: 'center', justifyItems: 'center' }}>
-          {PARTNER.map(([name, file]) => <img key={name} src={`/insurers/${file}`} alt={name} style={{ maxHeight: 42, maxWidth: 140, objectFit: 'contain' }} />)}
+      <footer style={{ background: C.black, color: C.ivory }}>
+        <div className="blatt" style={{ padding: '22px 40px', display: 'flex', flexWrap: 'wrap', gap: '8px 28px', alignItems: 'center', fontSize: 12.5 }}>
+          <span style={{ fontFamily: SERIF, fontSize: 15, letterSpacing: 3 }}>MARCO ARPA</span>
+          <span style={{ color: 'rgba(241,238,230,0.7)' }}>Versicherungsmakler nach § 34d GewO</span>
+          <span style={{ marginLeft: 'auto', display: 'flex', flexWrap: 'wrap', gap: '6px 22px', color: C.champagne }}>
+            <span>{CONTACT.phone}</span><span>{CONTACT.email}</span><span>marcoarpa.com</span>
+          </span>
         </div>
       </footer>
+      </div>
 
       <style>{`
-        .angebot .zeile { break-inside: avoid; }
+        .angebot .blatt { max-width: 980px; margin: 0 auto; box-sizing: border-box; }
+        .angebot .zeile, .angebot article, .angebot .abschnitt, .angebot .schluss { break-inside: avoid; }
+        @media (max-width: 720px) {
+          .angebot .karten { grid-template-columns: minmax(0, 1fr) !important; }
+          .angebot .blatt { padding-left: 18px !important; padding-right: 18px !important; }
+          .angebot .partner { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+        }
         @media print {
-          @page { size: A4; margin: 8mm; }
+          @page { size: A4; margin: 12mm 0; }
+          @page :first { margin-top: 0; }
           html, body { background: #fff !important; }
           .no-print { display: none !important; }
-          .angebot { -webkit-print-color-adjust: exact; print-color-adjust: exact; min-height: 0 !important; }
-          .angebot .blatt { max-width: none !important; padding: 0 !important; }
-          .angebot section.block { break-inside: auto; }
+          .angebot { -webkit-print-color-adjust: exact; print-color-adjust: exact; min-height: 0 !important; zoom: 0.82; }
+          .angebot .blatt { max-width: none; padding-left: 12mm !important; padding-right: 12mm !important; }
+          .angebot .details { break-before: page; padding-top: 0 !important; }
         }
       `}</style>
     </div>
@@ -297,6 +402,6 @@ export default function AngebotPage({ params }) {
 }
 
 const toolbarBtn = (primary) => ({
-  minHeight: 36, padding: '0 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: FONT,
-  background: primary ? '#B5A171' : 'transparent', color: primary ? '#111' : '#fff', border: primary ? 0 : '1px solid rgba(255,255,255,0.4)',
+  minHeight: 36, padding: '0 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: SANS,
+  background: primary ? C.champagne : 'transparent', color: primary ? C.black : '#fff', border: primary ? 0 : '1px solid rgba(255,255,255,0.4)',
 });
