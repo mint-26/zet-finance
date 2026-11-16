@@ -307,7 +307,7 @@ export default function Auswertung({ rows, allRows, periodText, onOpenLead, alwa
                           <td className="aw-num" style={num}>{percent(item.count, total)}</td>
                           {!statusView && (
                             <td className="aw-num aw-sum" style={num} title={item.ohneBeitrag ? `${item.ohneBeitrag} ohne bekannten Beitrag` : undefined}>
-                              {euro(item.beitrag)}{item.ohneBeitrag > 0 && <span style={{ color: 'var(--text-dim)' }}> *</span>}
+                              {item.ohneBeitrag === item.count ? '–' : euro(item.beitrag)}{item.ohneBeitrag > 0 && item.ohneBeitrag < item.count && <span style={{ color: 'var(--text-dim)' }}> *</span>}
                             </td>
                           )}
                         </tr>
@@ -344,7 +344,7 @@ export default function Auswertung({ rows, allRows, periodText, onOpenLead, alwa
                 <>
                   Gezählt werden Kunden mit Status „Versichert“ und gewählter Gesellschaft, im Monat ihres Abschlusses. Ältere Kunden ohne Abschlussdatum zählen im Monat ihrer Anfrage.
                   {' '}Beiträge pro Monat: Wert aus Marcos alter Liste, sonst der bei Abschluss gespeicherte oder aus Tarif und Alter berechnete Beitrag (ohne Tarifangabe der 100er).
-                  {items.some((i) => i.ohneBeitrag) && ` * Enthält Verträge ohne bekannten Beitrag (${items.reduce((s, i) => s + i.ohneBeitrag, 0)}), etwa Gesellschaften ohne hinterlegte Beitragstabelle.`}
+                  {items.some((i) => i.ohneBeitrag) && ` ${items.reduce((s, i) => s + i.ohneBeitrag, 0)} Verträge ohne bekannten Beitrag (Gesellschaften ohne Beitragstabelle) fehlen in den Summen, „–“ heißt: kein Beitrag bekannt, * heißt: teilweise.`}
                   {ohneGesellschaft > 0 && ` ${ohneGesellschaft} ${ohneGesellschaft === 1 ? 'versicherter Kunde hat' : 'versicherte Kunden haben'} in diesem Zeitraum noch keine Gesellschaft und ${ohneGesellschaft === 1 ? 'fehlt' : 'fehlen'} hier.`}
                 </>
               )}
