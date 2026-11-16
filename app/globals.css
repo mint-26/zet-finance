@@ -181,8 +181,8 @@ textarea::placeholder {
 
 /* CRM "Angebot erstellen": compact outlined button, then one row per tariff column. */
 .angebot-knopf:hover { background: var(--accent-dim) !important; }
-.angebot-zeile { display: grid; grid-template-columns: 130px minmax(0, 1.2fr) minmax(0, 1.2fr) 150px auto; gap: 10px; align-items: center; }
-@media (max-width: 860px) { .angebot-zeile { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-bottom: 10px; border-bottom: 1px dashed var(--border); } }
+.angebot-zeile { display: grid; grid-template-columns: 40px 130px minmax(0, 1.2fr) minmax(0, 1.2fr) 150px; gap: 10px; align-items: center; padding: 4px; border-radius: 10px; transition: background 0.2s ease; }
+@media (max-width: 860px) { .angebot-zeile { grid-template-columns: 40px minmax(0, 1fr); padding-bottom: 10px; } .angebot-zeile > :nth-child(n+3) { grid-column: 2; } }
 
 /* CRM lead list: the whole summary row opens a lead. */
 .crm-lead-row { cursor: pointer; transition: background 0.2s ease; }

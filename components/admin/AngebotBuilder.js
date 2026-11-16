@@ -56,12 +56,23 @@ export default function AngebotBuilder({ s }) {
       </button>
       <SmoothHeight duration={300}>
         {open && (
-          <div style={{ marginTop: 10, padding: 16, border: '1px solid var(--accent)', borderRadius: 12, background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          // Padding instead of a margin: SmoothHeight measures this box, a margin would cut off its frame.
+          <div style={{ paddingTop: 10, paddingBottom: 2 }}>
+          <div style={{ padding: 16, border: '1px solid var(--accent)', borderRadius: 12, background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <p style={{ margin: '0 0 2px', fontSize: 12, color: 'var(--text-muted)' }}>Stern = Empfehlung im Angebot (nochmal klicken: ohne Empfehlung)</p>
             {spalten.map((sp, i) => {
               const r = berechneBeitrag({ gesellschaft: sp.gesellschaft, tarif: sp.tarif, geburtsdatum: s.geburtsdatum, fehlendeZaehne: s.fehlende_zaehne }, beginn);
               const hatLeistungen = !!leistungenVon(sp.gesellschaft, sp.tarif);
               return (
-                <div key={i} className="angebot-zeile">
+                <div key={i} className="angebot-zeile" style={{ background: empfohlen === i ? 'var(--accent-dim)' : 'transparent' }}>
+                  <button
+                    type="button" aria-pressed={empfohlen === i} onClick={() => setEmpfohlen(empfohlen === i ? -1 : i)}
+                    title={empfohlen === i ? 'Empfehlung, nochmal klicken zum Entfernen' : 'Als Empfehlung markieren'}
+                    aria-label={`Spalte ${i + 1} als Empfehlung`}
+                    style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 0, borderRadius: 8, cursor: 'pointer', padding: 0 }}
+                  >
+                    <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill={empfohlen === i ? 'var(--accent)' : 'none'} stroke="var(--accent)" strokeWidth="1.8" strokeLinejoin="round"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" /></svg>
+                  </button>
                   <input aria-label={`Spaltenname ${i + 1}`} value={sp.label} onChange={(e) => set(i, { label: e.target.value })} style={field} />
                   <select
                     aria-label={`Gesellschaft ${i + 1}`} value={sp.gesellschaft} style={{ ...field, ...selectLook }}
@@ -78,10 +89,6 @@ export default function AngebotBuilder({ s }) {
                       {hatLeistungen ? 'Leistungen hinterlegt' : 'Leistungen fehlen noch'}
                     </span>
                   </span>
-                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                    <input type="radio" name={`empfehlung-${s.id}`} checked={empfohlen === i} onChange={() => setEmpfohlen(i)} />
-                    Empfehlung
-                  </label>
                 </div>
               );
             })}
@@ -89,10 +96,6 @@ export default function AngebotBuilder({ s }) {
               <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-muted)', cursor: 'pointer' }}>
                 <input type="checkbox" checked={mitGesellschaft} onChange={(e) => setMitGesellschaft(e.target.checked)} />
                 Gesellschaft und Tarif im Angebot nennen
-              </label>
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-muted)', cursor: 'pointer' }}>
-                <input type="radio" name={`empfehlung-${s.id}`} checked={empfohlen === -1} onChange={() => setEmpfohlen(-1)} />
-                Ohne Empfehlung
               </label>
               <button
                 type="button" onClick={oeffnen} disabled={!s.geburtsdatum}
@@ -107,6 +110,7 @@ export default function AngebotBuilder({ s }) {
             <p style={{ margin: 0, fontSize: 12, color: 'var(--text-dim)' }}>
               Beiträge für einen Beginn am {beginn.toLocaleDateString('de-DE')}. Das Angebot öffnet sich in einem neuen Tab, dort „PDF herunterladen“ (wird auch bei den Dokumenten abgelegt).
             </p>
+          </div>
           </div>
         )}
       </SmoothHeight>
