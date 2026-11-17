@@ -10,7 +10,7 @@
 // it with the lead's documents.
 
 import { Fragment, useEffect, useState } from 'react';
-import { berechneBeitrag, beitragsVerlauf, geburtsjahr, euro } from '../../../../lib/tarife';
+import { berechneBeitrag, beitragsVerlauf, geburtsjahr, euro, beginnVon } from '../../../../lib/tarife';
 import { SECTIONS, leistungenVon, begrenzungText, kurzfakten, LEISTUNGEN_STAND, BEWERTUNG_QUELLE } from '../../../../lib/leistungen';
 import { C, CONTACT } from '../../../../lib/brand';
 import { formatBirthdate } from '../../../../lib/format';
@@ -163,6 +163,7 @@ export default function AngebotPage({ params }) {
   const [empfohlen, setEmpfohlen] = useState(-1);
   const [mitGesellschaft, setMitGesellschaft] = useState(false);
   const [notiz, setNotiz] = useState('');
+  const [beginnParam, setBeginnParam] = useState('');
   const [statusGesetzt, setStatusGesetzt] = useState(false);
   const [pdfState, setPdfState] = useState('');
   const [mail, setMail] = useState(null); // open e-mail draft { an, betreff, text, state, fehler }
@@ -173,6 +174,7 @@ export default function AngebotPage({ params }) {
     setEmpfohlen(p.has('e') ? Number(p.get('e')) : -1);
     setMitGesellschaft(p.get('g') === '1');
     setNotiz((p.get('n') || '').slice(0, 600));
+    setBeginnParam(p.get('b') || '');
     fetch('/api/submissions').then(async (res) => {
       if (res.status === 401) { setState('login'); return; }
       const data = await res.json();
@@ -196,7 +198,9 @@ export default function AngebotPage({ params }) {
   }
 
   const heute = new Date();
-  const beginn = new Date(heute.getFullYear(), heute.getMonth() + 1, 1);
+  // Insurance start chosen in the lead (b), possibly backdated; else the first of next month.
+  const beginn = beginnVon(beginnParam || lead.vertragsbeginn, heute);
+  const rueckwirkend = beginn <= heute;
   const startJahr = beginn.getFullYear();
   const jahr = geburtsjahr(lead.geburtsdatum);
   const alter = jahr ? startJahr - jahr : null;
@@ -213,7 +217,8 @@ export default function AngebotPage({ params }) {
     const bald = ab && ab > beginn && ab - beginn <= 366 * 86400000;
     return { ...sp, sprung: bald ? { ab, beitrag: n.beitrag } : null };
   });
-  const gueltigBis = new Date(beginn.getFullYear(), beginn.getMonth(), 0);
+  // Valid until the day before the start; for a backdated start until the end of this month.
+  const gueltigBis = rueckwirkend ? new Date(heute.getFullYear(), heute.getMonth() + 1, 0) : new Date(beginn.getFullYear(), beginn.getMonth(), beginn.getDate() - 1);
   const cols = `minmax(0, 0.95fr) repeat(${spalten.length}, minmax(0, 1fr))`;
   const farben = farbenFuer(spalten.length, empfohlen);
 
@@ -452,7 +457,7 @@ export default function AngebotPage({ params }) {
                   <span>
                     <strong style={{ fontWeight: 700 }}>{s.label}</strong>
                     <span style={{ display: 'block', color: MUTED, fontSize: 11.5 }}>
-                      {s.verlauf.length ? `heute ${euro(s.verlauf[0].beitrag)}${naechste ? `, ab ${naechste.abAlter}: ${euro(naechste.beitrag)}` : ''}` : 'keine Beitragstabelle'}
+                      {s.verlauf.length ? `zu Beginn ${euro(s.verlauf[0].beitrag)}${naechste ? `, ab ${naechste.abAlter}: ${euro(naechste.beitrag)}` : ''}` : 'keine Beitragstabelle'}
                     </span>
                   </span>
                 </div>
@@ -508,7 +513,7 @@ export default function AngebotPage({ params }) {
             {[
               ['Tarif wählen', 'Sagen Sie mir kurz, welcher Tarif es sein soll, oder stellen Sie Ihre Fragen.'],
               ['Antrag unterschreiben', 'Ich bereite den Antrag vor, Sie unterschreiben ihn bequem digital.'],
-              [`Geschützt ab ${dateDe(beginn)}`, 'Ihr Versicherungsschutz beginnt, die Police kommt per Post oder E-Mail.'],
+              [`Geschützt ${rueckwirkend ? 'rückwirkend ' : ''}ab ${dateDe(beginn)}`, 'Ihr Versicherungsschutz beginnt, die Police kommt per Post oder E-Mail.'],
             ].map(([t, d], i) => (
               <li key={t} style={{ display: 'flex', gap: 12 }}>
                 <span style={{ fontFamily: SERIF, fontSize: 26, lineHeight: 1, color: C.champagne }}>{i + 1}</span>

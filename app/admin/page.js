@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ThemeProvider, useTheme } from '../../components/ThemeProvider';
 import { formatBirthdate } from '../../lib/format';
-import { istFokus, fokusTarife, standardTarif, berechneBeitrag, euro } from '../../lib/tarife';
+import { istFokus, fokusTarife, standardTarif, berechneBeitrag, euro, datumAusIso, standardBeginn } from '../../lib/tarife';
 import { GKV, PKV } from '../../lib/insurers';
 import {
   KV, KV_BY_VALUE, ERWERBSSTATUS, KONTAKTWEG, JA_NEIN, BEHANDLUNG, FEHLENDE_ZAEHNE, PARODONTOSE, SCHWERPUNKT,
@@ -831,6 +831,11 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
               </datalist>
               </>)}
             </EditableField>
+            <EditableField label="Versicherungsbeginn" min={170} max={210}>
+              <select value={s.vertragsbeginn ? String(s.vertragsbeginn).slice(0, 10) : ''} onChange={(e) => onUpdate('vertragsbeginn', e.target.value || null)} style={selectStyle}>
+                {beginnOptionen(s.vertragsbeginn).map(([value, label]) => <option key={value} value={value} style={optionStyle}>{label}</option>)}
+              </select>
+            </EditableField>
             {s.gesellschaft && <BeitragFelder s={s} />}
             {s.vertragsnummer && (
               <InfoField
@@ -1190,6 +1195,25 @@ function KundenAngaben({ s, fields, isGespraech, onSave }) {
 
 // Read-only fields next to the tariff: monthly premium from the age and missing teeth, and the
 // next age-related change (lib/tarife.js). Recomputed whenever tariff, birth date or teeth change.
+// Choices for the insurance start: the first of each month from a year back (some insurers accept
+// backdated applications) to half a year ahead; empty = the first of next month.
+function beginnOptionen(aktuell) {
+  const heute = new Date();
+  const de = (d) => d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+  const liste = [['', `Nächster Monatserster (${de(standardBeginn(heute))})`]];
+  for (let i = -12; i <= 6; i += 1) {
+    const d = new Date(heute.getFullYear(), heute.getMonth() + i, 1);
+    liste.push([iso(d), `${de(d)}${d <= heute ? ' (rückdatiert)' : ''}`]);
+  }
+  const wert = aktuell ? String(aktuell).slice(0, 10) : '';
+  if (wert && !liste.some(([v]) => v === wert)) {
+    const d = datumAusIso(wert);
+    liste.push([wert, d ? de(d) : wert]);
+  }
+  return liste;
+}
+
 function InfoField({ label, value, note, muted, min, max }) {
   return (
     <div className="crm-field" style={fieldBox(min, max)}>
@@ -1208,7 +1232,8 @@ function InfoField({ label, value, note, muted, min, max }) {
 // list (monatsbeitrag) if there is one, otherwise the one saved at closing (beitrag_abschluss).
 // Customers without a contract see today's premium.
 function BeitragFelder({ s }) {
-  const r = berechneBeitrag({ gesellschaft: s.gesellschaft, tarif: s.tarif, geburtsdatum: s.geburtsdatum, fehlendeZaehne: s.fehlende_zaehne });
+  // Premium for the chosen insurance start (backdated starts count with that year's age), else today.
+  const r = berechneBeitrag({ gesellschaft: s.gesellschaft, tarif: s.tarif, geburtsdatum: s.geburtsdatum, fehlendeZaehne: s.fehlende_zaehne }, datumAusIso(s.vertragsbeginn) || new Date());
   const vertrag = s.status === 'versichert' ? (s.monatsbeitrag ?? s.beitrag_abschluss) : null;
   const erhoehung = r.ok && r.naechste;
   const ab = erhoehung && r.naechste.ab.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import SmoothHeight from '../SmoothHeight';
-import { FOKUS, fokusTarife, standardTarif, berechneBeitrag, euro } from '../../lib/tarife';
+import { FOKUS, fokusTarife, standardTarif, berechneBeitrag, euro, beginnVon } from '../../lib/tarife';
 import { leistungenVon } from '../../lib/leistungen';
 import { selectLook } from './ui';
 
@@ -37,8 +37,8 @@ export default function AngebotBuilder({ s, onSave }) {
   const [mitGesellschaft, setMitGesellschaft] = useState(letzte ? !!letzte.mitGesellschaft : false);
   const [notiz, setNotiz] = useState(letzte ? String(letzte.notiz || '') : '');
 
-  const heute = new Date();
-  const beginn = new Date(heute.getFullYear(), heute.getMonth() + 1, 1);
+  // Insurance start from the lead's field "Versicherungsbeginn", else the first of next month.
+  const beginn = beginnVon(s.vertragsbeginn);
   const set = (i, patch) => setSpalten((prev) => prev.map((sp, j) => (j === i ? { ...sp, ...patch } : sp)));
 
   const oeffnen = () => {
@@ -47,6 +47,7 @@ export default function AngebotBuilder({ s, onSave }) {
     if (empfohlen >= 0) p.set('e', String(empfohlen));
     if (mitGesellschaft) p.set('g', '1');
     if (notiz.trim()) p.set('n', notiz.trim().slice(0, 600));
+    if (s.vertragsbeginn) p.set('b', String(s.vertragsbeginn).slice(0, 10));
     window.open(`/admin/angebot/${s.id}?${p.toString()}`, '_blank', 'noopener');
     onSave?.({ spalten, empfohlen, mitGesellschaft, notiz: notiz.trim().slice(0, 600), am: new Date().toISOString() });
   };
@@ -124,7 +125,7 @@ export default function AngebotBuilder({ s, onSave }) {
                 </label>
                 {!s.geburtsdatum && <span style={{ fontSize: 12, color: '#c9762b' }}>Für die Beiträge fehlt das Geburtsdatum (unter „Kundenangaben“ eintragen).</span>}
                 <span style={{ fontSize: 12, color: 'var(--text-dim)', lineHeight: 1.45 }}>
-                  Beiträge für einen Beginn am {beginn.toLocaleDateString('de-DE')}. Im Angebot dann „PDF herunterladen“, es wird auch bei den Dokumenten abgelegt.
+                  Beiträge für einen Beginn am {beginn.toLocaleDateString('de-DE')}{s.vertragsbeginn ? '' : ' (änderbar oben unter „Versicherungsbeginn“)'}. Im Angebot dann „PDF herunterladen“ oder „Per E-Mail senden“.
                 </span>
               </div>
               <button

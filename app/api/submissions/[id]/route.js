@@ -3,10 +3,10 @@ import { getSupabaseAdmin } from '../../../../lib/supabase';
 import { isAuthenticated } from '../../../../lib/auth';
 import { DOKUMENTE_BUCKET } from '../../../../lib/dokumente';
 import { ANTWORT_FELDER, splitMulti } from '../../../../lib/fragebogen';
-import { berechneBeitrag, istFokus, standardTarif } from '../../../../lib/tarife';
+import { berechneBeitrag, istFokus, standardTarif, datumAusIso } from '../../../../lib/tarife';
 
 // Fields the premium at closing depends on (lib/tarife.js).
-const BEITRAG_FELDER = ['status', 'gesellschaft', 'tarif', 'geburtsdatum', 'fehlende_zaehne'];
+const BEITRAG_FELDER = ['status', 'gesellschaft', 'tarif', 'geburtsdatum', 'fehlende_zaehne', 'vertragsbeginn'];
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +18,7 @@ const ALLOWED_FIELDS = [
   'abgerechnet',
   'notizen',
   'angebot_auswahl',
+  'vertragsbeginn',
   'alt_vertrag_gekuendigt',
   'kuendigungsbestaetigung_erhalten',
   // Customer details Marco can correct by hand (CRM "Kundenangaben bearbeiten").
@@ -81,6 +82,15 @@ export async function PATCH(request, { params }) {
   // "In aktuellen Monat holen" and its undo. The server sets the time.
   if ('wieder_aktiv' in body) update.wieder_aktiv_am = body.wieder_aktiv === true ? new Date().toISOString() : null;
 
+  // Insurance start chosen in the lead: a plain date, also in the past (backdated applications).
+  if ('vertragsbeginn' in update && update.vertragsbeginn !== null) {
+    const d = datumAusIso(update.vertragsbeginn);
+    if (typeof update.vertragsbeginn !== 'string' || !d || d.getFullYear() < 2015 || d.getFullYear() > 2040) {
+      return NextResponse.json({ error: 'Invalid value for vertragsbeginn' }, { status: 400 });
+    }
+    update.vertragsbeginn = update.vertragsbeginn.slice(0, 10);
+  }
+
   // Last offer put together in the CRM (AngebotBuilder): a small object, never anything else.
   if ('angebot_auswahl' in update && update.angebot_auswahl !== null) {
     const v = update.angebot_auswahl;
@@ -137,7 +147,7 @@ export async function PATCH(request, { params }) {
   if (BEITRAG_FELDER.some((key) => key in update)) {
     const { data: current } = await supabase
       .from('zahnzusatz_submissions')
-      .select('status, gesellschaft, tarif, geburtsdatum, fehlende_zaehne, abgeschlossen_am, created_at')
+      .select('status, gesellschaft, tarif, geburtsdatum, fehlende_zaehne, abgeschlossen_am, created_at, vertragsbeginn')
       .eq('id', id)
       .maybeSingle();
 
@@ -160,7 +170,8 @@ export async function PATCH(request, { params }) {
       merged.tarif = update.tarif;
     }
     if (merged.status === 'versichert') {
-      const stichtag = new Date(merged.abgeschlossen_am || merged.created_at || Date.now());
+      // Age in the year the insurance starts (chosen start, else closing, else enquiry).
+      const stichtag = datumAusIso(merged.vertragsbeginn) || new Date(merged.abgeschlossen_am || merged.created_at || Date.now());
       const beitrag = berechneBeitrag({
         gesellschaft: merged.gesellschaft, tarif: merged.tarif, geburtsdatum: merged.geburtsdatum, fehlendeZaehne: merged.fehlende_zaehne,
       }, stichtag);
