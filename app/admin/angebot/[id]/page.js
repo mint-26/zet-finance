@@ -25,8 +25,16 @@ const LINE = 'rgba(9,9,9,0.10)';
 const TINT = '#F8F5EE';
 const OK = '#2F6B45';
 const NO = '#A8473A';
-// Chart: ink, champagne, steel blue; far apart in lightness, so they stay apart without colour.
-const SERIES = ['#141414', '#B5A171', '#3F6E96'];
+// Chart: the recommended tariff in brand gold, the other two in a deep blue and a teal. The three
+// lie far apart in lightness (about 35 / 58 / 67), so they stay apart with colour blindness and in
+// greyscale print too.
+const GOLD = '#B5A171';
+const ANDERE = ['#1F4E8C', '#2E9C8A'];
+function farbenFuer(anzahl, empfohlen) {
+  const hero = empfohlen >= 0 && empfohlen < anzahl ? empfohlen : anzahl - 1;
+  let n = 0;
+  return Array.from({ length: anzahl }, (_, i) => (i === hero ? GOLD : ANDERE[n++ % ANDERE.length]));
+}
 const PARTNER = [
   ['Allianz', 'allianz'], ['AXA', 'axa'], ['Münchener Verein', 'muenchener-verein'], ['Württembergische', 'wuerttembergische'],
   ['BBKK', 'bbkk'], ['Barmenia Gothaer', 'barmenia'], ['DKV', 'dkv'], ['Nürnberger', 'nuernberger'],
@@ -126,8 +134,8 @@ function Verlauf({ reihen }) {
       ))}
       {ticksX.map((a) => <text key={a} x={x(a)} y={H - B + 18} fontSize="10.5" textAnchor="middle" fill={MUTED}>{a}</text>)}
       <text x={W - R} y={H - 4} fontSize="10.5" textAnchor="end" fill={MUTED}>Alter in Jahren</text>
-      {reihen.map((r, i) => r.punkte.length > 0 && (
-        <path key={i} d={pfad(r.punkte)} fill="none" stroke={SERIES[i]} strokeWidth="2.25" strokeLinejoin="round">
+      {[...reihen].sort((a, b) => Number(a.farbe === GOLD) - Number(b.farbe === GOLD)).map((r) => r.punkte.length > 0 && (
+        <path key={r.label} d={pfad(r.punkte)} fill="none" stroke={r.farbe} strokeWidth={r.farbe === GOLD ? 3 : 2.25} strokeLinejoin="round">
           <title>{`${r.label}: ${r.punkte.map((p) => `ab ${p.abAlter}: ${euro(p.beitrag)}`).join(', ')}`}</title>
         </path>
       ))}
@@ -161,8 +169,8 @@ function zeilenVon(sec, spalten) {
 
 const WHATSAPP = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '4915254611314').replace(/\D/g, '');
 
-const kicker = { fontFamily: SANS, fontSize: 11, letterSpacing: 2.2, textTransform: 'uppercase', color: C.champagneDark, marginBottom: 8 };
-const h2 = { fontFamily: SERIF, fontWeight: 400, fontSize: 24, lineHeight: 1.25, color: INK, margin: '0 0 12px' };
+const kicker = { fontFamily: SANS, fontSize: 11.5, fontWeight: 700, letterSpacing: 2.4, textTransform: 'uppercase', color: C.champagneDark, marginBottom: 8 };
+const h2 = { fontFamily: SERIF, fontWeight: 400, fontSize: 31, lineHeight: 1.2, color: INK, margin: '0 0 16px', paddingBottom: 12, borderBottom: `2px solid ${C.champagne}` };
 
 export default function AngebotPage({ params }) {
   const [lead, setLead] = useState(null);
@@ -222,6 +230,7 @@ export default function AngebotPage({ params }) {
   });
   const gueltigBis = new Date(beginn.getFullYear(), beginn.getMonth(), 0);
   const cols = `minmax(0, 0.95fr) repeat(${spalten.length}, minmax(0, 1fr))`;
+  const farben = farbenFuer(spalten.length, empfohlen);
 
   const pdfLaden = async () => {
     setPdfState('laeuft');
@@ -296,7 +305,7 @@ export default function AngebotPage({ params }) {
         </div>
       </header>
 
-      <section style={{ background: C.ivory }}>
+      <section className="intro" style={{ background: C.ivory }}>
         <div className="blatt" style={{ padding: '34px 40px 30px' }}>
           <div style={kicker}>Angebot für</div>
           <h1 style={{ fontFamily: SERIF, fontWeight: 400, fontSize: 38, lineHeight: 1.15, margin: '0 0 20px', color: INK }}>{lead.name}</h1>
@@ -385,7 +394,7 @@ export default function AngebotPage({ params }) {
               const naechste = s.verlauf[1];
               return (
                 <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 12.5 }}>
-                  <span style={{ width: 18, height: 3, background: SERIES[i], marginTop: 8, borderRadius: 2 }} />
+                  <span style={{ width: 18, height: 3, background: farben[i], marginTop: 8, borderRadius: 2 }} />
                   <span>
                     <strong style={{ fontWeight: 700 }}>{s.label}</strong>
                     <span style={{ display: 'block', color: MUTED, fontSize: 11.5 }}>
@@ -396,7 +405,7 @@ export default function AngebotPage({ params }) {
               );
             })}
           </div>
-          <Verlauf reihen={spalten.map((s) => ({ label: s.label, punkte: s.verlauf }))} />
+          <Verlauf reihen={spalten.map((s, i) => ({ label: s.label, punkte: s.verlauf, farbe: farben[i] }))} />
         </div>
       </div>
 
@@ -406,7 +415,7 @@ export default function AngebotPage({ params }) {
         <h2 style={h2}>Leistungen im Vergleich</h2>
         {SECTIONS.map((sec) => (
           <section key={sec.key} className="abschnitt" style={{ marginTop: 22, display: 'grid', gridTemplateColumns: cols }}>
-            <div style={{ fontFamily: SERIF, fontSize: 17, color: INK, padding: '10px 12px 10px 0', borderBottom: `1.5px solid ${C.champagne}` }}>{sec.title}</div>
+            <div style={{ fontFamily: SERIF, fontSize: 21, fontWeight: 700, color: INK, padding: '10px 12px 10px 0', borderBottom: `2px solid ${C.champagne}` }}>{sec.title}</div>
             {spalten.map((s, i) => (
               <div key={i} style={{ ...cell(i, { padding: '10px 12px' }), borderBottom: `1.5px solid ${C.champagne}`, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: MUTED }}>
                 {s.label}
@@ -469,7 +478,7 @@ export default function AngebotPage({ params }) {
         <h2 style={h2}>Unsere Partnergesellschaften</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: '16px 20px', alignItems: 'center', justifyItems: 'center', marginTop: 24 }} className="partner">
           {PARTNER.map(([name, file]) => (
-            <img key={name} src={`/insurers/gesellschaften/${file}.png`} alt={name} style={{ maxHeight: 30, maxWidth: '100%', objectFit: 'contain', filter: 'grayscale(1)', opacity: 0.75 }} />
+            <img key={name} src={`/insurers/gesellschaften/${file}.png`} alt={name} style={{ maxHeight: 32, maxWidth: '100%', objectFit: 'contain' }} />
           ))}
         </div>
         <p style={{ fontSize: 10.5, color: '#8f897f', lineHeight: 1.6, margin: '26px 0 0' }}>
@@ -503,12 +512,13 @@ export default function AngebotPage({ params }) {
           .angebot .schritte { grid-template-columns: minmax(0, 1fr) !important; }
         }
         @media print {
-          @page { size: A4; margin: 12mm 0; }
-          @page :first { margin-top: 0; }
+          @page { size: A4; margin: 14mm 13mm; }
           html, body { background: #fff !important; }
           .no-print { display: none !important; }
-          .angebot { -webkit-print-color-adjust: exact; print-color-adjust: exact; min-height: 0 !important; zoom: 0.76; }
-          .angebot .blatt { max-width: none; padding-left: 12mm !important; padding-right: 12mm !important; }
+          .angebot { -webkit-print-color-adjust: exact; print-color-adjust: exact; min-height: 0 !important; zoom: 0.7; }
+          .angebot .blatt { max-width: none; padding-left: 0 !important; padding-right: 0 !important; }
+          .angebot header .blatt, .angebot footer .blatt, .angebot .intro .blatt { padding-left: 7mm !important; padding-right: 7mm !important; }
+          .angebot header, .angebot .intro { border-radius: 0; }
           .angebot .details { break-before: page; padding-top: 0 !important; }
         }
       `}</style>
