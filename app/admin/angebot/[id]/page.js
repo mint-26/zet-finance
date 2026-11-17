@@ -11,7 +11,7 @@
 
 import { Fragment, useEffect, useState } from 'react';
 import { berechneBeitrag, beitragsVerlauf, geburtsjahr, euro } from '../../../../lib/tarife';
-import { SECTIONS, leistungenVon, begrenzungText, LEISTUNGEN_STAND, BEWERTUNG_QUELLE } from '../../../../lib/leistungen';
+import { SECTIONS, leistungenVon, begrenzungText, begrenzungEnde, LEISTUNGEN_STAND, BEWERTUNG_QUELLE } from '../../../../lib/leistungen';
 import { C, CONTACT } from '../../../../lib/brand';
 import { formatBirthdate } from '../../../../lib/format';
 
@@ -68,26 +68,26 @@ function Sterne({ wert, hell }) {
 }
 
 // The few facts on each card: what a customer compares first.
-function kurzfakten(l, startJahr) {
+function kurzfakten(l, beginn) {
   if (!l) return [{ s: undefined, t: 'Leistungsangaben folgen' }];
   const erste = (v) => (v?.t || '').split('\n')[0];
   const fakten = [
     { s: l.kronen?.s, t: `Zahnersatz ${erste(l.kronen)}` },
     { s: l.fuellungen?.s, t: `Zahnbehandlung ${erste(l.fuellungen)}` },
-    { s: l.pzr?.s, t: `Zahnreinigung: ${erste(l.pzr).replace(/ für alle Prophylaxemaßnahmen$/, '')}` },
+    { s: l.pzr?.s, t: `Zahnreinigung: ${erste(l.pzr).split(',')[0]}` },
     { s: l.kfo?.s, t: `Kieferorthopädie Kinder: ${erste(l.kfo).replace('Ohne Zuzahlung Krankenkasse: ', '')}` },
     { s: l.wartezeit?.t === 'Ohne Wartezeit' ? 'ja' : undefined, t: l.wartezeit?.t || '' },
   ];
   if (l.begrenzung?.staffel) {
     const st = l.begrenzung.staffel;
-    fakten.push({ s: undefined, t: `Anfangs begrenzt: bis ${st[st.length - 1].toLocaleString('de-DE')} € in ${st.length} Jahren, ab ${startJahr + st.length} unbegrenzt` });
+    fakten.push({ s: undefined, t: `Anfangs begrenzt: bis ${st[st.length - 1].toLocaleString('de-DE')} € in ${st.length} Jahren, ab ${dateDe(begrenzungEnde(l.begrenzung, beginn))} unbegrenzt` });
   }
   return fakten.filter((f) => f.t);
 }
 
-function Wert({ wert, startJahr }) {
+function Wert({ wert, beginn }) {
   if (!wert) return <span style={{ color: '#a29c92', fontStyle: 'italic' }}>Angaben folgen</span>;
-  if (wert.staffel) return <span style={{ whiteSpace: 'pre-line' }}>{begrenzungText(wert, startJahr)}</span>;
+  if (wert.staffel) return <span style={{ whiteSpace: 'pre-line' }}>{begrenzungText(wert, beginn)}</span>;
   if ((!wert.t || wert.t.trim() === '-') && !wert.s) return <span style={{ color: '#b9b3a8' }}>–</span>;
   return (
     <span style={{ display: 'flex', gap: 7, alignItems: 'flex-start', fontSize: (wert.t || '').length > 70 ? 11.5 : undefined, color: (wert.t || '').length > 70 ? '#45413b' : undefined }}>
@@ -350,7 +350,7 @@ export default function AngebotPage({ params }) {
                 </div>
                 {s.leistungen?.sterne && <Sterne wert={s.leistungen.sterne} hell={top} />}
                 <ul style={{ listStyle: 'none', margin: 0, padding: '14px 0 0', borderTop: `1px solid ${top ? 'rgba(241,238,230,0.18)' : LINE}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {kurzfakten(s.leistungen, startJahr).map((f) => (
+                  {kurzfakten(s.leistungen, beginn).map((f) => (
                     <li key={f.t} style={{ display: 'flex', gap: 8, fontSize: 12.5, lineHeight: 1.4 }}>
                       {f.s === 'ja'
                         ? <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={top ? C.champagne : OK} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><polyline points="4 12.5 9.5 18 20 6.5" /></svg>
@@ -422,11 +422,11 @@ export default function AngebotPage({ params }) {
                 {z.gemeinsam ? (
                   <div className="zeile" style={{ ...cell(-2), gridColumn: '2 / -1', borderBottom: `1px solid ${LINE}`, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                     <span style={{ color: MUTED, whiteSpace: 'nowrap' }}>Bei allen Tarifen:</span>
-                    <Wert wert={z.gemeinsam} startJahr={startJahr} />
+                    <Wert wert={z.gemeinsam} beginn={beginn} />
                   </div>
                 ) : spalten.map((s, i) => (
                   <div key={i} className="zeile" style={{ ...cell(i), borderBottom: `1px solid ${LINE}` }}>
-                    <Wert wert={s.leistungen ? (s.leistungen[z.key] || {}) : null} startJahr={startJahr} />
+                    <Wert wert={s.leistungen ? (s.leistungen[z.key] || {}) : null} beginn={beginn} />
                   </div>
                 ))}
               </Fragment>
