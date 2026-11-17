@@ -15,10 +15,11 @@ import { SECTIONS, leistungenVon, begrenzungText, begrenzungEnde, LEISTUNGEN_STA
 import { C, CONTACT } from '../../../../lib/brand';
 import { formatBirthdate } from '../../../../lib/format';
 
-// Georgia and Arial on Macs and PCs; on the server that renders the PDF (Linux) their
-// metric-compatible twins Gelasio and Arimo, loaded below.
-const SERIF = "Georgia, Gelasio, 'Times New Roman', serif";
-const SANS = 'Arial, Arimo, Helvetica, sans-serif';
+// Gelasio and Arimo, the free, metric-compatible twins of the brand fonts Georgia and Arial, loaded
+// below from Google Fonts. Used on screen too, so the page looks exactly like the PDF that Chrome
+// renders on the server (Linux, where Georgia and Arial do not exist).
+const SERIF = "Gelasio, Georgia, 'Times New Roman', serif";
+const SANS = 'Arimo, Arial, Helvetica, sans-serif';
 const INK = '#141414';
 const MUTED = '#6b665e';
 const LINE = 'rgba(9,9,9,0.10)';
@@ -502,7 +503,7 @@ export default function AngebotPage({ params }) {
       </div>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&family=Gelasio&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Arimo:wght@400;700&family=Gelasio:wght@400;700&display=swap');
         .angebot .blatt { max-width: 980px; margin: 0 auto; box-sizing: border-box; }
         .angebot .zeile, .angebot article, .angebot .abschnitt { break-inside: avoid; }
         @media (max-width: 720px) {
