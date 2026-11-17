@@ -11,9 +11,10 @@
 
 import { Fragment, useEffect, useState } from 'react';
 import { berechneBeitrag, beitragsVerlauf, geburtsjahr, euro } from '../../../../lib/tarife';
-import { SECTIONS, leistungenVon, begrenzungText, begrenzungEnde, LEISTUNGEN_STAND, BEWERTUNG_QUELLE } from '../../../../lib/leistungen';
+import { SECTIONS, leistungenVon, begrenzungText, kurzfakten, LEISTUNGEN_STAND, BEWERTUNG_QUELLE } from '../../../../lib/leistungen';
 import { C, CONTACT } from '../../../../lib/brand';
 import { formatBirthdate } from '../../../../lib/format';
+import { angebotMail } from '../../../../lib/angebotMail';
 
 // Gelasio and Arimo, the free, metric-compatible twins of the brand fonts Georgia and Arial, loaded
 // below from Google Fonts. Used on screen too, so the page looks exactly like the PDF that Chrome
@@ -74,24 +75,6 @@ function Sterne({ wert, hell }) {
       {wert.toLocaleString('de-DE')} / 5 Kundenbewertung
     </div>
   );
-}
-
-// The few facts on each card: what a customer compares first.
-function kurzfakten(l, beginn) {
-  if (!l) return [{ s: undefined, t: 'Leistungsangaben folgen' }];
-  const erste = (v) => (v?.t || '').split('\n')[0];
-  const fakten = [
-    { s: l.kronen?.s, t: `Zahnersatz ${erste(l.kronen)}` },
-    { s: l.fuellungen?.s, t: `Zahnbehandlung ${erste(l.fuellungen)}` },
-    { s: l.pzr?.s, t: `Zahnreinigung: ${erste(l.pzr).split(',')[0]}` },
-    { s: l.kfo?.s, t: `Kieferorthopädie Kinder: ${erste(l.kfo).replace('Ohne Zuzahlung Krankenkasse: ', '')}` },
-    { s: l.wartezeit?.t === 'Ohne Wartezeit' ? 'ja' : undefined, t: l.wartezeit?.t || '' },
-  ];
-  if (l.begrenzung?.staffel) {
-    const st = l.begrenzung.staffel;
-    fakten.push({ s: undefined, t: `Anfangs begrenzt: bis ${st[st.length - 1].toLocaleString('de-DE')} € in ${st.length} Jahren, ab ${dateDe(begrenzungEnde(l.begrenzung, beginn))} unbegrenzt` });
-  }
-  return fakten.filter((f) => f.t);
 }
 
 function Wert({ wert, beginn }) {
@@ -182,6 +165,7 @@ export default function AngebotPage({ params }) {
   const [notiz, setNotiz] = useState('');
   const [statusGesetzt, setStatusGesetzt] = useState(false);
   const [pdfState, setPdfState] = useState('');
+  const [mail, setMail] = useState(null); // open e-mail draft { an, betreff, text, state, fehler }
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
@@ -252,6 +236,27 @@ export default function AngebotPage({ params }) {
     }
   };
 
+  const mailOeffnen = () => {
+    const entwurf = angebotMail({ lead, spalten, empfohlen, notiz, beginn, gueltigBis });
+    setMail({ an: lead.email || '', ...entwurf, state: '', fehler: '' });
+  };
+
+  const mailSenden = async () => {
+    setMail((m) => ({ ...m, state: 'laeuft', fehler: '' }));
+    try {
+      const res = await fetch(`/api/angebot/${lead.id}/senden`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ an: mail.an, betreff: mail.betreff, text: mail.text, query: window.location.search.slice(1) }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Die E-Mail konnte nicht gesendet werden');
+      if (data.status === 'angebot_verschickt') setStatusGesetzt(true);
+      setMail((m) => ({ ...m, state: data.testmodus ? 'test' : 'gesendet', abgelegt: data.abgelegt }));
+    } catch (err) {
+      setMail((m) => ({ ...m, state: '', fehler: err.message }));
+    }
+  };
+
   const markieren = async () => {
     const res = await fetch(`/api/submissions/${lead.id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'angebot_verschickt' }),
@@ -285,11 +290,59 @@ export default function AngebotPage({ params }) {
               {{ abgelegt: 'PDF geladen und bei den Dokumenten abgelegt', fertig: 'PDF geladen', fehler: 'PDF fehlgeschlagen, bitte nochmal' }[pdfState]}
             </span>
           )}
+          <button type="button" onClick={mailOeffnen} style={toolbarBtn(false)}>Per E-Mail senden</button>
           <button type="button" onClick={pdfLaden} disabled={pdfState === 'laeuft'} style={toolbarBtn(true)}>
             {pdfState === 'laeuft' ? 'PDF wird erstellt …' : 'PDF herunterladen'}
           </button>
         </span>
       </div>
+
+      {mail && (
+        <div className="no-print" role="dialog" aria-modal="true" aria-label="Angebot per E-Mail senden" style={{ position: 'fixed', inset: 0, zIndex: 20, background: 'rgba(9,9,9,0.55)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px', overflowY: 'auto' }}>
+          <div style={{ width: '100%', maxWidth: 720, background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.3)', fontFamily: SANS, color: INK }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <h2 style={{ fontFamily: SERIF, fontWeight: 400, fontSize: 24, margin: 0 }}>Angebot per E-Mail senden</h2>
+              <button type="button" onClick={() => setMail(null)} aria-label="Schließen" style={{ marginLeft: 'auto', background: 'none', border: 0, fontSize: 26, lineHeight: 1, cursor: 'pointer', color: MUTED }}>×</button>
+            </div>
+            {mail.state === 'gesendet' || mail.state === 'test' ? (
+              <div>
+                <p style={{ fontSize: 15, lineHeight: 1.55, margin: '0 0 8px' }}>
+                  {mail.state === 'test' ? 'Testmodus: Die E-Mail wurde vorbereitet, aber nicht gesendet.' : `Gesendet an ${mail.an}, mit dem Angebot als PDF im Anhang. Eine Kopie ist in deinem Postfach.`}
+                </p>
+                <p style={{ fontSize: 13, color: MUTED, margin: '0 0 20px' }}>
+                  {mail.state === 'gesendet' && `${mail.abgelegt ? 'Das PDF liegt bei den Dokumenten, ' : ''}der Versand ist in der Beratungsdokumentation vermerkt.`}
+                </p>
+                <button type="button" onClick={() => setMail(null)} style={dialogBtn(true)}>Fertig</button>
+              </div>
+            ) : (
+              <>
+                <label style={dialogLabel}>
+                  An
+                  <input type="email" value={mail.an} onChange={(e) => setMail({ ...mail, an: e.target.value })} placeholder="E-Mail-Adresse des Kunden" style={dialogField} />
+                </label>
+                <label style={dialogLabel}>
+                  Betreff
+                  <input value={mail.betreff} onChange={(e) => setMail({ ...mail, betreff: e.target.value })} style={dialogField} />
+                </label>
+                <label style={dialogLabel}>
+                  Nachricht
+                  <textarea value={mail.text} onChange={(e) => setMail({ ...mail, text: e.target.value })} rows={18} style={{ ...dialogField, height: 'auto', padding: '12px 14px', lineHeight: 1.5, resize: 'vertical' }} />
+                </label>
+                <p style={{ fontSize: 12.5, color: MUTED, margin: '4px 0 16px' }}>
+                  Anhang: Zahnzusatz-Vergleich als PDF (wird beim Senden erstellt). Antworten des Kunden gehen an {CONTACT.email}, du bekommst eine Kopie.
+                </p>
+                {mail.fehler && <p style={{ fontSize: 13.5, color: NO, margin: '0 0 12px' }}>{mail.fehler}</p>}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'flex-end' }}>
+                  <button type="button" onClick={() => setMail(null)} style={dialogBtn(false)}>Abbrechen</button>
+                  <button type="button" onClick={mailSenden} disabled={mail.state === 'laeuft' || !mail.an.trim()} style={dialogBtn(true)}>
+                    {mail.state === 'laeuft' ? 'Wird gesendet …' : 'Jetzt senden'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Page 1: brand, customer, the three tariffs */}
       <header style={{ background: C.black, color: C.ivory }}>
@@ -526,6 +579,16 @@ export default function AngebotPage({ params }) {
     </div>
   );
 }
+
+const dialogLabel = { display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: MUTED, marginBottom: 14 };
+const dialogField = {
+  height: 44, padding: '0 14px', border: `1px solid ${LINE}`, borderRadius: 10, fontSize: 15, fontFamily: SANS, color: INK,
+  textTransform: 'none', letterSpacing: 0, fontWeight: 400, background: '#fff', boxSizing: 'border-box', width: '100%',
+};
+const dialogBtn = (primary) => ({
+  minHeight: 44, padding: '0 20px', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 700, fontFamily: SANS,
+  background: primary ? C.black : '#fff', color: primary ? C.ivory : INK, border: primary ? 0 : `1px solid ${LINE}`,
+});
 
 const ctaBtn = (primary) => ({
   display: 'inline-flex', alignItems: 'center', minHeight: 40, padding: '0 16px', borderRadius: 999, textDecoration: 'none',
