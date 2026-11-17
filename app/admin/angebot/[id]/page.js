@@ -414,7 +414,7 @@ export default function AngebotPage({ params }) {
         <div style={kicker}>Im Detail</div>
         <h2 style={h2}>Leistungen im Vergleich</h2>
         {SECTIONS.map((sec) => (
-          <section key={sec.key} className="abschnitt" style={{ marginTop: 22, display: 'grid', gridTemplateColumns: cols }}>
+          <section key={sec.key} className="abschnitt" style={{ marginTop: 52, display: 'grid', gridTemplateColumns: cols }}>
             <div style={{ fontFamily: SERIF, fontSize: 21, fontWeight: 700, color: INK, padding: '10px 12px 10px 0', borderBottom: `2px solid ${C.champagne}` }}>{sec.title}</div>
             {spalten.map((s, i) => (
               <div key={i} style={{ ...cell(i, { padding: '10px 12px' }), borderBottom: `1.5px solid ${C.champagne}`, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: MUTED }}>
