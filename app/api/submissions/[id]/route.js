@@ -16,6 +16,7 @@ const ALLOWED_FIELDS = [
   'gesellschaft',
   'tarif',
   'abgerechnet',
+  'aus_auswertung',
   'notizen',
   'angebot_auswahl',
   'vertragsbeginn',
@@ -38,6 +39,7 @@ const ALLOWED_STATUS = ['offen', 'angebot_verschickt', 'abgelehnt', 'versichert'
 const ALLOWED_ABLEHNUNGSGRUND = ['mehr als 4 fehlende Zähne', 'Bonität'];
 const BOOLEAN_FIELDS = new Set([
   'abgerechnet',
+  'aus_auswertung',
   'alt_vertrag_gekuendigt',
   'kuendigungsbestaetigung_erhalten',
 ]);

@@ -696,6 +696,7 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
             </button>
             {viaWhatsApp && <Tag color="#25a35a">{QUELLE_LABELS[s.quelle]}</Tag>}
             {s.quelle === 'bestand' && <Tag color="#2a78d6">Vertragsbestand</Tag>}
+            {s.aus_auswertung && <Tag color="#8a857c">Nicht in Auswertung</Tag>}
             {isGespraech && <Tag color="#7D6D49">Gespräch</Tag>}
             {documentCount > 0 && (
               <span
@@ -846,6 +847,12 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
                 note={s.vertragsbeginn ? `Beginn ${new Date(s.vertragsbeginn).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}, laut Vertragsstand Fonds Finanz` : 'laut Vertragsstand Fonds Finanz'}
               />
             )}
+            <EditableField label="Auswertungen" min={190} max={260}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minHeight: 44, fontSize: 14, color: 'var(--text-body)', cursor: 'pointer' }}>
+                <input type="checkbox" checked={!!s.aus_auswertung} onChange={(e) => onUpdate('aus_auswertung', e.target.checked)} />
+                Nicht in Auswertungen zählen
+              </label>
+            </EditableField>
             {(canBringBack || canUndoBack) && (
               <div className="crm-field" style={fieldBox(190, 420)}>
                 <span style={fieldLabel}>Kunde meldet sich wieder</span>

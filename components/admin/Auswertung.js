@@ -14,7 +14,9 @@ import { vertragsBeitrag } from '../../lib/provision';
 // whatever the status; a customer counts in this overview once set to "Versichert".
 const ANTRAG_STATUS = ['versichert'];
 
-export const isAntrag = (row) => !!row.gesellschaft && ANTRAG_STATUS.includes(row.status) && row.quelle !== 'whatsapp_test';
+// Customers marked "Nicht in Auswertungen" (aus_auswertung) count nowhere: Controlling, Abrechnung, Erhöhungen.
+export const zaehlt = (row) => row.quelle !== 'whatsapp_test' && !row.aus_auswertung;
+export const isAntrag = (row) => !!row.gesellschaft && ANTRAG_STATUS.includes(row.status) && zaehlt(row);
 
 // Eight-colour chart palette, checked with the dataviz validator against both CRM themes. The
 // first seven colours follow the entities with the most applications overall, so a colour
@@ -36,6 +38,9 @@ const STATUS_CHART = [
   { value: 'offen', light: '#2a78d6', dark: '#3987e5' },
   { value: 'abgelehnt', light: '#eb6834', dark: '#d95926' },
 ];
+
+// Average premium per contract: sum of the known premiums divided by the contracts that have one.
+const durchschnitt = (summe, anzahl) => (anzahl > 0 ? euro(Math.round((summe / anzahl) * 100) / 100) : '–');
 
 const percent = (count, total) => `${(total ? (count / total) * 100 : 0).toLocaleString('de-DE', { maximumFractionDigits: 1 })} %`;
 
@@ -161,9 +166,9 @@ export default function Auswertung({ rows, allRows, periodText, onOpenLead, alwa
 
   const mode = theme === 'dark' ? 'dark' : 'light';
   const antraege = rows.filter(isAntrag);
-  const ohneGesellschaft = rows.filter((r) => ANTRAG_STATUS.includes(r.status) && !r.gesellschaft && r.quelle !== 'whatsapp_test').length;
+  const ohneGesellschaft = rows.filter((r) => ANTRAG_STATUS.includes(r.status) && !r.gesellschaft && zaehlt(r)).length;
   // Status shares: only real enquiries, not customers known only from a contract list.
-  const leads = rows.filter((r) => r.quelle !== 'whatsapp_test' && r.quelle !== 'bestand');
+  const leads = rows.filter((r) => zaehlt(r) && r.quelle !== 'bestand');
   const statusView = view === 'status';
   const items = statusView
     ? STATUS_CHART.map((chart) => ({
@@ -264,13 +269,14 @@ export default function Auswertung({ rows, allRows, periodText, onOpenLead, alwa
                   <Donut segments={segments} total={total} center={center} activeKey={hover} onHover={setHover} />
                 </div>
                 <div style={{ flex: '1 1 320px', minWidth: 0 }}>
-                  <table style={{ width: '100%', maxWidth: 740, tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: 14, color: 'var(--text-body)' }}>
+                  <table style={{ width: '100%', maxWidth: 860, tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: 14, color: 'var(--text-body)' }}>
                     <thead>
                       <tr>
                         <th scope="col" style={{ ...th, textAlign: 'left' }}>{{ tarife: 'Tarif', status: 'Status' }[view] || 'Gesellschaft'}</th>
                         <th scope="col" className="aw-num" style={{ ...th, ...num }}>Anzahl</th>
                         <th scope="col" className="aw-num" style={{ ...th, ...num }}>Anteil</th>
                         {!statusView && <th scope="col" className="aw-num aw-sum" style={{ ...th, ...num }}>Beiträge mtl.</th>}
+                        {!statusView && <th scope="col" className="aw-num aw-sum" style={{ ...th, ...num }}>Ø Beitrag</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -310,10 +316,11 @@ export default function Auswertung({ rows, allRows, periodText, onOpenLead, alwa
                               {item.ohneBeitrag === item.count ? '–' : euro(item.beitrag)}{item.ohneBeitrag > 0 && item.ohneBeitrag < item.count && <span style={{ color: 'var(--text-dim)' }}> *</span>}
                             </td>
                           )}
+                          {!statusView && <td className="aw-num aw-sum" style={num}>{durchschnitt(item.beitrag, item.count - item.ohneBeitrag)}</td>}
                         </tr>
                         {view === 'gesellschaften' && (
                           <tr>
-                            <td colSpan={4} style={{ padding: 0 }}>
+                            <td colSpan={5} style={{ padding: 0 }}>
                               <SmoothHeight duration={350}>
                                 {kundenOpen && <KundenListe name={item.key} rows={allRows} onOpenLead={onOpenLead} />}
                               </SmoothHeight>
@@ -331,6 +338,7 @@ export default function Auswertung({ rows, allRows, periodText, onOpenLead, alwa
                           <td className="aw-num" style={num}>{total}</td>
                           <td className="aw-num" style={num}>100 %</td>
                           <td className="aw-num aw-sum" style={num}>{euro(Math.round(items.reduce((s, i) => s + i.beitrag, 0) * 100) / 100)}</td>
+                          <td className="aw-num aw-sum" style={num}>{durchschnitt(items.reduce((s, i) => s + i.beitrag, 0), items.reduce((s, i) => s + i.count - i.ohneBeitrag, 0))}</td>
                         </tr>
                       </tfoot>
                     )}
@@ -343,7 +351,7 @@ export default function Auswertung({ rows, allRows, periodText, onOpenLead, alwa
               {statusView ? `Grundlage: ${total} ${total === 1 ? 'Lead' : 'Leads'} in diesem Zeitraum, mit ihrem aktuellen Status. Abgeschlossene und wieder aktive Kunden zählen in dem Monat, in dem sie auch in der Liste stehen.` : (
                 <>
                   Gezählt werden Kunden mit Status „Versichert“ und gewählter Gesellschaft, im Monat ihres Abschlusses. Ältere Kunden ohne Abschlussdatum zählen im Monat ihrer Anfrage.
-                  {' '}Beiträge pro Monat: Wert aus Marcos alter Liste, sonst der bei Abschluss gespeicherte oder aus Tarif und Alter berechnete Beitrag (ohne Tarifangabe der 100er).
+                  {' '}Beiträge pro Monat: Wert aus Marcos alter Liste, sonst der bei Abschluss gespeicherte oder aus Tarif und Alter berechnete Beitrag (ohne Tarifangabe der 100er). Ø Beitrag = Summe der Beiträge geteilt durch die Verträge mit bekanntem Beitrag.
                   {items.some((i) => i.ohneBeitrag) && ` ${items.reduce((s, i) => s + i.ohneBeitrag, 0)} Verträge ohne bekannten Beitrag (Gesellschaften ohne Beitragstabelle) fehlen in den Summen, „–“ heißt: kein Beitrag bekannt, * heißt: teilweise.`}
                   {ohneGesellschaft > 0 && ` ${ohneGesellschaft} ${ohneGesellschaft === 1 ? 'versicherter Kunde hat' : 'versicherte Kunden haben'} in diesem Zeitraum noch keine Gesellschaft und ${ohneGesellschaft === 1 ? 'fehlt' : 'fehlen'} hier.`}
                 </>
