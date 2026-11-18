@@ -92,6 +92,7 @@ export async function GET() {
     { header: 'Beratungstermin', key: 'beratungstermin', width: 22 },
     { header: 'Anliegen', key: 'anliegen', width: 34 },
     { header: 'Notizen', key: 'notizen', width: 34 },
+    { header: 'Kontaktverlauf', key: 'kontakte', width: 40 },
   ];
 
   sheet.getRow(1).font = { bold: true };
@@ -110,6 +111,7 @@ export async function GET() {
       provision: toNumber(row.provision),
       monatsbeitrag: toNumber(row.monatsbeitrag),
       beitrag_abschluss: toNumber(row.beitrag_abschluss),
+      kontakte: (Array.isArray(row.kontakte) ? row.kontakte : []).map((k) => `${String(k.am).split('-').reverse().join('.')}: ${k.text || ''}`).join('\n'),
       vertragsnummer: row.vertragsnummer,
       vertragsbeginn: row.vertragsbeginn ? new Date(row.vertragsbeginn) : null,
       gesellschaft: row.gesellschaft,

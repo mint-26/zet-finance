@@ -14,6 +14,7 @@ import Auswertung from '../../components/admin/Auswertung';
 import Abrechnung from '../../components/admin/Abrechnung';
 import AngebotBuilder from '../../components/admin/AngebotBuilder';
 import Erhoehungen from '../../components/admin/Erhoehungen';
+import Kontakte, { KontaktIcon } from '../../components/admin/Kontakte';
 import Dokumente from '../../components/admin/Dokumente';
 import Backup from '../../components/admin/Backup';
 import { selectLook, STATUS_OPTIONS, pillColors } from '../../components/admin/ui';
@@ -697,6 +698,7 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
             {viaWhatsApp && <Tag color="#25a35a">{QUELLE_LABELS[s.quelle]}</Tag>}
             {s.quelle === 'bestand' && <Tag color="#2a78d6">Vertragsbestand</Tag>}
             {s.aus_auswertung && <Tag color="#8a857c">Nicht in Auswertung</Tag>}
+            <KontaktIcon s={s} />
             {isGespraech && <Tag color="#7D6D49">Gespräch</Tag>}
             {documentCount > 0 && (
               <span
@@ -863,6 +865,8 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
               </div>
             )}
           </div>
+
+          <Kontakte s={s} onSave={(kontakte) => onUpdateMany({ kontakte })} />
 
           {!isGespraech && <AngebotBuilder s={s} onSave={(auswahl) => onUpdateMany({ angebot_auswahl: auswahl })} />}
 

@@ -19,6 +19,7 @@ const ALLOWED_FIELDS = [
   'aus_auswertung',
   'notizen',
   'angebot_auswahl',
+  'kontakte',
   'vertragsbeginn',
   'alt_vertrag_gekuendigt',
   'kuendigungsbestaetigung_erhalten',
@@ -91,6 +92,16 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ error: 'Invalid value for vertragsbeginn' }, { status: 400 });
     }
     update.vertragsbeginn = update.vertragsbeginn.slice(0, 10);
+  }
+
+  // Contact log ("Kunde kontaktiert"): a list of { am: 'YYYY-MM-DD', text }, newest first.
+  if ('kontakte' in update) {
+    const v = update.kontakte ?? [];
+    const ok = Array.isArray(v) && v.length <= 200 && v.every((k) => k && typeof k === 'object'
+      && datumAusIso(k.am) && typeof (k.text ?? '') === 'string' && String(k.text ?? '').length <= 2000);
+    if (!ok) return NextResponse.json({ error: 'Invalid value for kontakte' }, { status: 400 });
+    update.kontakte = v.map((k) => ({ am: String(k.am).slice(0, 10), text: String(k.text ?? '').trim() }))
+      .sort((a, b) => b.am.localeCompare(a.am));
   }
 
   // Last offer put together in the CRM (AngebotBuilder): a small object, never anything else.
@@ -193,7 +204,7 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: 'Failed to update submission' }, { status: 500 });
   }
 
-  const dates = Object.fromEntries(['abgeschlossen_am', 'wieder_aktiv_am', 'beitrag_abschluss', 'tarif'].filter((k) => k in update).map((k) => [k, update[k]]));
+  const dates = Object.fromEntries(['abgeschlossen_am', 'wieder_aktiv_am', 'beitrag_abschluss', 'tarif', 'kontakte'].filter((k) => k in update).map((k) => [k, update[k]]));
   return NextResponse.json({ ok: true, ...dates });
 }
 
