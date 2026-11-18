@@ -82,7 +82,7 @@ function Wert({ wert, beginn }) {
   if (wert.staffel) return <span style={{ whiteSpace: 'pre-line' }}>{begrenzungText(wert, beginn)}</span>;
   if ((!wert.t || wert.t.trim() === '-') && !wert.s) return <span style={{ color: '#b9b3a8' }}>–</span>;
   return (
-    <span style={{ display: 'flex', gap: 7, alignItems: 'flex-start', fontSize: (wert.t || '').length > 70 ? 11.5 : undefined, color: (wert.t || '').length > 70 ? '#45413b' : undefined }}>
+    <span style={{ display: 'flex', gap: 7, alignItems: 'flex-start' }}>
       <Icon s={wert.s} />
       <span style={{ whiteSpace: 'pre-line' }}>{wert.t || (wert.s === 'ja' ? 'Enthalten' : '')}</span>
     </span>
