@@ -710,8 +710,10 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
             )}
           </div>
         </div>
-        {/* Abgerechnet: a pill in the style of the status, the whole pill is the dropdown. */}
+        {/* Abgerechnet: a pill in the style of the status, the whole pill is the dropdown. Only for
+            customers set to "Versichert"; for all others the slot stays empty, so the rows line up. */}
         <span style={{ position: 'relative', display: 'inline-flex', flexShrink: 0, width: 168 }}>
+          {s.status === 'versichert' && (<>
           <span aria-hidden="true" style={{
             position: 'absolute', left: 11, top: '50%', marginTop: -4, width: 8, height: 8, borderRadius: '50%',
             background: pillColors(s.abgerechnet ? 'versichert' : 'abgelehnt').color, pointerEvents: 'none',
@@ -732,6 +734,7 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
             <option value="false" style={{ background: 'var(--bg-card)', color: 'var(--text-body)' }}>Nicht abgerechnet</option>
             <option value="true" style={{ background: 'var(--bg-card)', color: 'var(--text-body)' }}>Abgerechnet</option>
           </select>
+          </>)}
         </span>
         <div style={{ fontSize: 12, lineHeight: 1.45, textAlign: 'left', whiteSpace: 'nowrap', width: 150, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
           {closedAt || backAt ? (
