@@ -29,9 +29,8 @@ function letzteAuswahl(a) {
 // "Angebot erstellen" in the lead details: three tariffs, their column names, the recommended one
 // and a personal note; opens the offer page (app/admin/angebot/[id]) in a new tab. The choice is
 // saved with the lead, so it is there again next time.
-export default function AngebotBuilder({ s, onSave }) {
+export default function AngebotBuilder({ s, open, onSave }) {
   const letzte = letzteAuswahl(s.angebot_auswahl);
-  const [open, setOpen] = useState(false);
   const [spalten, setSpalten] = useState(letzte ? letzte.spalten.map((sp) => ({ gesellschaft: sp.gesellschaft, tarif: sp.tarif, label: String(sp.label || sp.tarif) })) : VORLAGE);
   const [empfohlen, setEmpfohlen] = useState(letzte ? Number(letzte.empfohlen ?? -1) : 2);
   const [mitGesellschaft, setMitGesellschaft] = useState(letzte ? !!letzte.mitGesellschaft : false);
@@ -53,24 +52,11 @@ export default function AngebotBuilder({ s, onSave }) {
   };
 
   return (
-    <div style={{ marginBottom: 20 }}>
-      <button
-        type="button" aria-expanded={open} onClick={() => setOpen((v) => !v)} className="angebot-knopf"
-        title="Vergleich von drei Tarifen, als PDF"
-        style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8, minHeight: 42, padding: '0 16px', cursor: 'pointer',
-          background: open ? 'var(--accent-dim)' : 'transparent', border: '1px solid var(--accent)', borderRadius: 10,
-          fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, color: 'var(--text-primary)',
-        }}
-      >
-        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="8" y1="13" x2="16" y2="13" /><line x1="8" y1="17" x2="13" y2="17" /></svg>
-        Angebot erstellen
-        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.25s ease', color: 'var(--text-muted)' }}><polyline points="6 9 12 15 18 9" /></svg>
-      </button>
+    <div style={{ marginBottom: open ? 20 : 0 }}>
       <SmoothHeight duration={300}>
         {open && (
           // Padding instead of a margin: SmoothHeight measures this box, a margin would cut off its frame.
-          <div style={{ paddingTop: 10, paddingBottom: 2 }}>
+          <div style={{ paddingTop: 0, paddingBottom: 2 }}>
           <div style={{ padding: 16, border: '1px solid var(--accent)', borderRadius: 12, background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', gap: 8 }}>
             <p style={{ margin: '0 0 2px', fontSize: 12, color: 'var(--text-muted)' }}>
               Stern = Empfehlung im Angebot (nochmal klicken: ohne Empfehlung)

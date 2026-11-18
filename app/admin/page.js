@@ -14,7 +14,7 @@ import Auswertung from '../../components/admin/Auswertung';
 import Abrechnung from '../../components/admin/Abrechnung';
 import AngebotBuilder from '../../components/admin/AngebotBuilder';
 import Erhoehungen from '../../components/admin/Erhoehungen';
-import Kontakte, { KontaktIcon } from '../../components/admin/Kontakte';
+import Kontakte, { KontaktIcon, KontaktSymbol } from '../../components/admin/Kontakte';
 import Dokumente from '../../components/admin/Dokumente';
 import Backup from '../../components/admin/Backup';
 import { selectLook, STATUS_OPTIONS, pillColors } from '../../components/admin/ui';
@@ -584,6 +584,7 @@ function AdminContent() {
 }
 
 function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocumentsChanged, expanded, onToggle, onUpdate, onUpdateMany, onDelete, onResendNotification }) {
+  const [aktion, setAktion] = useState(null); // open panel below the action row: 'kontakt' | 'angebot'
   const statusOpt = STATUS_OPTIONS.find((o) => o.value === s.status) || STATUS_OPTIONS[0];
   const createdAt = s.created_at ? new Date(s.created_at) : null;
   const closedAt = s.abgeschlossen_am ? new Date(s.abgeschlossen_am) : null;
@@ -849,26 +850,40 @@ function SubmissionCard({ submission: s, tarifOptions, documentCount, onDocument
                 note={s.vertragsbeginn ? `Beginn ${new Date(s.vertragsbeginn).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}, laut Vertragsstand Fonds Finanz` : 'laut Vertragsstand Fonds Finanz'}
               />
             )}
-            <EditableField label="Auswertungen" min={190} max={260}>
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minHeight: 44, fontSize: 14, color: 'var(--text-body)', cursor: 'pointer' }}>
-                <input type="checkbox" checked={!!s.aus_auswertung} onChange={(e) => onUpdate('aus_auswertung', e.target.checked)} />
-                Nicht in Auswertungen zählen
-              </label>
-            </EditableField>
-            {(canBringBack || canUndoBack) && (
-              <div className="crm-field" style={fieldBox(190, 420)}>
-                <span style={fieldLabel}>Kunde meldet sich wieder</span>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {canBringBack && <button type="button" onClick={() => onUpdateMany({ wieder_aktiv: true })} style={monthBtn}>In aktuellen Monat holen</button>}
-                  {canUndoBack && <button type="button" onClick={() => onUpdateMany({ wieder_aktiv: false })} style={monthBtn}>Zurück zum Anfragemonat</button>}
-                </div>
-              </div>
-            )}
           </div>
 
-          <Kontakte s={s} onSave={(kontakte) => onUpdateMany({ kontakte })} />
+          {/* Actions in one row; their panels (contact form, offer) open below it. */}
+          <div className="crm-aktionen">
+            <button type="button" className="aktion-knopf" aria-expanded={aktion === 'kontakt'} onClick={() => setAktion(aktion === 'kontakt' ? null : 'kontakt')}>
+              <KontaktSymbol /> Kunde kontaktiert
+            </button>
+            {!isGespraech && (
+              <button type="button" className="aktion-knopf" aria-expanded={aktion === 'angebot'} onClick={() => setAktion(aktion === 'angebot' ? null : 'angebot')}>
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="8" y1="13" x2="16" y2="13" /><line x1="8" y1="17" x2="13" y2="17" /></svg>
+                Angebot erstellen
+              </button>
+            )}
+            {canBringBack && (
+              <button type="button" className="aktion-knopf" onClick={() => onUpdateMany({ wieder_aktiv: true })} title="Kunde meldet sich wieder: Lead in den aktuellen Monat holen">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 11 12 6 7 11" /><line x1="12" y1="6" x2="12" y2="18" /></svg>
+                In aktuellen Monat holen
+              </button>
+            )}
+            {canUndoBack && (
+              <button type="button" className="aktion-knopf" onClick={() => onUpdateMany({ wieder_aktiv: false })}>
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 14 4 9 9 4" /><path d="M20 20v-7a4 4 0 0 0-4-4H4" /></svg>
+                Zurück zum Anfragemonat
+              </button>
+            )}
+            <label className="aktion-haken">
+              <input type="checkbox" checked={!!s.aus_auswertung} onChange={(e) => onUpdate('aus_auswertung', e.target.checked)} />
+              Nicht in Auswertungen zählen
+            </label>
+          </div>
 
-          {!isGespraech && <AngebotBuilder s={s} onSave={(auswahl) => onUpdateMany({ angebot_auswahl: auswahl })} />}
+          <Kontakte s={s} formOpen={aktion === 'kontakt'} onClose={() => setAktion(null)} onSave={(kontakte) => onUpdateMany({ kontakte })} />
+
+          {!isGespraech && <AngebotBuilder s={s} open={aktion === 'angebot'} onSave={(auswahl) => onUpdateMany({ angebot_auswahl: auswahl })} />}
 
           <div className="crm-two">
             <EditableField label="Beratungsdokumentation">

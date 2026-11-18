@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // Follow-up log in the lead details: "Kunde kontaktiert" with a date (default today) and a short
 // note on where things stand. Stored in the column kontakte as [{ am, text }], newest first; the
@@ -52,39 +52,29 @@ export function KontaktIcon({ s }) {
   );
 }
 
-export default function Kontakte({ s, onSave }) {
+// The button "Kunde kontaktiert" sits in the action row of the lead (app/admin/page.js); it opens
+// the form here (formOpen). The history shows below whenever there is one.
+export default function Kontakte({ s, formOpen, onClose, onSave }) {
   const liste = kontakteVon(s);
   const [entwurf, setEntwurf] = useState(null); // { am, text } while adding
   const [speichert, setSpeichert] = useState(false);
+  useEffect(() => { setEntwurf(formOpen ? { am: heuteIso(), text: '' } : null); }, [formOpen]);
 
   const speichern = async () => {
     setSpeichert(true);
     const neu = [{ am: entwurf.am || heuteIso(), text: entwurf.text.trim() }, ...liste];
     const ok = await onSave(neu);
     setSpeichert(false);
-    if (ok !== false) setEntwurf(null);
+    if (ok !== false) onClose?.();
   };
   const loeschen = (i) => {
     if (!confirm('Diesen Kontakt aus dem Verlauf löschen?')) return;
     onSave(liste.filter((_, j) => j !== i));
   };
 
+  if (!entwurf && !liste.length) return null;
   return (
     <section style={{ marginBottom: 20 }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, marginBottom: liste.length || entwurf ? 12 : 0 }}>
-        <span style={{ fontSize: 11, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Wiedervorlage</span>
-        {!entwurf && (
-          <button type="button" onClick={() => setEntwurf({ am: heuteIso(), text: '' })} style={btn(false)}>
-            <KontaktSymbol /> Kunde kontaktiert
-          </button>
-        )}
-        {liste.length > 0 && !entwurf && (
-          <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-            {liste.length} {liste.length === 1 ? 'Kontakt' : 'Kontakte'}, zuletzt am {datumDe(liste[0].am)}
-          </span>
-        )}
-      </div>
-
       {entwurf && (
         <div style={{ border: '1px solid var(--accent)', borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12, background: 'var(--bg-card)' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
@@ -102,13 +92,17 @@ export default function Kontakte({ s, onSave }) {
             />
           </label>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-            <button type="button" onClick={() => setEntwurf(null)} style={btn(false)}>Abbrechen</button>
+            <button type="button" onClick={() => onClose?.()} style={btn(false)}>Abbrechen</button>
             <button type="button" onClick={speichern} disabled={speichert || !entwurf.am} style={btn(true)}>{speichert ? 'Speichert …' : 'Kontakt speichern'}</button>
           </div>
         </div>
       )}
 
       {liste.length > 0 && (
+        <>
+        <div style={{ fontSize: 11, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+          Kontaktverlauf · {liste.length} {liste.length === 1 ? 'Kontakt' : 'Kontakte'}, zuletzt am {datumDe(liste[0].am)}
+        </div>
         <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column' }}>
           {liste.map((k, i) => (
             <li key={`${k.am}-${i}`} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '8px 0', borderTop: '1px dashed var(--border)', fontSize: 14 }}>
@@ -118,6 +112,7 @@ export default function Kontakte({ s, onSave }) {
             </li>
           ))}
         </ol>
+        </>
       )}
     </section>
   );
